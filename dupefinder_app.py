@@ -58,21 +58,15 @@ def main():
     print("  Press Ctrl+C to stop")
     print("")
 
-    # Open browser, but skip if a restored tab already connected
-    def _maybe_open_browser():
-        import time
-        # Wait for any restored browser tabs to connect via heartbeat
-        time.sleep(4)
-        from web.server import _last_heartbeat, _heartbeat_lock
-        with _heartbeat_lock:
-            # Server sets _last_heartbeat at startup. If a browser tab
-            # sent a heartbeat since then, the timestamp will be newer.
-            age = time.time() - _last_heartbeat
-        if age < 3:
-            # A tab already connected -- don't open another
-            return
-        webbrowser.open(url)
-    threading.Timer(0.1, _maybe_open_browser).start()
+    # Open browser on first run only. After that, rely on
+    # bookmark or browser session restore to avoid duplicate tabs.
+    flag_file = Path(__file__).parent / ".browser_opened"
+    if not flag_file.exists():
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+        try:
+            flag_file.write_text("1")
+        except Exception:
+            pass
 
     # Serve forever
     try:

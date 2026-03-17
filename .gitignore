@@ -17,6 +17,9 @@ check.py
 # PowerShell scripts (generated)
 *.ps1
 
+# Runtime flags
+.browser_opened
+
 # Python
 __pycache__/
 *.pyc
