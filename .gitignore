@@ -1,0 +1,31 @@
+# Scan results and logs (generated data)
+scans/
+logs/
+settings.json
+
+# Legacy reports
+dupes_report.json
+perceptual_report.json
+rescan_report.json
+
+# Test/scratch files
+test.txt
+writetest.py
+check.py
+
+# PowerShell scripts (generated)
+*.ps1
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Output folders
+exact_dupes/
+final_review/
+
+# Additional reports
+oddballs_report.json

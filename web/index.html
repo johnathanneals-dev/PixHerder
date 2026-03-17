@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DupeFinder</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0c;
+    --surface: #131318;
+    --surface-2: #1a1a22;
+    --surface-3: #222230;
+    --border: #2a2a35;
+    --text: #e8e8ed;
+    --text-dim: #7a7a8a;
+    --text-muted: #55556a;
+    --accent: #6ee7b7;
+    --accent-dim: #2d6a54;
+    --accent-bg: #0f2a1f;
+    --danger: #f87171;
+    --danger-dim: #5c2626;
+    --danger-bg: #2a1215;
+    --warning: #d97706;
+    --warning-bg: #2a1f0f;
+    --keep-bg: #0f2a1f;
+    --keep-border: #1a5c3a;
+    --dupe-bg: #2a1215;
+    --dupe-border: #5c2a2e;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ---- Top Nav ---- */
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 10, 12, 0.88);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+  .topnav-left { display: flex; align-items: center; gap: 24px; }
+  .logo {
+    font-size: 20px; font-weight: 900; letter-spacing: -0.5px;
+    color: var(--accent); font-family: monospace; cursor: pointer;
+  }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    color: var(--text-dim); cursor: pointer; border: none; background: none;
+    transition: all 0.15s;
+  }
+  .nav-link:hover { color: var(--text); background: var(--surface-2); }
+  .nav-link.active { color: var(--accent); background: var(--accent-bg); }
+
+  /* ---- Main container ---- */
+  .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
+  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ---- Common elements ---- */
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+  }
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; text-align: center;
+  }
+  .stat-card .num {
+    font-size: 36px; font-weight: 900; font-family: monospace;
+    color: var(--accent); line-height: 1.1;
+  }
+  .stat-card .label {
+    font-size: 12px; color: var(--text-dim); margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    padding: 10px 20px; border-radius: var(--radius-sm); border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #0a0a0c; }
+  .btn-primary:hover:not(:disabled) { background: #a7f3d0; }
+  .btn-danger { background: var(--danger); color: #0a0a0c; }
+  .btn-danger:hover:not(:disabled) { background: #fca5a5; }
+  .btn-warning { background: var(--warning); color: #0a0a0c; }
+  .btn-warning:hover:not(:disabled) { background: #fbbf24; }
+  .btn-secondary {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--border); }
+  .btn-ghost { background: none; color: var(--text-dim); padding: 8px 12px; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-lg { padding: 14px 28px; font-size: 16px; }
+
+  /* ---- Forms ---- */
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block; font-size: 13px; font-weight: 600; color: var(--text-dim);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .form-input {
+    width: 100%; padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 14px; font-family: monospace;
+  }
+  .form-input:focus { outline: none; border-color: var(--accent); }
+  .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .radio-option {
+    padding: 8px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;
+    font-weight: 500; transition: all 0.15s; color: var(--text-dim);
+  }
+  .radio-option:hover { border-color: var(--text-dim); color: var(--text); }
+  .radio-option.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+  .radio-option input { display: none; }
+
+  .checkbox-label {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 14px; color: var(--text);
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--accent);
+  }
+
+  .slider-container { display: flex; align-items: center; gap: 16px; }
+  .slider-container input[type="range"] {
+    flex: 1; accent-color: var(--accent); height: 6px;
+  }
+  .slider-value {
+    font-family: monospace; font-size: 16px; font-weight: 700;
+    color: var(--accent); min-width: 30px; text-align: center;
+  }
+  .slider-labels {
+    display: flex; justify-content: space-between; font-size: 10px;
+    color: var(--text-muted); margin-top: 4px; padding: 0 2px;
+  }
+
+  /* ---- Progress bar ---- */
+  .progress-container { margin: 16px 0; }
+  .progress-bar {
+    width: 100%; height: 8px; background: var(--surface-2);
+    border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    display: flex; justify-content: space-between; font-size: 12px;
+    color: var(--text-dim); font-family: monospace; margin-top: 6px;
+  }
+
+  /* ---- Toast notifications ---- */
+  .toast-container {
+    position: fixed; top: 72px; right: 24px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    padding: 12px 20px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; max-width: 400px;
+    animation: slideIn 0.25s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast-success { background: var(--accent-bg); border: 1px solid var(--accent-dim); color: var(--accent); }
+  .toast-error { background: var(--danger-bg); border: 1px solid var(--danger-dim); color: var(--danger); }
+  .toast-warning { background: var(--warning-bg); border: 1px solid #5c4a1a; color: var(--warning); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ---- Confirm dialog ---- */
+  .dialog-overlay {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+  }
+  .dialog-overlay.active { display: flex; }
+  .dialog {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; max-width: 440px;
+    width: 90%; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .dialog h3 { font-size: 18px; margin-bottom: 12px; }
+  .dialog p { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+  .dialog-actions { display: flex; gap: 12px; justify-content: flex-end; }
+
+  /* ---- Scan list ---- */
+  .scan-list { display: flex; flex-direction: column; gap: 8px; }
+  .scan-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); transition: border-color 0.15s;
+  }
+  .scan-item:hover { border-color: var(--text-dim); }
+  .scan-item-info { flex: 1; }
+  .scan-item-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .scan-item-meta { font-size: 12px; color: var(--text-dim); font-family: monospace; }
+  .scan-item-actions { display: flex; gap: 8px; }
+  .scan-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .scan-badge-legacy { background: var(--warning-bg); color: var(--warning); }
+  .scan-badge-scan { background: var(--accent-bg); color: var(--accent); }
+
+  /* ---- Review UI ---- */
+  .review-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; margin-bottom: 16px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 12px;
+  }
+  .review-nav { display: flex; align-items: center; gap: 8px; }
+  .review-counter {
+    font-family: monospace; font-size: 14px; color: var(--text-dim);
+    min-width: 100px; text-align: center;
+  }
+  .review-counter strong { color: var(--accent); }
+  .jump-input {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 6px 10px; border-radius: 6px;
+    font-family: monospace; font-size: 13px; width: 70px; text-align: center;
+  }
+  .jump-input:focus { outline: none; border-color: var(--accent); }
+
+  .filter-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    padding: 12px 0; margin-bottom: 16px;
+  }
+  .filter-bar select, .filter-bar input[type="text"] {
+    padding: 6px 10px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 12px;
+  }
+  .filter-bar select:focus, .filter-bar input[type="text"]:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .filter-bar label { font-size: 11px; color: var(--text-dim); }
+
+  .group-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 8px;
+  }
+  .group-title { font-size: 18px; font-weight: 700; }
+  .group-title .decision-badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    font-weight: 700; margin-left: 8px;
+  }
+  .decision-skip { background: var(--surface-2); color: var(--text-dim); }
+  .decision-move { background: var(--danger-bg); color: var(--danger); }
+  .decision-delete { background: #2a0a1a; color: #f472b6; }
+  .group-meta { font-size: 13px; color: var(--text-dim); font-family: monospace; }
+  .distance-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; font-family: monospace;
+  }
+  .dist-low { background: var(--accent-bg); color: var(--accent); }
+  .dist-med { background: var(--warning-bg); color: var(--warning); }
+  .dist-high { background: var(--danger-bg); color: var(--danger); }
+
+  .image-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+  .image-card {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    transition: all 0.2s; position: relative;
+  }
+  .image-card.keep { border-color: var(--keep-border); background: var(--keep-bg); }
+  .image-card.dupe { border-color: var(--dupe-border); background: var(--dupe-bg); }
+  .image-card:hover { transform: translateY(-2px); }
+
+  .image-wrapper {
+    width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+  }
+  .image-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  .badge {
+    position: absolute; top: 10px; left: 10px; padding: 3px 10px;
+    border-radius: 5px; font-size: 11px; font-weight: 700;
+    font-family: monospace; text-transform: uppercase;
+    letter-spacing: 0.5px; z-index: 2;
+  }
+  .badge-keep { background: var(--accent); color: #0a0a0c; }
+  .badge-dupe { background: var(--danger); color: #0a0a0c; }
+
+  .card-info { padding: 12px 14px; }
+  .card-filename {
+    font-size: 12px; font-weight: 600; word-break: break-all;
+    margin-bottom: 4px; line-height: 1.3;
+  }
+  .card-meta {
+    font-size: 11px; color: var(--text-dim); font-family: monospace;
+    word-break: break-all; line-height: 1.4;
+  }
+
+  /* ---- Review action bar ---- */
+  .action-bar {
+    position: sticky; bottom: 0; background: rgba(10, 10, 12, 0.92);
+    backdrop-filter: blur(20px); border-top: 1px solid var(--border);
+    padding: 12px 32px; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    margin: 0 -32px;
+  }
+  .action-info { font-size: 13px; color: var(--text-dim); font-family: monospace; }
+  .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .kbd-hints {
+    display: flex; gap: 12px; font-size: 11px; color: var(--text-muted);
+    font-family: monospace;
+  }
+  kbd {
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 3px; font-size: 10px; color: var(--text-dim);
+  }
+
+  /* ---- Lightbox ---- */
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 5000;
+    background: rgba(0,0,0,0.95); align-items: center;
+    justify-content: center; cursor: zoom-out;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img { max-width: 95vw; max-height: 95vh; object-fit: contain; }
+
+  /* ---- Scan progress ---- */
+  .progress-center {
+    max-width: 600px; margin: 60px auto; text-align: center;
+  }
+  .progress-stage {
+    font-size: 14px; color: var(--text-dim); font-family: monospace;
+    margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .progress-big-text {
+    font-size: 48px; font-weight: 900; font-family: monospace;
+    color: var(--accent); margin: 16px 0;
+  }
+  .progress-details {
+    display: flex; justify-content: center; gap: 32px;
+    font-size: 13px; color: var(--text-dim); font-family: monospace;
+    margin-top: 16px;
+  }
+
+  /* ---- Settings form ---- */
+  .settings-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+
+  /* ---- Empty state ---- */
+  .empty-state {
+    text-align: center; padding: 60px 32px; color: var(--text-dim);
+  }
+  .empty-state h3 { font-size: 20px; color: var(--text); margin-bottom: 8px; }
+
+  /* ---- Action results ---- */
+  .error-list {
+    max-height: 300px; overflow-y: auto; margin-top: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px;
+  }
+  .error-item {
+    font-size: 12px; font-family: monospace; color: var(--danger);
+    padding: 4px 0; border-bottom: 1px solid var(--border);
+  }
+  .error-item:last-child { border-bottom: none; }
+
+  /* ---- Scrollbar ---- */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<div class="topnav">
+  <div class="topnav-left">
+    <div class="logo" onclick="navigate('dashboard')">DupeFinder</div>
+    <div class="nav-links" id="navLinks">
+      <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</button>
+      <button class="nav-link" data-view="scan-config" onclick="navigate('scan-config')">Scan</button>
+      <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
+    </div>
+  </div>
+  <div class="kbd-hints" id="kbdHints" style="display:none;">
+    <span><kbd>&larr;</kbd> prev</span>
+    <span><kbd>&rarr;</kbd> next</span>
+    <span><kbd>S</kbd> skip</span>
+    <span><kbd>M</kbd> move</span>
+    <span><kbd>D</kbd> delete</span>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Confirm dialog -->
+<div class="dialog-overlay" id="dialogOverlay">
+  <div class="dialog">
+    <h3 id="dialogTitle">Confirm</h3>
+    <p id="dialogMessage">Are you sure?</p>
+    <div class="dialog-actions">
+      <button class="btn btn-secondary" onclick="closeDialog()">Cancel</button>
+      <button class="btn btn-danger" id="dialogConfirmBtn" onclick="dialogConfirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="">
+</div>
+
+<!-- Main content area -->
+<div class="main">
+
+  <!-- Dashboard View -->
+  <div class="view active" id="view-dashboard">
+    <h1>DupeFinder</h1>
+    <p class="subtitle">Find and clean up duplicate images on your computer.</p>
+
+    <div class="card-grid" id="dashboardStats" style="display:none;">
+      <div class="stat-card"><div class="num" id="dStatGroups">0</div><div class="label">Duplicate Groups</div></div>
+      <div class="stat-card"><div class="num" id="dStatDupes">0</div><div class="label">Duplicate Files</div></div>
+      <div class="stat-card"><div class="num" id="dStatSpace">0</div><div class="label">Reclaimable</div></div>
+    </div>
+
+    <div style="margin-bottom:32px;">
+      <button class="btn btn-primary btn-lg" onclick="navigate('scan-config')">Start New Scan</button>
+    </div>
+
+    <h2>Previous Scans</h2>
+    <div class="scan-list" id="scanList">
+      <div class="empty-state"><p>Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- Scan Configuration View -->
+  <div class="view" id="view-scan-config">
+    <h1>Configure Scan</h1>
+    <p class="subtitle">Choose a folder and scanning options.</p>
+
+    <div class="card" style="max-width:640px;">
+      <div class="form-group">
+        <label class="form-label">Folder to scan</label>
+        <input class="form-input" type="text" id="scanDir"
+               placeholder="C:\Users\repom\OneDrive\Pictures">
+        <div class="form-hint">Paste or type the full path to the folder you want to scan.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Scan mode</label>
+        <div class="radio-group" id="scanModeGroup">
+          <label class="radio-option" onclick="selectRadio(this,'scanMode')">
+            <input type="radio" name="scanMode" value="exact"> Exact (MD5)
+          </label>
+          <label class="radio-option" onclick="selectRadio(this,'scanMode')">
+            <input type="radio" name="scanMode" value="perceptual"> Perceptual (visual)
+          </label>
+          <label class="radio-option selected" onclick="selectRadio(this,'scanMode')">
+            <input type="radio" name="scanMode" value="both" checked> Both
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Perceptual threshold</label>
+        <div class="slider-container">
+          <input type="range" id="scanThreshold" min="0" max="20" value="5"
+                 oninput="document.getElementById('thresholdVal').textContent=this.value">
+          <span class="slider-value" id="thresholdVal">5</span>
+        </div>
+        <div class="slider-labels">
+          <span>0 identical</span><span>5 near-dupe</span><span>10 similar</span><span>15 loose</span><span>20</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="scanRecursive" checked>
+          Scan subdirectories (recursive)
+        </label>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="startScan()" style="margin-top:12px;">
+        Start Scan
+      </button>
+    </div>
+  </div>
+
+  <!-- Scan Progress View -->
+  <div class="view" id="view-scan-progress">
+    <div class="progress-center">
+      <h2>Scanning...</h2>
+      <div class="progress-stage" id="scanStage">Initializing</div>
+
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="scanProgressFill" style="width:0%"></div></div>
+        <div class="progress-text">
+          <span id="scanProgressLeft">0 / 0</span>
+          <span id="scanProgressRight"></span>
+        </div>
+      </div>
+
+      <div class="progress-big-text" id="scanProgressPct">0%</div>
+
+      <div class="progress-details">
+        <span>Elapsed: <strong id="scanElapsed">0:00</strong></span>
+        <span>ETA: <strong id="scanETA">--</strong></span>
+        <span>Errors: <strong id="scanErrors">0</strong></span>
+      </div>
+
+      <div style="margin-top:32px;" id="scanProgressActions">
+        <button class="btn btn-danger" onclick="cancelScan()">Cancel Scan</button>
+      </div>
+
+      <div style="margin-top:32px;display:none;" id="scanCompleteBox">
+        <div class="card" style="text-align:left;">
+          <h3 style="color:var(--accent);margin-bottom:12px;" id="scanCompleteTitle">Scan Complete</h3>
+          <p id="scanCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
+          <div id="scanCompleteSummary" style="margin-bottom:16px;"></div>
+          <button class="btn btn-primary" id="scanReviewBtn" onclick="" style="display:none;">Review Results</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back to Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review View -->
+  <div class="view" id="view-review">
+    <div class="review-header">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <button class="btn btn-ghost" onclick="navigate('dashboard')">&larr; Back</button>
+        <h2 style="margin:0;" id="reviewTitle">Review Duplicates</h2>
+      </div>
+      <div class="review-nav">
+        <button class="btn btn-secondary btn-sm" id="reviewPrevBtn" onclick="reviewNav(-1)">Prev</button>
+        <div class="review-counter">
+          <input class="jump-input" id="reviewJumpInput" type="number" min="1"
+                 onchange="reviewJumpTo(this.value)">
+          / <span id="reviewTotalLabel">0</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="reviewNextBtn" onclick="reviewNav(1)">Next</button>
+      </div>
+    </div>
+
+    <div class="filter-bar" id="reviewFilterBar">
+      <label>Sort:
+        <select id="reviewSort" onchange="applyReviewFilters()">
+          <option value="default">Default</option>
+          <option value="size_desc">Group size (large first)</option>
+          <option value="space_desc">Reclaimable space (most first)</option>
+          <option value="distance_asc">Distance (lowest first)</option>
+          <option value="distance_desc">Distance (highest first)</option>
+        </select>
+      </label>
+      <label>Filter:
+        <select id="reviewFilter" onchange="applyReviewFilters()">
+          <option value="all">All groups</option>
+          <option value="unreviewed">Unreviewed</option>
+          <option value="move">Marked: Move</option>
+          <option value="delete">Marked: Delete</option>
+          <option value="skip">Skipped</option>
+        </select>
+      </label>
+      <label>Search:
+        <input type="text" id="reviewSearch" placeholder="filename or path..."
+               oninput="applyReviewFilters()" style="width:180px;">
+      </label>
+      <span style="font-size:12px;color:var(--text-dim);font-family:monospace;" id="reviewFilterInfo"></span>
+    </div>
+
+    <div id="reviewContent">
+      <div class="empty-state"><p>Loading groups...</p></div>
+    </div>
+
+    <div class="action-bar">
+      <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
+      <div class="action-buttons">
+        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Skip (keep all)</button>
+        <button class="btn btn-danger btn-sm" onclick="reviewMarkMove()">Mark for Move</button>
+        <button class="btn btn-sm" style="background:#f472b6;color:#0a0a0c;" onclick="reviewMarkDelete()">Mark for Delete</button>
+        <span style="width:1px;height:24px;background:var(--border);"></span>
+        <button class="btn btn-warning btn-sm" onclick="reviewBulkMove()">All: Move</button>
+        <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">All: Skip</button>
+        <span style="width:1px;height:24px;background:var(--border);"></span>
+        <button class="btn btn-primary btn-sm" onclick="goToActions()">Execute Actions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions View -->
+  <div class="view" id="view-actions">
+    <h1>Execute Actions</h1>
+    <p class="subtitle">Review and execute pending file operations.</p>
+
+    <div id="actionsContent">
+      <div class="card" id="actionsSummaryCard">
+        <h3>Pending Actions</h3>
+        <div class="card-grid" style="margin:16px 0;">
+          <div class="stat-card"><div class="num" id="actMoveCount">0</div><div class="label">Files to Move</div></div>
+          <div class="stat-card"><div class="num" id="actDeleteCount">0</div><div class="label">Files to Delete</div></div>
+          <div class="stat-card"><div class="num" id="actSpaceCount">0</div><div class="label">Space to Reclaim</div></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Move destination folder</label>
+          <input class="form-input" type="text" id="actMoveDir" placeholder="C:\Temp\dupes">
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:16px;">
+          <button class="btn btn-primary" id="actExecuteBtn" onclick="executeActions()">Execute</button>
+          <button class="btn btn-secondary" onclick="navigate('review')">Back to Review</button>
+        </div>
+      </div>
+
+      <div id="actionProgressBox" style="display:none;">
+        <div class="card">
+          <h3>Executing...</h3>
+          <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="actProgressFill" style="width:0%"></div></div>
+            <div class="progress-text">
+              <span id="actProgressLeft">0 / 0</span>
+              <span id="actProgressRight"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="actionResultBox" style="display:none;">
+        <div class="card">
+          <h3 style="color:var(--accent);" id="actResultTitle">Complete</h3>
+          <p id="actResultMsg" style="color:var(--text-dim);margin-bottom:12px;"></p>
+          <div id="actResultErrors"></div>
+          <div style="margin-top:16px;display:flex;gap:12px;">
+            <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Oddball View -->
+  <div class="view" id="view-oddball">
+    <h1>Oddball Verification</h1>
+    <p class="subtitle">Check for weak matches that might be false positives.</p>
+    <div id="oddballContent">
+      <div class="card" id="oddballSetup">
+        <div class="form-group">
+          <label class="form-label">Dupes folder (where moved files are)</label>
+          <input class="form-input" type="text" id="oddballDupesFolder" placeholder="C:\Temp\dupes">
+        </div>
+        <button class="btn btn-primary" onclick="runOddball()">Run Verification</button>
+      </div>
+      <div id="oddballProgress" style="display:none;">
+        <div class="progress-center">
+          <h3>Verifying pairs...</h3>
+          <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="oddProgressFill" style="width:0%"></div></div>
+            <div class="progress-text">
+              <span id="oddProgressLeft">0 / 0</span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="oddballResults" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Settings View -->
+  <div class="view" id="view-settings">
+    <h1>Settings</h1>
+    <p class="subtitle">Configure default scan and action preferences.</p>
+
+    <div class="card" style="max-width:700px;">
+      <div class="settings-grid">
+        <div class="form-group">
+          <label class="form-label">Default threshold</label>
+          <div class="slider-container">
+            <input type="range" id="setThreshold" min="0" max="20" value="5"
+                   oninput="document.getElementById('setThresholdVal').textContent=this.value">
+            <span class="slider-value" id="setThresholdVal">5</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Move destination</label>
+          <input class="form-input" type="text" id="setMoveDir" placeholder="C:\Temp\dupes">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Keep strategy</label>
+          <select class="form-input" id="setKeepStrategy">
+            <option value="largest">Largest file (highest quality)</option>
+            <option value="oldest">Oldest file (earliest modified)</option>
+            <option value="newest">Newest file (most recent)</option>
+            <option value="shortest_name">Shortest filename</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Server port</label>
+          <input class="form-input" type="number" id="setPort" value="8787">
+          <div class="form-hint">Requires restart to take effect.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Supported extensions (comma separated)</label>
+        <input class="form-input" type="text" id="setExtensions"
+               value=".jpg, .jpeg, .png, .gif, .bmp, .tiff, .tif, .webp, .heic, .heif">
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;">Save Settings</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ==================================================================
+   DupeFinder SPA - State, Router, API, Views
+   ================================================================== */
+
+// ---- Global State ----
+var state = {
+  groups: [],
+  filteredIndices: [],
+  currentGroupIndex: 0,
+  decisions: {},
+  currentReport: null,
+  settings: {}
+};
+
+// ---- Utilities ----
+function formatBytes(bytes) {
+  if (!bytes || bytes < 0) return "0 B";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+}
+
+function formatTime(seconds) {
+  if (!seconds || seconds < 0) return "0:00";
+  var m = Math.floor(seconds / 60);
+  var s = Math.floor(seconds % 60);
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function getFilename(fp) {
+  if (!fp) return "";
+  var sep = fp.indexOf("\\") >= 0 ? "\\" : "/";
+  var parts = fp.split(sep);
+  return parts[parts.length - 1];
+}
+
+function getFolder(fp) {
+  if (!fp) return "";
+  var sep = fp.indexOf("\\") >= 0 ? "\\" : "/";
+  var parts = fp.split(sep);
+  parts.pop();
+  return parts.slice(-2).join(sep);
+}
+
+// ---- Toast ----
+function toast(message, type) {
+  type = type || "success";
+  var container = document.getElementById("toastContainer");
+  var el = document.createElement("div");
+  el.className = "toast toast-" + type;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(function() { el.remove(); }, 4000);
+}
+
+// ---- Confirm Dialog ----
+var _dialogCallback = null;
+function showDialog(title, message, confirmText, confirmClass, onConfirm) {
+  document.getElementById("dialogTitle").textContent = title;
+  document.getElementById("dialogMessage").textContent = message;
+  var btn = document.getElementById("dialogConfirmBtn");
+  btn.textContent = confirmText || "Confirm";
+  btn.className = "btn " + (confirmClass || "btn-danger");
+  _dialogCallback = onConfirm;
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+function closeDialog() {
+  document.getElementById("dialogOverlay").classList.remove("active");
+  _dialogCallback = null;
+}
+function dialogConfirmAction() {
+  var cb = _dialogCallback;
+  closeDialog();
+  if (cb) cb();
+}
+
+// ---- Lightbox ----
+function openLightbox(encodedPath) {
+  document.getElementById("lightboxImg").src = "/api/image?path=" + encodedPath;
+  document.getElementById("lightbox").classList.add("active");
+}
+function closeLightbox() {
+  document.getElementById("lightbox").classList.remove("active");
+  document.getElementById("lightboxImg").src = "";
+}
+
+// ---- API Helper ----
+function api(method, path, body) {
+  var opts = { method: method, headers: {} };
+  if (body !== undefined) {
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  return fetch(path, opts).then(function(r) {
+    if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || "Request failed"); });
+    return r.json();
+  });
+}
+
+// ---- Router ----
+function navigate(view, params) {
+  var hash = "#" + view;
+  if (params) {
+    var parts = [];
+    for (var k in params) parts.push(k + "=" + encodeURIComponent(params[k]));
+    if (parts.length) hash += "?" + parts.join("&");
+  }
+  window.location.hash = hash;
+}
+
+function parseHash() {
+  var hash = window.location.hash.replace(/^#/, "") || "dashboard";
+  var qIdx = hash.indexOf("?");
+  var view = qIdx >= 0 ? hash.substring(0, qIdx) : hash;
+  var params = {};
+  if (qIdx >= 0) {
+    var qs = hash.substring(qIdx + 1);
+    qs.split("&").forEach(function(pair) {
+      var kv = pair.split("=");
+      if (kv.length === 2) params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1]);
+    });
+  }
+  return { view: view, params: params };
+}
+
+function route() {
+  var parsed = parseHash();
+  var view = parsed.view;
+  var params = parsed.params;
+
+  // Hide all views
+  var views = document.querySelectorAll(".view");
+  for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
+
+  // Update nav
+  var links = document.querySelectorAll(".nav-link");
+  for (var i = 0; i < links.length; i++) {
+    links[i].classList.toggle("active", links[i].getAttribute("data-view") === view);
+  }
+
+  // Show kbd hints only in review
+  document.getElementById("kbdHints").style.display = view === "review" ? "flex" : "none";
+
+  // Activate view
+  var viewEl = document.getElementById("view-" + view);
+  if (viewEl) {
+    viewEl.classList.add("active");
+  } else {
+    document.getElementById("view-dashboard").classList.add("active");
+    view = "dashboard";
+  }
+
+  // View-specific init
+  if (view === "dashboard") initDashboard();
+  else if (view === "scan-config") initScanConfig();
+  else if (view === "scan-progress") initScanProgress();
+  else if (view === "review") initReview(params.report);
+  else if (view === "actions") initActions();
+  else if (view === "oddball") initOddball(params.report);
+  else if (view === "settings") initSettings();
+}
+
+window.onhashchange = route;
+
+// ---- Radio helper ----
+function selectRadio(el, name) {
+  var siblings = el.parentElement.querySelectorAll(".radio-option");
+  for (var i = 0; i < siblings.length; i++) siblings[i].classList.remove("selected");
+  el.classList.add("selected");
+  el.querySelector("input").checked = true;
+}
+
+/* ==================================================================
+   DASHBOARD
+   ================================================================== */
+function initDashboard() {
+  api("GET", "/api/scans").then(function(scans) {
+    var list = document.getElementById("scanList");
+    var statsBox = document.getElementById("dashboardStats");
+
+    if (!scans || scans.length === 0) {
+      list.innerHTML = '<div class="empty-state"><h3>No scans yet</h3><p>Click "Start New Scan" to find duplicates.</p></div>';
+      statsBox.style.display = "none";
+      return;
+    }
+
+    // Stats from most recent scan
+    var latest = scans[0];
+    var totalGroups = 0, totalDupes = 0, totalSpace = 0;
+    for (var i = 0; i < scans.length; i++) {
+      totalGroups += scans[i].total_groups || 0;
+      totalDupes += scans[i].total_dupes || 0;
+      totalSpace += scans[i].reclaimable_bytes || 0;
+    }
+    document.getElementById("dStatGroups").textContent = totalGroups.toLocaleString();
+    document.getElementById("dStatDupes").textContent = totalDupes.toLocaleString();
+    document.getElementById("dStatSpace").textContent = formatBytes(totalSpace);
+    statsBox.style.display = "grid";
+
+    // Scan list
+    var html = "";
+    for (var i = 0; i < scans.length; i++) {
+      var s = scans[i];
+      var badge = s.source === "legacy"
+        ? '<span class="scan-badge scan-badge-legacy">legacy</span>'
+        : '<span class="scan-badge scan-badge-scan">scan</span>';
+      var meta = s.total_groups + " groups";
+      if (s.reclaimable_bytes) meta += " | " + formatBytes(s.reclaimable_bytes) + " reclaimable";
+      if (s.directory) meta += " | " + s.directory;
+      if (s.timestamp) meta += " | " + s.timestamp.substring(0, 19);
+
+      html += '<div class="scan-item">';
+      html += '<div class="scan-item-info">';
+      html += '<div class="scan-item-name">' + badge + " " + escHtml(s.filename) + '</div>';
+      html += '<div class="scan-item-meta">' + escHtml(meta) + '</div>';
+      html += '</div>';
+      html += '<div class="scan-item-actions">';
+      html += '<button class="btn btn-primary btn-sm" onclick="navigate(\'review\',{report:\'' + escAttr(s.filename) + '\'})">Review</button>';
+      if (s.source === "scan") {
+        html += '<button class="btn btn-secondary btn-sm" onclick="deleteScan(\'' + escAttr(s.filename) + '\')">Delete</button>';
+      }
+      html += '</div></div>';
+    }
+    list.innerHTML = html;
+  }).catch(function(err) {
+    document.getElementById("scanList").innerHTML =
+      '<div class="empty-state" style="color:var(--danger);">Error loading scans: ' + escHtml(String(err)) + '</div>';
+  });
+}
+
+function deleteScan(filename) {
+  showDialog("Delete Scan", "Delete scan result " + filename + "? This cannot be undone.", "Delete", "btn-danger", function() {
+    api("POST", "/api/scans/delete", { filename: filename }).then(function() {
+      toast("Scan deleted");
+      initDashboard();
+    }).catch(function(err) { toast("Error: " + err.message, "error"); });
+  });
+}
+
+/* ==================================================================
+   SCAN CONFIG
+   ================================================================== */
+function initScanConfig() {
+  api("GET", "/api/settings").then(function(settings) {
+    state.settings = settings;
+    document.getElementById("scanThreshold").value = settings.threshold || 5;
+    document.getElementById("thresholdVal").textContent = settings.threshold || 5;
+    document.getElementById("scanRecursive").checked = settings.recursive !== false;
+  });
+}
+
+function startScan() {
+  var dir = document.getElementById("scanDir").value.trim();
+  if (!dir) { toast("Please enter a folder path", "error"); return; }
+
+  var modeEl = document.querySelector('input[name="scanMode"]:checked');
+  var mode = modeEl ? modeEl.value : "both";
+  var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
+  var recursive = document.getElementById("scanRecursive").checked;
+
+  api("POST", "/api/scan/start", {
+    directory: dir, mode: mode, threshold: threshold, recursive: recursive
+  }).then(function() {
+    navigate("scan-progress");
+  }).catch(function(err) {
+    toast("Error: " + err.message, "error");
+  });
+}
+
+/* ==================================================================
+   SCAN PROGRESS
+   ================================================================== */
+var _scanSSE = null;
+var _scanStartTime = null;
+
+function initScanProgress() {
+  // Reset UI
+  document.getElementById("scanProgressActions").style.display = "block";
+  document.getElementById("scanCompleteBox").style.display = "none";
+  document.getElementById("scanProgressFill").style.width = "0%";
+  document.getElementById("scanProgressPct").textContent = "0%";
+  _scanStartTime = Date.now();
+
+  // Connect SSE
+  if (_scanSSE) _scanSSE.close();
+  _scanSSE = new EventSource("/api/scan/progress");
+  _scanSSE.onmessage = function(e) {
+    var d = JSON.parse(e.data);
+    updateScanUI(d);
+
+    if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+      _scanSSE.close();
+      _scanSSE = null;
+      showScanComplete(d);
+    }
+  };
+  _scanSSE.onerror = function() {
+    if (_scanSSE) _scanSSE.close();
+    _scanSSE = null;
+  };
+}
+
+function updateScanUI(d) {
+  var stageNames = {
+    "discovering": "Discovering images",
+    "md5": "Computing MD5 hashes",
+    "phash_hash": "Computing perceptual hashes",
+    "phash_compare": "Comparing images",
+    "done": "Complete"
+  };
+  document.getElementById("scanStage").textContent = stageNames[d.stage] || d.stage || "Working";
+  document.getElementById("scanErrors").textContent = d.errors || 0;
+
+  var pct = 0;
+  if (d.total > 0) pct = Math.round((d.current / d.total) * 100);
+  document.getElementById("scanProgressFill").style.width = pct + "%";
+  document.getElementById("scanProgressPct").textContent = pct + "%";
+  document.getElementById("scanProgressLeft").textContent =
+    (d.current || 0).toLocaleString() + " / " + (d.total || 0).toLocaleString();
+
+  var elapsed = (Date.now() - _scanStartTime) / 1000;
+  document.getElementById("scanElapsed").textContent = formatTime(elapsed);
+
+  if (d.current > 0 && d.total > 0 && pct < 100) {
+    var rate = d.current / elapsed;
+    var remaining = (d.total - d.current) / rate;
+    document.getElementById("scanETA").textContent = formatTime(remaining);
+  } else {
+    document.getElementById("scanETA").textContent = "--";
+  }
+}
+
+function showScanComplete(d) {
+  document.getElementById("scanProgressActions").style.display = "none";
+  document.getElementById("scanCompleteBox").style.display = "block";
+  document.getElementById("scanProgressPct").textContent = d.status === "complete" ? "Done" : d.status;
+
+  if (d.status === "complete") {
+    document.getElementById("scanCompleteTitle").textContent = "Scan Complete";
+    document.getElementById("scanCompleteTitle").style.color = "var(--accent)";
+  } else if (d.status === "cancelled") {
+    document.getElementById("scanCompleteTitle").textContent = "Scan Cancelled";
+    document.getElementById("scanCompleteTitle").style.color = "var(--warning)";
+  } else {
+    document.getElementById("scanCompleteTitle").textContent = "Scan Error";
+    document.getElementById("scanCompleteTitle").style.color = "var(--danger)";
+  }
+
+  document.getElementById("scanCompleteMsg").textContent = d.message || "";
+
+  if (d.summary) {
+    var s = d.summary;
+    var html = '<div class="card-grid">';
+    html += '<div class="stat-card"><div class="num">' + s.total_images + '</div><div class="label">Images Scanned</div></div>';
+    html += '<div class="stat-card"><div class="num">' + s.total_groups + '</div><div class="label">Duplicate Groups</div></div>';
+    html += '<div class="stat-card"><div class="num">' + s.reclaimable_mb + ' MB</div><div class="label">Reclaimable</div></div>';
+    html += '<div class="stat-card"><div class="num">' + formatTime(s.duration) + '</div><div class="label">Duration</div></div>';
+    html += '</div>';
+    document.getElementById("scanCompleteSummary").innerHTML = html;
+  }
+
+  if (d.result_file) {
+    var btn = document.getElementById("scanReviewBtn");
+    btn.style.display = "inline-flex";
+    btn.onclick = function() { navigate("review", { report: d.result_file }); };
+  }
+}
+
+function cancelScan() {
+  api("POST", "/api/scan/cancel").then(function() {
+    toast("Cancelling scan...", "warning");
+  });
+}
+
+/* ==================================================================
+   REVIEW
+   ================================================================== */
+function initReview(report) {
+  if (!report) {
+    document.getElementById("reviewContent").innerHTML =
+      '<div class="empty-state"><h3>No report selected</h3><p>Go to the dashboard and choose a scan to review.</p></div>';
+    return;
+  }
+
+  // If same report and we have data, just re-render
+  if (state.currentReport === report && state.groups.length > 0) {
+    applyReviewFilters();
+    return;
+  }
+
+  state.currentReport = report;
+  state.decisions = {};
+  state.currentGroupIndex = 0;
+
+  document.getElementById("reviewContent").innerHTML =
+    '<div class="empty-state"><p>Loading groups...</p></div>';
+
+  api("GET", "/api/groups?report=" + encodeURIComponent(report)).then(function(data) {
+    state.groups = data.groups || [];
+    state.filteredIndices = [];
+    for (var i = 0; i < state.groups.length; i++) state.filteredIndices.push(i);
+
+    document.getElementById("reviewTotalLabel").textContent = state.groups.length;
+    document.getElementById("reviewTitle").textContent =
+      "Review: " + report + " (" + state.groups.length + " groups)";
+
+    applyReviewFilters();
+  }).catch(function(err) {
+    document.getElementById("reviewContent").innerHTML =
+      '<div class="empty-state" style="color:var(--danger);">Error: ' + escHtml(String(err)) + '</div>';
+  });
+}
+
+function applyReviewFilters() {
+  var sortBy = document.getElementById("reviewSort").value;
+  var filterBy = document.getElementById("reviewFilter").value;
+  var search = document.getElementById("reviewSearch").value.toLowerCase().trim();
+
+  // Build filtered indices
+  var indices = [];
+  for (var i = 0; i < state.groups.length; i++) {
+    var g = state.groups[i];
+    var decision = state.decisions[i];
+
+    // Filter
+    if (filterBy === "unreviewed" && decision) continue;
+    if (filterBy === "move" && decision !== "move") continue;
+    if (filterBy === "delete" && decision !== "delete") continue;
+    if (filterBy === "skip" && decision !== "skip") continue;
+
+    // Search
+    if (search) {
+      var haystack = (g.keep || "").toLowerCase();
+      for (var j = 0; j < (g.duplicates || []).length; j++) {
+        haystack += " " + (g.duplicates[j] || "").toLowerCase();
+      }
+      if (haystack.indexOf(search) < 0) continue;
+    }
+
+    indices.push(i);
+  }
+
+  // Sort
+  if (sortBy === "size_desc") {
+    indices.sort(function(a, b) {
+      return (state.groups[b].files || 0) - (state.groups[a].files || 0);
+    });
+  } else if (sortBy === "space_desc") {
+    indices.sort(function(a, b) {
+      return (state.groups[b].reclaimable_bytes || 0) - (state.groups[a].reclaimable_bytes || 0);
+    });
+  } else if (sortBy === "distance_asc" || sortBy === "distance_desc") {
+    var mult = sortBy === "distance_asc" ? 1 : -1;
+    indices.sort(function(a, b) {
+      var da = getGroupDistance(state.groups[a]);
+      var db = getGroupDistance(state.groups[b]);
+      return (da - db) * mult;
+    });
+  }
+
+  state.filteredIndices = indices;
+
+  // Clamp current index
+  if (state.currentGroupIndex >= indices.length) {
+    state.currentGroupIndex = Math.max(0, indices.length - 1);
+  }
+
+  document.getElementById("reviewFilterInfo").textContent =
+    "Showing " + indices.length + " of " + state.groups.length + " groups";
+  document.getElementById("reviewTotalLabel").textContent = indices.length;
+
+  renderReviewGroup();
+  updateReviewActionInfo();
+}
+
+function getGroupDistance(group) {
+  if (group.distance !== undefined) return group.distance;
+  var dists = group.distances;
+  if (dists) {
+    var vals = [];
+    for (var k in dists) vals.push(dists[k]);
+    if (vals.length) return Math.max.apply(null, vals);
+  }
+  return -1;
+}
+
+function renderReviewGroup() {
+  var content = document.getElementById("reviewContent");
+
+  if (state.filteredIndices.length === 0) {
+    content.innerHTML = '<div class="empty-state"><h3>No groups to show</h3><p>Adjust your filters or start a new scan.</p></div>';
+    return;
+  }
+
+  var realIdx = state.filteredIndices[state.currentGroupIndex];
+  var group = state.groups[realIdx];
+  var decision = state.decisions[realIdx];
+
+  document.getElementById("reviewJumpInput").value = state.currentGroupIndex + 1;
+  document.getElementById("reviewPrevBtn").disabled = state.currentGroupIndex === 0;
+  document.getElementById("reviewNextBtn").disabled = state.currentGroupIndex >= state.filteredIndices.length - 1;
+
+  var html = "";
+
+  // Group header
+  html += '<div class="group-header">';
+  html += '<div class="group-title">Group ' + (realIdx + 1);
+  if (decision === "skip") html += ' <span class="decision-badge decision-skip">SKIPPED</span>';
+  if (decision === "move") html += ' <span class="decision-badge decision-move">MOVE</span>';
+  if (decision === "delete") html += ' <span class="decision-badge decision-delete">DELETE</span>';
+  html += '</div>';
+
+  html += '<div class="group-meta">';
+  html += (group.files || ((group.duplicates || []).length + 1)) + " files";
+  html += " | " + formatBytes(group.reclaimable_bytes || 0) + " reclaimable";
+
+  var dist = getGroupDistance(group);
+  if (dist >= 0) {
+    var distClass = dist <= 2 ? "dist-low" : (dist <= 8 ? "dist-med" : "dist-high");
+    html += ' | <span class="distance-badge ' + distClass + '">distance: ' + dist + '</span>';
+  }
+  html += '</div></div>';
+
+  // Image grid
+  html += '<div class="image-grid">';
+  html += makeImageCardHtml(group.keep, "keep", null);
+
+  var dupes = group.duplicates || [];
+  for (var i = 0; i < dupes.length; i++) {
+    var dupeDist = null;
+    if (group.distances && group.distances[dupes[i]] !== undefined) {
+      dupeDist = group.distances[dupes[i]];
+    }
+    html += makeImageCardHtml(dupes[i], "dupe", dupeDist);
+  }
+  html += '</div>';
+
+  content.innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+function makeImageCardHtml(filepath, type, distance) {
+  var encoded = encodeURIComponent(filepath);
+  var badgeClass = type === "keep" ? "badge-keep" : "badge-dupe";
+  var badgeText = type === "keep" ? "KEEP" : "DUPE";
+  var cardClass = type;
+
+  var html = '<div class="image-card ' + cardClass + '">';
+  html += '<div class="image-wrapper" onclick="openLightbox(\'' + escAttr(encoded) + '\')">';
+  html += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
+  html += '<img src="/api/image?path=' + escAttr(encoded) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<span style=color:var(--text-dim);font-size:12px>Could not load</span>\'">';
+  html += '</div>';
+  html += '<div class="card-info">';
+  html += '<div class="card-filename">' + escHtml(getFilename(filepath)) + '</div>';
+  html += '<div class="card-meta">' + escHtml(getFolder(filepath));
+  if (distance !== null && distance !== undefined) {
+    html += ' | dist: ' + distance;
+  }
+  html += '</div></div></div>';
+  return html;
+}
+
+function reviewNav(dir) {
+  state.currentGroupIndex = Math.max(0, Math.min(state.filteredIndices.length - 1, state.currentGroupIndex + dir));
+  renderReviewGroup();
+}
+
+function reviewJumpTo(val) {
+  var n = parseInt(val);
+  if (n >= 1 && n <= state.filteredIndices.length) {
+    state.currentGroupIndex = n - 1;
+    renderReviewGroup();
+  }
+}
+
+function reviewMarkSkip() {
+  if (state.filteredIndices.length === 0) return;
+  var realIdx = state.filteredIndices[state.currentGroupIndex];
+  state.decisions[realIdx] = "skip";
+  if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
+  else renderReviewGroup();
+  updateReviewActionInfo();
+}
+
+function reviewMarkMove() {
+  if (state.filteredIndices.length === 0) return;
+  var realIdx = state.filteredIndices[state.currentGroupIndex];
+  state.decisions[realIdx] = "move";
+  if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
+  else renderReviewGroup();
+  updateReviewActionInfo();
+}
+
+function reviewMarkDelete() {
+  if (state.filteredIndices.length === 0) return;
+  var realIdx = state.filteredIndices[state.currentGroupIndex];
+  state.decisions[realIdx] = "delete";
+  if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
+  else renderReviewGroup();
+  updateReviewActionInfo();
+}
+
+function reviewBulkMove() {
+  showDialog(
+    "Mark All for Move",
+    "Mark all " + state.filteredIndices.length + " visible groups for move? You can undo individual ones by pressing S.",
+    "Mark All", "btn-warning",
+    function() {
+      for (var i = 0; i < state.filteredIndices.length; i++) {
+        state.decisions[state.filteredIndices[i]] = "move";
+      }
+      renderReviewGroup();
+      updateReviewActionInfo();
+      toast("Marked " + state.filteredIndices.length + " groups for move");
+    }
+  );
+}
+
+function reviewBulkSkip() {
+  for (var i = 0; i < state.filteredIndices.length; i++) {
+    if (!state.decisions[state.filteredIndices[i]]) {
+      state.decisions[state.filteredIndices[i]] = "skip";
+    }
+  }
+  renderReviewGroup();
+  updateReviewActionInfo();
+  toast("Skipped all unreviewed groups");
+}
+
+function updateReviewActionInfo() {
+  var reviewed = 0, moves = 0, deletes = 0, moveBytes = 0, deleteBytes = 0;
+  for (var k in state.decisions) {
+    reviewed++;
+    if (state.decisions[k] === "move") {
+      moves++;
+      var g = state.groups[parseInt(k)];
+      if (g) moveBytes += (g.reclaimable_bytes || 0);
+    }
+    if (state.decisions[k] === "delete") {
+      deletes++;
+      var g = state.groups[parseInt(k)];
+      if (g) deleteBytes += (g.reclaimable_bytes || 0);
+    }
+  }
+  document.getElementById("reviewActionInfo").textContent =
+    "Reviewed: " + reviewed + " / " + state.groups.length +
+    " | Move: " + moves + " | Delete: " + deletes +
+    " | Space: " + formatBytes(moveBytes + deleteBytes);
+}
+
+function goToActions() {
+  // Check if anything is marked
+  var hasMoves = false, hasDeletes = false;
+  for (var k in state.decisions) {
+    if (state.decisions[k] === "move") hasMoves = true;
+    if (state.decisions[k] === "delete") hasDeletes = true;
+  }
+  if (!hasMoves && !hasDeletes) {
+    toast("No groups marked for move or delete yet", "warning");
+    return;
+  }
+  navigate("actions");
+}
+
+/* ==================================================================
+   ACTIONS
+   ================================================================== */
+function initActions() {
+  var moveGroups = [];
+  var deleteGroups = [];
+  var moveBytes = 0;
+  var deleteBytes = 0;
+
+  for (var k in state.decisions) {
+    var g = state.groups[parseInt(k)];
+    if (!g) continue;
+    if (state.decisions[k] === "move") {
+      moveGroups.push(g);
+      moveBytes += (g.reclaimable_bytes || 0);
+    }
+    if (state.decisions[k] === "delete") {
+      deleteGroups.push(g);
+      deleteBytes += (g.reclaimable_bytes || 0);
+    }
+  }
+
+  // Count files
+  var moveFileCount = 0, deleteFileCount = 0;
+  for (var i = 0; i < moveGroups.length; i++) moveFileCount += (moveGroups[i].duplicates || []).length;
+  for (var i = 0; i < deleteGroups.length; i++) deleteFileCount += (deleteGroups[i].duplicates || []).length;
+
+  document.getElementById("actMoveCount").textContent = moveFileCount;
+  document.getElementById("actDeleteCount").textContent = deleteFileCount;
+  document.getElementById("actSpaceCount").textContent = formatBytes(moveBytes + deleteBytes);
+
+  var settings = state.settings || {};
+  document.getElementById("actMoveDir").value = settings.move_destination || "C:\\Temp\\dupes";
+
+  // Reset UI state
+  document.getElementById("actionsSummaryCard").style.display = "block";
+  document.getElementById("actionProgressBox").style.display = "none";
+  document.getElementById("actionResultBox").style.display = "none";
+
+  // Store for execution
+  state._moveGroups = moveGroups;
+  state._deleteGroups = deleteGroups;
+}
+
+function executeActions() {
+  var moveGroups = state._moveGroups || [];
+  var deleteGroups = state._deleteGroups || [];
+  var moveDir = document.getElementById("actMoveDir").value.trim();
+
+  if (moveGroups.length === 0 && deleteGroups.length === 0) {
+    toast("Nothing to do", "warning");
+    return;
+  }
+
+  var msg = "";
+  if (moveGroups.length > 0) msg += "Move " + moveGroups.length + " groups to " + moveDir + ". ";
+  if (deleteGroups.length > 0) msg += "Permanently delete " + deleteGroups.length + " groups. ";
+  msg += "This cannot be undone.";
+
+  showDialog("Confirm Execution", msg, "Execute", "btn-danger", function() {
+    _doExecute(moveGroups, deleteGroups, moveDir);
+  });
+}
+
+function _doExecute(moveGroups, deleteGroups, moveDir) {
+  document.getElementById("actionsSummaryCard").style.display = "none";
+  document.getElementById("actionProgressBox").style.display = "block";
+  document.getElementById("actionResultBox").style.display = "none";
+
+  var pendingOps = [];
+  if (moveGroups.length > 0) {
+    pendingOps.push(api("POST", "/api/action/move", { groups: moveGroups, destination: moveDir }));
+  }
+  if (deleteGroups.length > 0) {
+    pendingOps.push(api("POST", "/api/action/delete", { groups: deleteGroups }));
+  }
+
+  Promise.all(pendingOps).then(function() {
+    // Poll for progress via SSE
+    var sse = new EventSource("/api/action/progress");
+    sse.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      if (d.total > 0) {
+        var pct = Math.round((d.current / d.total) * 100);
+        document.getElementById("actProgressFill").style.width = pct + "%";
+        document.getElementById("actProgressLeft").textContent =
+          d.current + " / " + d.total;
+      }
+      if (d.status === "complete" || d.status === "error") {
+        sse.close();
+        showActionResult(d);
+      }
+    };
+    sse.onerror = function() {
+      sse.close();
+      // Try fetching final state
+      setTimeout(function() {
+        showActionResult({ status: "complete", result: {} });
+      }, 1000);
+    };
+  }).catch(function(err) {
+    toast("Error starting action: " + err.message, "error");
+  });
+}
+
+function showActionResult(d) {
+  document.getElementById("actionProgressBox").style.display = "none";
+  document.getElementById("actionResultBox").style.display = "block";
+
+  var result = d.result || {};
+  var moved = result.moved || 0;
+  var deleted = result.deleted || 0;
+  var errors = result.errors || [];
+
+  document.getElementById("actResultTitle").textContent = "Actions Complete";
+  document.getElementById("actResultMsg").textContent =
+    "Moved: " + moved + " files. Deleted: " + deleted + " files. Errors: " + errors.length + ".";
+
+  if (errors.length > 0) {
+    var html = '<h4 style="color:var(--danger);margin-bottom:8px;">Errors (' + errors.length + ')</h4>';
+    html += '<div class="error-list">';
+    for (var i = 0; i < errors.length; i++) {
+      html += '<div class="error-item">' + escHtml(errors[i].path) + ': ' + escHtml(errors[i].error) + '</div>';
+    }
+    html += '</div>';
+    document.getElementById("actResultErrors").innerHTML = html;
+  } else {
+    document.getElementById("actResultErrors").innerHTML = "";
+  }
+
+  // Clear decisions
+  state.decisions = {};
+  toast("Actions completed successfully");
+}
+
+/* ==================================================================
+   ODDBALL
+   ================================================================== */
+function initOddball(report) {
+  state._oddballReport = report || state.currentReport;
+  var settings = state.settings || {};
+  document.getElementById("oddballDupesFolder").value = settings.move_destination || "C:\\Temp\\dupes";
+  document.getElementById("oddballSetup").style.display = "block";
+  document.getElementById("oddballProgress").style.display = "none";
+  document.getElementById("oddballResults").style.display = "none";
+}
+
+function runOddball() {
+  var report = state._oddballReport;
+  if (!report) { toast("No report selected", "error"); return; }
+
+  var dupesFolder = document.getElementById("oddballDupesFolder").value.trim();
+
+  document.getElementById("oddballSetup").style.display = "none";
+  document.getElementById("oddballProgress").style.display = "block";
+
+  api("POST", "/api/oddball/run", { report: report, dupes_folder: dupesFolder }).then(function() {
+    var sse = new EventSource("/api/oddball/progress");
+    sse.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      if (d.total > 0) {
+        var pct = Math.round((d.current / d.total) * 100);
+        document.getElementById("oddProgressFill").style.width = pct + "%";
+        document.getElementById("oddProgressLeft").textContent = d.current + " / " + d.total;
+      }
+      if (d.status === "complete" || d.status === "error") {
+        sse.close();
+        showOddballResults(d);
+      }
+    };
+    sse.onerror = function() { sse.close(); };
+  }).catch(function(err) {
+    toast("Error: " + err.message, "error");
+    document.getElementById("oddballSetup").style.display = "block";
+    document.getElementById("oddballProgress").style.display = "none";
+  });
+}
+
+function showOddballResults(d) {
+  document.getElementById("oddballProgress").style.display = "none";
+  document.getElementById("oddballResults").style.display = "block";
+
+  var result = d.result || {};
+  var oddballs = result.oddballs || [];
+
+  var html = '<div class="card">';
+  html += '<h3>Verification Complete</h3>';
+  html += '<p style="color:var(--text-dim);margin-bottom:16px;">Checked: ' +
+    (result.total_checked || 0) + ' pairs. Skipped: ' + (result.total_skipped || 0) +
+    '. Found ' + oddballs.length + ' potential false positives (distance > 5).</p>';
+
+  if (oddballs.length === 0) {
+    html += '<p style="color:var(--accent);">No oddballs found -- all matches look genuine!</p>';
+  } else {
+    html += '<div style="margin-top:16px;">';
+    for (var i = 0; i < oddballs.length; i++) {
+      var o = oddballs[i];
+      var distClass = o.distance <= 8 ? "dist-med" : "dist-high";
+      html += '<div style="display:flex;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">';
+
+      html += '<span class="distance-badge ' + distClass + '">dist: ' + o.distance + '</span>';
+
+      html += '<div style="flex:1;">';
+      html += '<div style="font-size:12px;"><span style="color:var(--accent);">KEEP:</span> ' + escHtml(getFilename(o.keep)) + '</div>';
+      html += '<div style="font-size:12px;"><span style="color:var(--danger);">DUPE:</span> ' + escHtml(getFilename(o.duplicates[0] || "")) + '</div>';
+      html += '</div>';
+
+      html += '<div style="display:flex;gap:8px;">';
+      html += '<button class="btn btn-secondary btn-sm" onclick="openLightbox(\'' + escAttr(encodeURIComponent(o.keep)) + '\')">View Keep</button>';
+      html += '<button class="btn btn-secondary btn-sm" onclick="openLightbox(\'' + escAttr(encodeURIComponent(o.duplicates[0] || "")) + '\')">View Dupe</button>';
+      html += '<button class="btn btn-primary btn-sm" onclick="rescueFile(\'' + escAttr(o.duplicates[0] || "") + '\',\'' + escAttr(o.original_dupe_path || o.duplicates[0] || "") + '\')">Rescue</button>';
+      html += '</div>';
+
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+  document.getElementById("oddballResults").innerHTML = html;
+}
+
+function rescueFile(source, destination) {
+  showDialog("Rescue File", "Copy " + getFilename(source) + " back to its original location?", "Rescue", "btn-primary", function() {
+    api("POST", "/api/action/rescue", { source: source, destination: destination }).then(function(result) {
+      if (result.success) {
+        toast("File rescued successfully");
+      } else {
+        toast("Rescue failed: " + (result.error || "Unknown error"), "error");
+      }
+    }).catch(function(err) {
+      toast("Error: " + err.message, "error");
+    });
+  });
+}
+
+/* ==================================================================
+   SETTINGS
+   ================================================================== */
+function initSettings() {
+  api("GET", "/api/settings").then(function(settings) {
+    state.settings = settings;
+    document.getElementById("setThreshold").value = settings.threshold || 5;
+    document.getElementById("setThresholdVal").textContent = settings.threshold || 5;
+    document.getElementById("setMoveDir").value = settings.move_destination || "";
+    document.getElementById("setKeepStrategy").value = settings.keep_strategy || "largest";
+    document.getElementById("setPort").value = settings.port || 8787;
+    var exts = settings.extensions || [];
+    document.getElementById("setExtensions").value = exts.join(", ");
+  });
+}
+
+function saveSettings() {
+  var extsStr = document.getElementById("setExtensions").value;
+  var exts = extsStr.split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+
+  var data = {
+    threshold: parseInt(document.getElementById("setThreshold").value) || 5,
+    move_destination: document.getElementById("setMoveDir").value.trim(),
+    keep_strategy: document.getElementById("setKeepStrategy").value,
+    port: parseInt(document.getElementById("setPort").value) || 8787,
+    extensions: exts
+  };
+
+  api("POST", "/api/settings", data).then(function(saved) {
+    state.settings = saved;
+    toast("Settings saved");
+  }).catch(function(err) {
+    toast("Error saving settings: " + err.message, "error");
+  });
+}
+
+/* ==================================================================
+   KEYBOARD SHORTCUTS
+   ================================================================== */
+document.addEventListener("keydown", function(e) {
+  // Only in review view
+  if (parseHash().view !== "review") return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+
+  if (e.key === "ArrowLeft") { e.preventDefault(); reviewNav(-1); }
+  if (e.key === "ArrowRight") { e.preventDefault(); reviewNav(1); }
+  if (e.key === "s" || e.key === "S") { e.preventDefault(); reviewMarkSkip(); }
+  if (e.key === "m" || e.key === "M") { e.preventDefault(); reviewMarkMove(); }
+  if (e.key === "d" || e.key === "D") { e.preventDefault(); reviewMarkDelete(); }
+  if (e.key === "Escape") closeLightbox();
+});
+
+/* ==================================================================
+   HTML ESCAPE HELPERS
+   ================================================================== */
+function escHtml(str) {
+  if (!str) return "";
+  var div = document.createElement("div");
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function escAttr(str) {
+  if (!str) return "";
+  return str.replace(/&/g, "&amp;").replace(/'/g, "&#39;").replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ==================================================================
+   INIT
+   ================================================================== */
+route();
+</script>
+</body>
+</html>
