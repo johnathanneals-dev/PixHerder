@@ -3,9 +3,10 @@
 ## Quick Start
 
 1. Double-click the **DupeFinder** shortcut on your desktop (see setup below)
-2. Your browser opens to `http://127.0.0.1:8787`
-3. Click **Start Guided Cleanup** and follow the 4-step wizard
-4. Click **Shut Down** in the status bar when done
+2. Your browser opens to `http://127.0.0.1:8787` (first time only -- after that, use your bookmark)
+3. **Bookmark the page** (Ctrl+D) when prompted on the dashboard
+4. Click **Start Guided Cleanup** and follow the 4-step wizard
+5. Click **Shut Down** in the status bar when done
 
 ---
 
@@ -20,6 +21,10 @@
 4. (Optional) Right-click the shortcut > **Properties** and set a custom icon
 
 The server runs hidden in the background. The status bar at the bottom of the browser shows it's running. Use the **Shut Down** button to stop it cleanly. If you need to debug, use `launch.bat` instead (shows a terminal window with error output).
+
+### Bookmarking
+
+DupeFinder only auto-opens a browser tab on the very first launch. After that, it relies on your bookmark to avoid duplicate tabs. If you see multiple DupeFinder tabs after restarting your browser, close the extras and bookmark the page (Ctrl+D). The dashboard shows a notice to remind you.
 
 ---
 
@@ -194,7 +199,8 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 
 | Problem | Solution |
 |---------|----------|
-| Browser doesn't open | Navigate manually to `http://127.0.0.1:8787` |
+| Browser doesn't open | The browser only opens on first launch. Use your bookmark or navigate to `http://127.0.0.1:8787` |
+| Multiple tabs appear | Your browser restored old tabs. Close the extras and bookmark the page (Ctrl+D) |
 | "Address already in use" | Another instance is running. Close it or change the port in Settings |
 | Images don't load | Check that the image files still exist at their original paths |
 | "Access denied" on file operations | Pause OneDrive sync, check Controlled Folder Access |
