@@ -33,6 +33,10 @@ from engine.checkpoint import (
     checkpoint_path, save_checkpoint, load_checkpoint, delete_checkpoint,
     find_checkpoint, validate_checkpoint,
 )
+from engine.staging import (
+    is_onedrive_path, get_staging_dir, count_files_for_staging,
+    start_staging, load_manifest, sync_back_deletions, cleanup_staging,
+)
 
 
 # ---- Activity Log ----
@@ -92,7 +96,7 @@ def _heartbeat_checker():
             elapsed = time.time() - _last_heartbeat
 
         if elapsed > _shutdown_grace_seconds:
-            # Don't shut down if a scan or action is running
+            # Don't shut down if a scan, action, or staging is running
             if scan_thread and scan_thread.is_alive():
                 _touch_heartbeat()  # keep alive during scans
                 continue
@@ -100,6 +104,12 @@ def _heartbeat_checker():
                 _touch_heartbeat()
                 continue
             if oddball_thread and oddball_thread.is_alive():
+                _touch_heartbeat()
+                continue
+            if staging_thread and staging_thread.is_alive():
+                _touch_heartbeat()
+                continue
+            if syncback_thread and syncback_thread.is_alive():
                 _touch_heartbeat()
                 continue
 
@@ -144,6 +154,34 @@ oddball_progress = {
     "current": 0,
     "total": 0,
     "result": None,
+}
+
+staging_thread = None
+staging_cancel = threading.Event()
+staging_progress = {
+    "status": "idle",
+    "current": 0,
+    "total": 0,
+    "bytes_copied": 0,
+    "bytes_total": 0,
+    "copied": 0,
+    "skipped": 0,
+    "failed": 0,
+    "message": "",
+    "staging_dir": None,
+    "source_dir": None,
+    "manifest_path": None,
+}
+
+syncback_thread = None
+syncback_cancel = threading.Event()
+syncback_progress = {
+    "status": "idle",
+    "current": 0,
+    "total": 0,
+    "deleted": 0,
+    "errors": 0,
+    "message": "",
 }
 
 
@@ -547,6 +585,155 @@ def _run_oddball(report_data, dupes_folder):
         oddball_progress["result"] = {"error": str(e)}
 
 
+def _update_staging_progress(current, total, bytes_copied, bytes_total, stage):
+    """Callback for staging engine to report progress."""
+    staging_progress["current"] = current
+    staging_progress["total"] = total
+    staging_progress["bytes_copied"] = bytes_copied
+    staging_progress["bytes_total"] = bytes_total
+    staging_progress["stage"] = stage
+    mb_copied = bytes_copied / (1024 * 1024)
+    mb_total = bytes_total / (1024 * 1024)
+    staging_progress["message"] = (
+        "Staging: " + str(current) + "/" + str(total) + " files ("
+        + str(round(mb_copied, 1)) + " / "
+        + str(round(mb_total, 1)) + " MB)"
+    )
+
+
+def _run_staging(source_dir, staging_dir, extensions):
+    """Background staging thread target."""
+    global staging_progress
+    start_time = time.time()
+
+    staging_progress.update({
+        "status": "running",
+        "current": 0,
+        "total": 0,
+        "bytes_copied": 0,
+        "bytes_total": 0,
+        "copied": 0,
+        "skipped": 0,
+        "failed": 0,
+        "message": "Counting files...",
+        "staging_dir": staging_dir,
+        "source_dir": source_dir,
+        "manifest_path": None,
+    })
+
+    _log_activity("staging_started", {
+        "source": source_dir,
+        "destination": staging_dir,
+    })
+
+    try:
+        ext_set = set(extensions) if extensions else None
+        result = start_staging(
+            source_dir, staging_dir,
+            extensions=ext_set,
+            progress_cb=_update_staging_progress,
+            cancel_event=staging_cancel,
+        )
+
+        elapsed = time.time() - start_time
+
+        if result.get("cancelled"):
+            staging_progress["status"] = "cancelled"
+            staging_progress["message"] = "Staging cancelled"
+            _log_activity("staging_cancelled", {
+                "source": source_dir,
+                "copied": result.get("copied", 0),
+            })
+            return
+
+        staging_progress.update({
+            "status": "complete",
+            "copied": result.get("copied", 0),
+            "skipped": result.get("skipped", 0),
+            "failed": result.get("failed", 0),
+            "manifest_path": result.get("manifest_path"),
+            "message": (
+                "Staging complete: " + str(result.get("total_staged", 0))
+                + " files in " + str(round(elapsed, 1)) + "s"
+            ),
+        })
+
+        _log_activity("staging_completed", {
+            "source": source_dir,
+            "destination": staging_dir,
+            "copied": result.get("copied", 0),
+            "skipped": result.get("skipped", 0),
+            "failed": result.get("failed", 0),
+            "duration": round(elapsed, 1),
+        })
+
+    except Exception as e:
+        staging_progress["status"] = "error"
+        staging_progress["message"] = "Staging failed: " + str(e)
+        _log_activity("staging_error", {
+            "source": source_dir,
+            "error": str(e),
+        })
+
+
+def _update_syncback_progress(current, total, stage):
+    """Callback for sync-back progress."""
+    syncback_progress["current"] = current
+    syncback_progress["total"] = total
+    syncback_progress["message"] = (
+        "Syncing: " + str(current) + "/" + str(total) + " files"
+    )
+
+
+def _run_syncback(staging_dir, source_dir):
+    """Background sync-back thread target."""
+    global syncback_progress
+
+    syncback_progress.update({
+        "status": "running",
+        "current": 0,
+        "total": 0,
+        "deleted": 0,
+        "errors": 0,
+        "message": "Starting sync-back...",
+    })
+
+    _log_activity("syncback_started", {
+        "source": source_dir,
+        "staging": staging_dir,
+    })
+
+    try:
+        result = sync_back_deletions(
+            staging_dir, source_dir,
+            progress_cb=_update_syncback_progress,
+            cancel_event=syncback_cancel,
+        )
+
+        syncback_progress.update({
+            "status": "complete",
+            "deleted": result.get("deleted", 0),
+            "errors": result.get("errors", 0),
+            "message": (
+                "Sync complete: " + str(result.get("deleted", 0))
+                + " deleted from OneDrive, "
+                + str(result.get("skipped", 0)) + " kept"
+            ),
+            "result": result,
+        })
+
+        _log_activity("syncback_completed", {
+            "deleted": result.get("deleted", 0),
+            "skipped": result.get("skipped", 0),
+            "errors": result.get("errors", 0),
+        })
+
+    except Exception as e:
+        syncback_progress["status"] = "error"
+        syncback_progress["message"] = "Sync-back failed: " + str(e)
+        _log_activity("syncback_error", {"error": str(e)})
+
+
 class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
     """HTTP request handler for the DupeFinder web API."""
 
@@ -606,6 +793,18 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/activity":
             limit = int(params.get("limit", ["50"])[0])
             self._handle_get_activity(limit)
+        elif path == "/api/staging/progress":
+            self._handle_staging_progress_sse()
+        elif path == "/api/staging/status":
+            self._handle_staging_status()
+        elif path == "/api/browse":
+            dirpath = params.get("path", [""])[0]
+            page = int(params.get("page", ["1"])[0])
+            page_size = int(params.get("page_size", ["50"])[0])
+            sort_by = params.get("sort", ["name"])[0]
+            self._handle_browse(dirpath, page, page_size, sort_by)
+        elif path == "/api/staging/syncback/progress":
+            self._handle_syncback_progress_sse()
         else:
             self.send_error(404)
 
@@ -635,6 +834,16 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_shutdown()
         elif path == "/api/activity/clear":
             self._handle_clear_activity()
+        elif path == "/api/staging/check":
+            self._handle_staging_check()
+        elif path == "/api/staging/start":
+            self._handle_staging_start()
+        elif path == "/api/staging/cancel":
+            self._handle_staging_cancel()
+        elif path == "/api/staging/syncback":
+            self._handle_syncback_start()
+        elif path == "/api/staging/cleanup":
+            self._handle_staging_cleanup()
         else:
             self.send_error(404)
 
@@ -1144,6 +1353,273 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                 _server_instance.shutdown()
             os._exit(0)
         threading.Thread(target=_shutdown, daemon=True).start()
+
+    # ---- Staging handlers ----
+
+    def _handle_browse(self, dirpath, page, page_size, sort_by):
+        if not dirpath or not os.path.isdir(dirpath):
+            self.send_error_json("Invalid directory", 400)
+            return
+
+        # Security: only allow browsing staging or dupes directories
+        real = os.path.realpath(dirpath).lower()
+        settings = load_settings()
+        allowed = []
+        staging_base = settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging")
+        dupes_dir = settings.get("move_destination", "C:\\Temp\\dupes")
+        if os.path.isdir(staging_base):
+            allowed.append(os.path.realpath(staging_base).lower())
+        if os.path.isdir(dupes_dir):
+            allowed.append(os.path.realpath(dupes_dir).lower())
+        if not any(real.startswith(a) for a in allowed):
+            self.send_error_json("Access denied: path outside allowed directories", 403)
+            return
+
+        image_exts = {
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+            ".tiff", ".tif", ".webp", ".heic", ".heif",
+        }
+
+        entries = []
+        try:
+            for entry in os.scandir(dirpath):
+                try:
+                    is_dir = entry.is_dir()
+                    ext = os.path.splitext(entry.name)[1].lower()
+                    if not is_dir and ext not in image_exts:
+                        continue
+                    stat = entry.stat()
+                    item = {
+                        "name": entry.name,
+                        "is_dir": is_dir,
+                        "path": entry.path,
+                        "size": stat.st_size if not is_dir else 0,
+                        "mtime": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        "ext": ext,
+                    }
+                    entries.append(item)
+                except Exception:
+                    continue
+        except Exception as e:
+            self.send_error_json("Error reading directory: " + str(e), 500)
+            return
+
+        # Sort: folders first, then by chosen field
+        dirs = [e for e in entries if e["is_dir"]]
+        files = [e for e in entries if not e["is_dir"]]
+        if sort_by == "size":
+            files.sort(key=lambda x: x["size"], reverse=True)
+        elif sort_by == "date":
+            files.sort(key=lambda x: x["mtime"], reverse=True)
+        else:
+            files.sort(key=lambda x: x["name"].lower())
+        dirs.sort(key=lambda x: x["name"].lower())
+        sorted_entries = dirs + files
+
+        total = len(sorted_entries)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_entries = sorted_entries[start:end]
+
+        parent = os.path.dirname(dirpath)
+        # Only allow parent navigation within allowed dirs
+        parent_real = os.path.realpath(parent).lower()
+        if not any(parent_real.startswith(a) for a in allowed):
+            parent = None
+
+        self.send_json({
+            "path": os.path.normpath(dirpath),
+            "parent": parent,
+            "entries": page_entries,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_more": end < total,
+        })
+
+    def _handle_staging_check(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        directory = body.get("directory", "")
+        if not directory:
+            self.send_json({"is_onedrive": False})
+            return
+
+        is_od = is_onedrive_path(directory)
+        settings = load_settings()
+        staging_dir = get_staging_dir(
+            directory, settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging"))
+
+        result = {"is_onedrive": is_od, "staging_dir": staging_dir}
+
+        if is_od and os.path.isdir(directory):
+            try:
+                file_count, total_bytes = count_files_for_staging(directory)
+                result["file_count"] = file_count
+                result["estimated_bytes"] = total_bytes
+                result["estimated_gb"] = round(total_bytes / (1024 ** 3), 1)
+            except Exception:
+                result["file_count"] = 0
+                result["estimated_bytes"] = 0
+
+            # Check free space
+            import shutil as _shutil
+            try:
+                _, _, free = _shutil.disk_usage(
+                    os.path.splitdrive(staging_dir)[0] or "C:")
+                result["free_space_gb"] = round(free / (1024 ** 3), 1)
+            except Exception:
+                pass
+
+            # Check for existing staging session
+            manifest = load_manifest(directory)
+            if manifest:
+                result["existing_session"] = {
+                    "staging_dir": manifest.get("staging_dir", ""),
+                    "file_count": manifest.get("file_count", 0),
+                    "created": manifest.get("created", ""),
+                }
+
+        self.send_json(result)
+
+    def _handle_staging_start(self):
+        global staging_thread, staging_cancel
+
+        if staging_thread and staging_thread.is_alive():
+            self.send_error_json("Staging is already running", 409)
+            return
+
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        source_dir = body.get("source_dir", "")
+        if not source_dir or not os.path.isdir(source_dir):
+            self.send_error_json("Invalid source directory")
+            return
+
+        settings = load_settings()
+        staging_dir = body.get("staging_dir") or get_staging_dir(
+            source_dir, settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging"))
+        extensions = settings.get("extensions")
+
+        staging_cancel = threading.Event()
+        staging_thread = threading.Thread(
+            target=_run_staging,
+            args=(source_dir, staging_dir, extensions),
+            daemon=True,
+        )
+        staging_thread.start()
+
+        self.send_json({
+            "status": "started",
+            "source_dir": source_dir,
+            "staging_dir": staging_dir,
+        })
+
+    def _handle_staging_cancel(self):
+        staging_cancel.set()
+        self.send_json({"status": "cancelling"})
+
+    def _handle_staging_progress_sse(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+
+        try:
+            while True:
+                data = dict(staging_progress)
+                msg = "data: " + json.dumps(data) + "\n\n"
+                self.wfile.write(msg.encode("utf-8"))
+                self.wfile.flush()
+
+                if data.get("status") in ("complete", "error", "cancelled", "idle"):
+                    break
+
+                time.sleep(0.5)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
+
+    def _handle_staging_status(self):
+        self.send_json(dict(staging_progress))
+
+    def _handle_syncback_start(self):
+        global syncback_thread, syncback_cancel
+
+        if syncback_thread and syncback_thread.is_alive():
+            self.send_error_json("Sync-back is already running", 409)
+            return
+
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        staging_dir = body.get("staging_dir", "")
+        source_dir = body.get("source_dir", "")
+
+        if not staging_dir or not source_dir:
+            self.send_error_json("Missing staging_dir or source_dir")
+            return
+
+        syncback_cancel = threading.Event()
+        syncback_thread = threading.Thread(
+            target=_run_syncback,
+            args=(staging_dir, source_dir),
+            daemon=True,
+        )
+        syncback_thread.start()
+
+        self.send_json({"status": "started"})
+
+    def _handle_syncback_progress_sse(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+
+        try:
+            while True:
+                data = dict(syncback_progress)
+                msg = "data: " + json.dumps(data) + "\n\n"
+                self.wfile.write(msg.encode("utf-8"))
+                self.wfile.flush()
+
+                if data.get("status") in ("complete", "error", "idle"):
+                    break
+
+                time.sleep(0.5)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass
+
+    def _handle_staging_cleanup(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        staging_dir = body.get("staging_dir", "")
+        if not staging_dir:
+            self.send_error_json("Missing staging_dir")
+            return
+
+        result = cleanup_staging(staging_dir)
+        _log_activity("staging_cleanup", {
+            "staging_dir": staging_dir,
+            "result": result.get("status"),
+        })
+        self.send_json(result)
 
 
 _server_instance = None

@@ -26,6 +26,8 @@ DEFAULTS = {
     "recursive": True,
     "port": 8787,
     "hash_size": 16,
+    "staging_dir": "C:\\Temp\\DupeFinder_Staging",
+    "onedrive_safe_mode": True,
 }
 
 

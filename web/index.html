@@ -93,6 +93,168 @@
     border-color: var(--danger);
   }
 
+  /* ---- Wizard Stepper ---- */
+  .wizard-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 0 auto 32px;
+    max-width: 700px;
+  }
+  .wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  .wizard-step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    font-family: monospace;
+    border: 2px solid var(--border);
+    color: var(--text-muted);
+    background: var(--surface);
+    transition: all 0.3s;
+  }
+  .wizard-step.active .wizard-step-circle {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-bg);
+    box-shadow: 0 0 12px rgba(110, 231, 183, 0.2);
+  }
+  .wizard-step.completed .wizard-step-circle {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: #fff;
+  }
+  .wizard-step-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .wizard-step.active .wizard-step-label { color: var(--accent); }
+  .wizard-step.completed .wizard-step-label { color: var(--text-dim); }
+  .wizard-step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    margin: 0 -4px;
+    margin-bottom: 22px;
+    transition: background 0.3s;
+  }
+  .wizard-step-line.done { background: var(--accent-dim); }
+  .wizard-panel { display: none; animation: fadeIn 0.3s ease; }
+  .wizard-panel.active { display: block; }
+  .wizard-panel .card { max-width: 800px; margin: 0 auto; }
+  .wizard-explanation {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-dim);
+  }
+
+  /* ---- File Browser ---- */
+  .browser-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .browser-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-family: monospace;
+    color: var(--text-dim);
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .browser-crumb {
+    cursor: pointer;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .browser-crumb:hover { text-decoration: underline; }
+  .browser-crumb-sep { color: var(--text-muted); margin: 0 2px; }
+  .browser-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    padding-bottom: 32px;
+  }
+  .browser-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .browser-item:hover {
+    border-color: var(--accent-dim);
+    transform: translateY(-2px);
+  }
+  .browser-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .browser-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .browser-folder-icon {
+    font-size: 48px;
+    color: var(--text-muted);
+  }
+  .browser-meta {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .browser-meta .browser-name {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .browser-meta .browser-size {
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+  .browser-loading {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
   /* ---- Activity Log ---- */
   .activity-entry {
     display: flex;
@@ -548,14 +710,193 @@
       <div class="stat-card"><div class="num" id="dStatSpace">0</div><div class="label">Reclaimable</div></div>
     </div>
 
-    <div style="margin-bottom:32px;">
-      <button class="btn btn-primary btn-lg" onclick="navigate('scan-config')">Start New Scan</button>
+    <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-lg" onclick="navigate('wizard')">Start Guided Cleanup</button>
+      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')">Advanced Scan</button>
     </div>
 
     <h2>Previous Scans</h2>
     <div class="scan-list" id="scanList">
       <div class="empty-state"><p>Loading...</p></div>
     </div>
+  </div>
+
+  <!-- Wizard View -->
+  <div class="view" id="view-wizard">
+    <div class="wizard-stepper" id="wizardStepper">
+      <div class="wizard-step active" data-step="1">
+        <div class="wizard-step-circle" id="wizStep1Circle">1</div>
+        <div class="wizard-step-label">Migrate</div>
+      </div>
+      <div class="wizard-step-line" id="wizLine1"></div>
+      <div class="wizard-step" data-step="2">
+        <div class="wizard-step-circle" id="wizStep2Circle">2</div>
+        <div class="wizard-step-label">Scan</div>
+      </div>
+      <div class="wizard-step-line" id="wizLine2"></div>
+      <div class="wizard-step" data-step="3">
+        <div class="wizard-step-circle" id="wizStep3Circle">3</div>
+        <div class="wizard-step-label">Review</div>
+      </div>
+      <div class="wizard-step-line" id="wizLine3"></div>
+      <div class="wizard-step" data-step="4">
+        <div class="wizard-step-circle" id="wizStep4Circle">4</div>
+        <div class="wizard-step-label">Finalize</div>
+      </div>
+    </div>
+
+    <!-- Step 1: Migration -->
+    <div class="wizard-panel active" id="wizardStep1">
+      <div class="card">
+        <h2>Step 1: Migrate Files</h2>
+        <div class="wizard-explanation">
+          OneDrive sync interferes with scanning and file operations.
+          This step copies your images to a local staging folder where
+          DupeFinder can work without interruption. Your originals remain untouched.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Source folder (OneDrive)</label>
+          <input class="form-input" type="text" id="wizSourceDir"
+                 placeholder="C:\Users\repom\OneDrive\Pictures">
+        </div>
+        <div id="wizMigrateInfo" style="display:none;margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizMigrateInfoText"></div>
+        </div>
+        <div id="wizMigrateActions">
+          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()">Begin Migration</button>
+        </div>
+        <div id="wizMigrateProgress" style="display:none;margin-top:16px;">
+          <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="wizMigFill" style="width:0%"></div></div>
+            <div class="progress-text">
+              <span id="wizMigLeft">0 / 0 files</span>
+              <span id="wizMigRight">0 MB</span>
+            </div>
+          </div>
+          <div style="font-size:24px;font-weight:900;font-family:monospace;color:var(--accent);text-align:center;margin:12px 0;" id="wizMigPct">0%</div>
+          <div style="text-align:center;">
+            <button class="btn btn-danger btn-sm" onclick="cancelStaging()">Cancel</button>
+          </div>
+        </div>
+        <div id="wizMigrateComplete" style="display:none;margin-top:16px;">
+          <div style="color:var(--accent);font-weight:600;" id="wizMigrateCompleteMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Scan -->
+    <div class="wizard-panel" id="wizardStep2">
+      <div class="card">
+        <h2>Step 2: Configure &amp; Scan</h2>
+        <div class="wizard-explanation">
+          Choose how to scan for duplicates. Exact mode finds byte-for-byte
+          identical files (fast, no false positives). Perceptual mode finds
+          visually similar images even if resized or recompressed.
+          Run exact first, then perceptual for best results.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Scan mode</label>
+          <div style="display:flex;gap:16px;">
+            <label><input type="radio" name="wizScanMode" value="exact" checked> Exact (MD5)</label>
+            <label><input type="radio" name="wizScanMode" value="perceptual"> Perceptual</label>
+            <label><input type="radio" name="wizScanMode" value="both"> Both</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Perceptual threshold</label>
+          <div class="slider-container">
+            <input type="range" id="wizThreshold" min="0" max="20" value="5"
+                   oninput="document.getElementById('wizThresholdVal').textContent=this.value">
+            <span class="slider-value" id="wizThresholdVal">5</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="wizRecursive" checked> Include subfolders</label>
+        </div>
+        <div id="wizScanActions">
+          <button class="btn btn-primary" onclick="wizardStartScan()">Start Scan</button>
+        </div>
+        <div id="wizScanProgress" style="display:none;margin-top:16px;">
+          <div class="progress-stage" id="wizScanStage" style="text-align:center;margin-bottom:8px;">Initializing</div>
+          <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="wizScanFill" style="width:0%"></div></div>
+            <div class="progress-text">
+              <span id="wizScanLeft">0 / 0</span>
+              <span id="wizScanRight"></span>
+            </div>
+          </div>
+          <div style="font-size:24px;font-weight:900;font-family:monospace;color:var(--accent);text-align:center;margin:12px 0;" id="wizScanPct">0%</div>
+          <div style="text-align:center;">
+            <button class="btn btn-danger btn-sm" onclick="cancelScan()">Cancel</button>
+          </div>
+        </div>
+        <div id="wizScanComplete" style="display:none;margin-top:16px;">
+          <div style="color:var(--accent);font-weight:600;" id="wizScanCompleteMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div class="wizard-panel" id="wizardStep3">
+      <div class="card">
+        <h2>Step 3: Review &amp; Sort</h2>
+        <div class="wizard-explanation">
+          Review each group of duplicates side by side. For each group, decide
+          which file to keep and which to move or delete. Use keyboard shortcuts
+          (S=skip, M=move, D=delete, arrows=navigate) for faster reviewing.
+        </div>
+        <div id="wizReviewInfo" style="margin-bottom:16px;">
+          <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizReviewInfoText"></div>
+        </div>
+        <button class="btn btn-primary" id="wizReviewBtn" onclick="wizardStartReview()">Open Review</button>
+        <div id="wizReviewComplete" style="display:none;margin-top:16px;">
+          <div style="color:var(--accent);font-weight:600;" id="wizReviewCompleteMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Finalize -->
+    <div class="wizard-panel" id="wizardStep4">
+      <div class="card">
+        <h2>Step 4: Explore &amp; Finalize</h2>
+        <div class="wizard-explanation">
+          Browse your cleaned-up files and the removed duplicates.
+          You can rescan to catch more duplicates, or sync your
+          changes back to OneDrive when satisfied.
+        </div>
+        <h3 style="margin-top:20px;">Browse Files</h3>
+        <div style="display:flex;gap:12px;margin:12px 0 24px;">
+          <button class="btn btn-primary" onclick="openBrowser('staging')">Cleaned Files</button>
+          <button class="btn btn-secondary" onclick="openBrowser('dupes')">Removed Duplicates</button>
+        </div>
+        <h3>Next Steps</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btn btn-secondary" onclick="wizardGoToStep(2)">Rescan</button>
+          <button class="btn btn-primary" onclick="navigate('syncback')">Sync Back to OneDrive</button>
+          <button class="btn btn-danger" onclick="cleanupStaging()">Clean Up Staging</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Browser View -->
+  <div class="view" id="view-browser">
+    <div class="browser-toolbar">
+      <button class="btn btn-ghost" onclick="closeBrowser()">&larr; Return</button>
+      <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+        <select class="form-input" id="browserSort" onchange="browserRefresh()"
+                style="width:auto;padding:4px 8px;font-size:12px;">
+          <option value="name">Name</option>
+          <option value="size">Size (largest)</option>
+          <option value="date">Date (newest)</option>
+        </select>
+        <span id="browserCount" style="font-size:12px;color:var(--text-dim);font-family:monospace;white-space:nowrap;"></span>
+      </div>
+    </div>
+    <div class="browser-grid" id="browserGrid"></div>
+    <div id="browserSentinel" style="height:1px;"></div>
+    <div class="browser-loading" id="browserLoading" style="display:none;">Loading more...</div>
   </div>
 
   <!-- Scan Configuration View -->
@@ -611,6 +952,85 @@
     </div>
   </div>
 
+  <!-- Staging Progress View -->
+  <div class="view" id="view-staging-progress">
+    <div class="progress-center">
+      <h2>Staging Files...</h2>
+      <p class="subtitle">Copying files from OneDrive to local staging folder for reliable scanning.</p>
+      <div class="progress-stage" id="stagingStage">Counting files</div>
+
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="stagingProgressFill" style="width:0%"></div></div>
+        <div class="progress-text">
+          <span id="stagingProgressLeft">0 / 0 files</span>
+          <span id="stagingProgressRight">0 MB</span>
+        </div>
+      </div>
+
+      <div class="progress-big-text" id="stagingProgressPct">0%</div>
+
+      <div class="progress-details">
+        <span>Copied: <strong id="stagingCopied">0</strong></span>
+        <span>Skipped: <strong id="stagingSkipped">0</strong></span>
+        <span>Failed: <strong id="stagingFailed">0</strong></span>
+      </div>
+
+      <div style="margin-top:32px;" id="stagingActions">
+        <button class="btn btn-danger" onclick="cancelStaging()">Cancel</button>
+      </div>
+
+      <div style="margin-top:32px;display:none;" id="stagingCompleteBox">
+        <div class="card" style="text-align:left;">
+          <h3 style="color:var(--accent);margin-bottom:12px;" id="stagingCompleteTitle">Staging Complete</h3>
+          <p id="stagingCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
+          <button class="btn btn-primary" id="stagingScanBtn">Start Scan</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync Back View -->
+  <div class="view" id="view-syncback">
+    <div class="progress-center">
+      <h2>Sync Back to OneDrive</h2>
+      <p class="subtitle">Applying your cleanup decisions to the original OneDrive folder.</p>
+
+      <div id="syncbackStart" style="margin-top:24px;">
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:12px;">Ready to sync back</h3>
+          <p style="color:var(--text-dim);margin-bottom:16px;">
+            Files you deleted from the staging folder will also be deleted from OneDrive.
+            Files you kept will remain untouched.
+          </p>
+          <button class="btn btn-primary" onclick="startSyncback()">Sync Back Now</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Skip</button>
+        </div>
+      </div>
+
+      <div id="syncbackProgress" style="display:none;">
+        <div class="progress-stage" id="syncbackStage">Syncing</div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" id="syncbackProgressFill" style="width:0%"></div></div>
+          <div class="progress-text">
+            <span id="syncbackProgressLeft">0 / 0</span>
+            <span id="syncbackProgressRight"></span>
+          </div>
+        </div>
+        <div class="progress-big-text" id="syncbackProgressPct">0%</div>
+      </div>
+
+      <div style="margin-top:32px;display:none;" id="syncbackCompleteBox">
+        <div class="card" style="text-align:left;">
+          <h3 style="color:var(--accent);margin-bottom:12px;" id="syncbackCompleteTitle">Sync Complete</h3>
+          <p id="syncbackCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
+          <button class="btn btn-danger" onclick="cleanupStaging()">Clean Up Staging Folder</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scan Progress View -->
   <div class="view" id="view-scan-progress">
     <div class="progress-center">
@@ -653,7 +1073,7 @@
   <div class="view" id="view-review">
     <div class="review-header">
       <div style="display:flex;align-items:center;gap:16px;">
-        <button class="btn btn-ghost" onclick="navigate('dashboard')">&larr; Back</button>
+        <button class="btn btn-ghost" id="reviewBackBtn" onclick="navigate('dashboard')">&larr; Back</button>
         <h2 style="margin:0;" id="reviewTitle">Review Duplicates</h2>
       </div>
       <div class="review-nav">
@@ -1047,6 +1467,537 @@ function clearActivity() {
   });
 }
 
+// ---- Wizard ----
+var wizardState = {
+  currentStep: 1,
+  completedSteps: {},
+  stagingDir: null,
+  sourceDir: null,
+  lastReport: null,
+  dupesDir: null,
+  browserReturnTo: "wizard"
+};
+var _wizScanSSE = null;
+var _wizStagingSSE = null;
+
+function initWizard() {
+  // Load settings first
+  fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+    wizardState.dupesDir = s.move_destination || "C:\\Temp\\dupes";
+    var defaultSource = "C:\\Users\\repom\\OneDrive\\Pictures";
+    document.getElementById("wizSourceDir").value = wizardState.sourceDir || defaultSource;
+
+    // Check for existing staging session (in-memory first, then on-disk manifest)
+    return fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.status === "complete" && d.staging_dir) {
+        wizardState.stagingDir = d.staging_dir;
+        wizardState.sourceDir = d.source_dir;
+        wizardState.completedSteps[1] = true;
+        document.getElementById("wizSourceDir").value = d.source_dir || defaultSource;
+        _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
+        return _wizardCheckScans();
+      }
+      // Check on-disk manifest via staging/check
+      var src = document.getElementById("wizSourceDir").value;
+      return api("POST", "/api/staging/check", { directory: src }).then(function(result) {
+        if (result.existing_session && result.existing_session.staging_dir) {
+          wizardState.stagingDir = result.existing_session.staging_dir;
+          wizardState.sourceDir = src;
+          wizardState.completedSteps[1] = true;
+          _stagingSession = { source_dir: src, staging_dir: result.existing_session.staging_dir };
+          return _wizardCheckScans();
+        }
+        _wizardDetermineStep();
+      });
+    });
+  }).catch(function() { _wizardDetermineStep(); });
+}
+
+function _wizardCheckScans() {
+  return fetch("/api/scans").then(function(r) { return r.json(); }).then(function(scans) {
+    for (var i = 0; i < scans.length; i++) {
+      if (scans[i].directory === wizardState.stagingDir && scans[i].total_groups > 0) {
+        wizardState.lastReport = scans[i].filename;
+        wizardState.completedSteps[2] = true;
+        break;
+      }
+    }
+    _wizardDetermineStep();
+  }).catch(function() { _wizardDetermineStep(); });
+}
+
+function _wizardDetermineStep() {
+  // Find the first incomplete step
+  var step = 1;
+  if (wizardState.completedSteps[1]) step = 2;
+  if (wizardState.completedSteps[2]) step = 3;
+  if (wizardState.completedSteps[3]) step = 4;
+  wizardGoToStep(step);
+}
+
+function wizardGoToStep(n) {
+  wizardState.currentStep = n;
+  // Show/hide panels
+  for (var i = 1; i <= 4; i++) {
+    var panel = document.getElementById("wizardStep" + i);
+    if (panel) panel.classList.toggle("active", i === n);
+  }
+  updateStepper();
+  // Step-specific init
+  if (n === 1) {
+    if (wizardState.completedSteps[1]) {
+      document.getElementById("wizMigrateBtn").disabled = true;
+      document.getElementById("wizMigrateBtn").textContent = "Migration Complete";
+      document.getElementById("wizMigrateComplete").style.display = "block";
+      document.getElementById("wizMigrateCompleteMsg").textContent =
+        "Files staged to: " + (wizardState.stagingDir || "");
+    }
+  }
+  if (n === 2) {
+    // Load settings for threshold
+    fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+      document.getElementById("wizThreshold").value = s.threshold || 5;
+      document.getElementById("wizThresholdVal").textContent = s.threshold || 5;
+    }).catch(function() {});
+  }
+  if (n === 3 && wizardState.lastReport) {
+    document.getElementById("wizReviewInfoText").textContent =
+      "Report: " + wizardState.lastReport;
+  }
+}
+
+function updateStepper() {
+  var steps = document.querySelectorAll(".wizard-step");
+  for (var i = 0; i < steps.length; i++) {
+    var stepNum = parseInt(steps[i].getAttribute("data-step"));
+    steps[i].classList.remove("active", "completed");
+    if (wizardState.completedSteps[stepNum]) {
+      steps[i].classList.add("completed");
+      document.getElementById("wizStep" + stepNum + "Circle").innerHTML = "&#10003;";
+    } else if (stepNum === wizardState.currentStep) {
+      steps[i].classList.add("active");
+      document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
+    } else {
+      document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
+    }
+  }
+  // Update connecting lines
+  for (var i = 1; i <= 3; i++) {
+    var line = document.getElementById("wizLine" + i);
+    if (line) line.classList.toggle("done", !!wizardState.completedSteps[i]);
+  }
+}
+
+function wizardMarkComplete(n) {
+  wizardState.completedSteps[n] = true;
+  updateStepper();
+  // Auto-advance to next step
+  if (n < 4) wizardGoToStep(n + 1);
+}
+
+function wizardStartMigration() {
+  var dir = document.getElementById("wizSourceDir").value.trim();
+  if (!dir) { toast("Please enter a source folder", "error"); return; }
+
+  wizardState.sourceDir = dir;
+  document.getElementById("wizMigrateBtn").disabled = true;
+  document.getElementById("wizMigrateProgress").style.display = "block";
+  document.getElementById("wizMigrateInfo").style.display = "none";
+
+  api("POST", "/api/staging/start", { source_dir: dir }).then(function(d) {
+    wizardState.stagingDir = d.staging_dir;
+    // Connect SSE
+    if (_wizStagingSSE) _wizStagingSSE.close();
+    _wizStagingSSE = new EventSource("/api/staging/progress");
+    _wizStagingSSE.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+      document.getElementById("wizMigFill").style.width = pct + "%";
+      document.getElementById("wizMigPct").textContent = pct + "%";
+      document.getElementById("wizMigLeft").textContent = d.current + " / " + d.total + " files";
+      var mb = d.bytes_copied ? Math.round(d.bytes_copied / (1024*1024)) : 0;
+      var mbT = d.bytes_total ? Math.round(d.bytes_total / (1024*1024)) : 0;
+      document.getElementById("wizMigRight").textContent = mb + " / " + mbT + " MB";
+
+      if (d.status === "complete") {
+        _wizStagingSSE.close();
+        document.getElementById("wizMigrateProgress").style.display = "none";
+        document.getElementById("wizMigrateComplete").style.display = "block";
+        document.getElementById("wizMigrateCompleteMsg").textContent = d.message || "Migration complete";
+        wizardState.stagingDir = d.staging_dir || wizardState.stagingDir;
+        // Also set up _stagingSession for compatibility
+        _stagingSession = {
+          source_dir: wizardState.sourceDir,
+          staging_dir: wizardState.stagingDir
+        };
+        wizardMarkComplete(1);
+      } else if (d.status === "error" || d.status === "cancelled") {
+        _wizStagingSSE.close();
+        document.getElementById("wizMigrateProgress").style.display = "none";
+        document.getElementById("wizMigrateBtn").disabled = false;
+        toast(d.message || "Migration failed", "error");
+      }
+    };
+  }).catch(function(err) {
+    document.getElementById("wizMigrateBtn").disabled = false;
+    document.getElementById("wizMigrateProgress").style.display = "none";
+    toast("Migration error: " + err.message, "error");
+  });
+}
+
+function wizardStartScan() {
+  if (!wizardState.stagingDir) { toast("Complete migration first", "error"); return; }
+
+  var modeEl = document.querySelector('input[name="wizScanMode"]:checked');
+  var mode = modeEl ? modeEl.value : "exact";
+  var threshold = parseInt(document.getElementById("wizThreshold").value) || 5;
+  var recursive = document.getElementById("wizRecursive").checked;
+
+  document.getElementById("wizScanActions").style.display = "none";
+  document.getElementById("wizScanProgress").style.display = "block";
+  document.getElementById("wizScanComplete").style.display = "none";
+
+  // Check for resume first
+  fetch("/api/scan/check-resume?directory=" + encodeURIComponent(wizardState.stagingDir) + "&mode=" + mode)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var resume = false;
+      if (data.has_checkpoint) {
+        // Auto-resume in wizard mode
+        resume = true;
+      }
+      return api("POST", "/api/scan/start", {
+        directory: wizardState.stagingDir, mode: mode,
+        threshold: threshold, recursive: recursive, resume: resume
+      });
+    })
+    .then(function() {
+      if (_wizScanSSE) _wizScanSSE.close();
+      _wizScanSSE = new EventSource("/api/scan/progress");
+      _wizScanSSE.onmessage = function(e) {
+        var d = JSON.parse(e.data);
+        var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+        document.getElementById("wizScanFill").style.width = pct + "%";
+        document.getElementById("wizScanPct").textContent = pct + "%";
+        document.getElementById("wizScanLeft").textContent = d.current + " / " + d.total;
+        document.getElementById("wizScanStage").textContent = d.stage || "scanning";
+
+        if (d.status === "complete") {
+          _wizScanSSE.close();
+          document.getElementById("wizScanProgress").style.display = "none";
+          document.getElementById("wizScanComplete").style.display = "block";
+          document.getElementById("wizScanCompleteMsg").textContent = d.message || "Scan complete";
+          wizardState.lastReport = d.result_file;
+          wizardMarkComplete(2);
+        } else if (d.status === "error" || d.status === "cancelled") {
+          _wizScanSSE.close();
+          document.getElementById("wizScanProgress").style.display = "none";
+          document.getElementById("wizScanActions").style.display = "block";
+          toast(d.message || "Scan failed", "error");
+        }
+      };
+    })
+    .catch(function(err) {
+      document.getElementById("wizScanProgress").style.display = "none";
+      document.getElementById("wizScanActions").style.display = "block";
+      toast("Scan error: " + err.message, "error");
+    });
+}
+
+function wizardStartReview() {
+  if (!wizardState.lastReport) { toast("Complete a scan first", "error"); return; }
+  wizardState.browserReturnTo = "wizard";
+  navigate("review", { report: wizardState.lastReport, returnTo: "wizard" });
+}
+
+// ---- File Browser ----
+var browserState = {
+  rootPath: null,
+  currentPath: null,
+  currentPage: 1,
+  hasMore: false,
+  loading: false,
+  type: null
+};
+var _browserObserver = null;
+
+function openBrowser(type) {
+  if (type === "staging") {
+    browserState.rootPath = wizardState.stagingDir;
+    browserState.type = "staging";
+  } else if (type === "dupes") {
+    browserState.rootPath = wizardState.dupesDir || "C:\\Temp\\dupes";
+    browserState.type = "dupes";
+  }
+  browserState.currentPath = browserState.rootPath;
+  browserState.currentPage = 1;
+  navigate("browser");
+}
+
+function initBrowser() {
+  if (!browserState.rootPath) {
+    document.getElementById("browserGrid").innerHTML =
+      '<div class="browser-loading">No folder selected.</div>';
+    return;
+  }
+  browserState.currentPage = 1;
+  document.getElementById("browserGrid").innerHTML = "";
+  browserLoadPage(true);
+  // Set up infinite scroll
+  if (_browserObserver) _browserObserver.disconnect();
+  _browserObserver = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && browserState.hasMore && !browserState.loading) {
+      browserLoadPage(false);
+    }
+  });
+  _browserObserver.observe(document.getElementById("browserSentinel"));
+}
+
+function browserLoadPage(replace) {
+  browserState.loading = true;
+  document.getElementById("browserLoading").style.display = "block";
+  var sort = document.getElementById("browserSort").value || "name";
+  var url = "/api/browse?path=" + encodeURIComponent(browserState.currentPath)
+    + "&page=" + browserState.currentPage
+    + "&page_size=50&sort=" + sort;
+
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    browserState.loading = false;
+    document.getElementById("browserLoading").style.display = "none";
+    browserState.hasMore = data.has_more;
+
+    // Update breadcrumb
+    buildBreadcrumb(data.path);
+    document.getElementById("browserCount").textContent =
+      data.total + " items";
+
+    // Render items
+    var html = "";
+    for (var i = 0; i < data.entries.length; i++) {
+      var e = data.entries[i];
+      if (e.is_dir) {
+        html += '<div class="browser-item" onclick="browserNavigate(\'' + escAttr(e.path) + '\')">'
+          + '<div class="browser-thumb"><div class="browser-folder-icon">&#128193;</div></div>'
+          + '<div class="browser-meta"><div class="browser-name">' + escHtml(e.name) + '</div>'
+          + '<div class="browser-size">Folder</div></div></div>';
+      } else {
+        var imgUrl = "/api/image?path=" + encodeURIComponent(e.path);
+        var sizeStr = e.size > 1048576 ? (e.size / 1048576).toFixed(1) + " MB"
+          : Math.round(e.size / 1024) + " KB";
+        html += '<div class="browser-item" onclick="openLightbox(\'' + encodeURIComponent(e.path) + '\')">'
+          + '<div class="browser-thumb"><img src="' + imgUrl + '" loading="lazy" alt=""></div>'
+          + '<div class="browser-meta"><div class="browser-name">' + escHtml(e.name) + '</div>'
+          + '<div class="browser-size">' + sizeStr + '</div></div></div>';
+      }
+    }
+
+    if (replace) {
+      document.getElementById("browserGrid").innerHTML = html;
+    } else {
+      document.getElementById("browserGrid").innerHTML += html;
+    }
+    browserState.currentPage++;
+
+    if (data.total === 0) {
+      document.getElementById("browserGrid").innerHTML =
+        '<div class="browser-loading">This folder is empty.</div>';
+    }
+  }).catch(function(err) {
+    browserState.loading = false;
+    document.getElementById("browserLoading").style.display = "none";
+    document.getElementById("browserGrid").innerHTML =
+      '<div class="browser-loading">Error: ' + escHtml(err.message || "Failed to load") + '</div>';
+  });
+}
+
+function browserNavigate(path) {
+  browserState.currentPath = path;
+  browserState.currentPage = 1;
+  document.getElementById("browserGrid").innerHTML = "";
+  browserLoadPage(true);
+}
+
+function browserRefresh() {
+  browserState.currentPage = 1;
+  document.getElementById("browserGrid").innerHTML = "";
+  browserLoadPage(true);
+}
+
+function buildBreadcrumb(fullPath) {
+  var root = browserState.rootPath.replace(/\\/g, "/");
+  var current = fullPath.replace(/\\/g, "/");
+  var rootLabel = browserState.type === "staging" ? "Cleaned Files" : "Removed Duplicates";
+
+  var html = '<span class="browser-crumb" onclick="browserNavigate(\'' + escAttr(browserState.rootPath) + '\')">'
+    + escHtml(rootLabel) + '</span>';
+
+  if (current !== root && current.indexOf(root) === 0) {
+    var rel = current.substring(root.length).replace(/^\//, "");
+    var parts = rel.split("/");
+    var built = browserState.rootPath;
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      built = built + "\\" + parts[i];
+      html += '<span class="browser-crumb-sep">/</span>'
+        + '<span class="browser-crumb" onclick="browserNavigate(\'' + escAttr(built) + '\')">'
+        + escHtml(parts[i]) + '</span>';
+    }
+  }
+  document.getElementById("browserBreadcrumb").innerHTML = html;
+}
+
+function closeBrowser() {
+  if (_browserObserver) _browserObserver.disconnect();
+  navigate("wizard");
+}
+
+function escAttr(str) {
+  return str.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+// ---- Staging ----
+var _stagingSSE = null;
+var _stagingSession = null;  // { source_dir, staging_dir, manifest_path }
+
+function startStaging(sourceDir, stagingDir, mode, threshold, recursive) {
+  _stagingSession = { source_dir: sourceDir, staging_dir: stagingDir,
+                      mode: mode, threshold: threshold, recursive: recursive };
+  api("POST", "/api/staging/start", {
+    source_dir: sourceDir, staging_dir: stagingDir
+  }).then(function() {
+    navigate("staging-progress");
+  }).catch(function(err) {
+    toast("Staging error: " + err.message, "error");
+  });
+}
+
+function initStagingProgress() {
+  document.getElementById("stagingActions").style.display = "block";
+  document.getElementById("stagingCompleteBox").style.display = "none";
+  document.getElementById("stagingProgressFill").style.width = "0%";
+  document.getElementById("stagingProgressPct").textContent = "0%";
+
+  if (_stagingSSE) _stagingSSE.close();
+  _stagingSSE = new EventSource("/api/staging/progress");
+  _stagingSSE.onmessage = function(e) {
+    var d = JSON.parse(e.data);
+    updateStagingUI(d);
+    if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+      _stagingSSE.close();
+    }
+  };
+}
+
+function updateStagingUI(d) {
+  var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+  document.getElementById("stagingProgressFill").style.width = pct + "%";
+  document.getElementById("stagingProgressPct").textContent = pct + "%";
+  document.getElementById("stagingProgressLeft").textContent = d.current + " / " + d.total + " files";
+  var mbCopied = d.bytes_copied ? Math.round(d.bytes_copied / (1024*1024)) : 0;
+  var mbTotal = d.bytes_total ? Math.round(d.bytes_total / (1024*1024)) : 0;
+  document.getElementById("stagingProgressRight").textContent = mbCopied + " / " + mbTotal + " MB";
+  document.getElementById("stagingStage").textContent = d.stage || "staging";
+  document.getElementById("stagingCopied").textContent = d.copied || 0;
+  document.getElementById("stagingSkipped").textContent = d.skipped || 0;
+  document.getElementById("stagingFailed").textContent = d.failed || 0;
+
+  if (d.status === "complete") {
+    document.getElementById("stagingActions").style.display = "none";
+    document.getElementById("stagingCompleteBox").style.display = "block";
+    document.getElementById("stagingCompleteTitle").textContent = "Staging Complete";
+    document.getElementById("stagingCompleteMsg").textContent = d.message || "";
+    if (_stagingSession) {
+      _stagingSession.manifest_path = d.manifest_path;
+      _stagingSession.staging_dir = d.staging_dir || _stagingSession.staging_dir;
+    }
+    // Wire up the scan button to scan the staged folder
+    document.getElementById("stagingScanBtn").onclick = function() {
+      if (_stagingSession) {
+        _doStartScan(_stagingSession.staging_dir, _stagingSession.mode,
+                      _stagingSession.threshold, _stagingSession.recursive, false);
+      }
+    };
+  } else if (d.status === "error") {
+    document.getElementById("stagingActions").style.display = "none";
+    document.getElementById("stagingCompleteBox").style.display = "block";
+    document.getElementById("stagingCompleteTitle").textContent = "Staging Failed";
+    document.getElementById("stagingCompleteTitle").style.color = "var(--danger)";
+    document.getElementById("stagingCompleteMsg").textContent = d.message || "";
+  } else if (d.status === "cancelled") {
+    document.getElementById("stagingActions").style.display = "none";
+    document.getElementById("stagingCompleteBox").style.display = "block";
+    document.getElementById("stagingCompleteTitle").textContent = "Staging Cancelled";
+    document.getElementById("stagingCompleteTitle").style.color = "var(--warning)";
+    document.getElementById("stagingCompleteMsg").textContent = d.message || "";
+  }
+}
+
+function cancelStaging() {
+  api("POST", "/api/staging/cancel").catch(function() {});
+}
+
+// ---- Sync Back ----
+var _syncbackSSE = null;
+
+function initSyncback() {
+  document.getElementById("syncbackStart").style.display = "block";
+  document.getElementById("syncbackProgress").style.display = "none";
+  document.getElementById("syncbackCompleteBox").style.display = "none";
+}
+
+function startSyncback() {
+  if (!_stagingSession) {
+    toast("No staging session to sync back", "error");
+    return;
+  }
+  document.getElementById("syncbackStart").style.display = "none";
+  document.getElementById("syncbackProgress").style.display = "block";
+
+  api("POST", "/api/staging/syncback", {
+    staging_dir: _stagingSession.staging_dir,
+    source_dir: _stagingSession.source_dir
+  }).then(function() {
+    if (_syncbackSSE) _syncbackSSE.close();
+    _syncbackSSE = new EventSource("/api/staging/syncback/progress");
+    _syncbackSSE.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+      document.getElementById("syncbackProgressFill").style.width = pct + "%";
+      document.getElementById("syncbackProgressPct").textContent = pct + "%";
+      document.getElementById("syncbackProgressLeft").textContent = d.current + " / " + d.total;
+      document.getElementById("syncbackStage").textContent = d.message || "Syncing";
+
+      if (d.status === "complete") {
+        _syncbackSSE.close();
+        document.getElementById("syncbackProgress").style.display = "none";
+        document.getElementById("syncbackCompleteBox").style.display = "block";
+        document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
+      } else if (d.status === "error") {
+        _syncbackSSE.close();
+        document.getElementById("syncbackProgress").style.display = "none";
+        document.getElementById("syncbackCompleteBox").style.display = "block";
+        document.getElementById("syncbackCompleteTitle").textContent = "Sync Failed";
+        document.getElementById("syncbackCompleteTitle").style.color = "var(--danger)";
+        document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
+      }
+    };
+  });
+}
+
+function cleanupStaging() {
+  if (!_stagingSession) return;
+  showDialog("Clean Up Staging", "Delete the local staging folder? This cannot be undone.",
+    "Delete", "btn-danger", function() {
+      api("POST", "/api/staging/cleanup", {
+        staging_dir: _stagingSession.staging_dir
+      }).then(function() {
+        toast("Staging folder cleaned up");
+        _stagingSession = null;
+        navigate("dashboard");
+      });
+    });
+}
+
 // ---- Heartbeat ----
 setInterval(function() {
   fetch("/api/heartbeat").catch(function() {});
@@ -1122,9 +2073,13 @@ function route() {
   if (view === "dashboard") initDashboard();
   else if (view === "scan-config") initScanConfig();
   else if (view === "scan-progress") initScanProgress();
-  else if (view === "review") initReview(params.report);
+  else if (view === "review") initReview(params.report, params.returnTo);
   else if (view === "actions") initActions();
   else if (view === "oddball") initOddball(params.report);
+  else if (view === "wizard") initWizard();
+  else if (view === "browser") initBrowser();
+  else if (view === "staging-progress") initStagingProgress();
+  else if (view === "syncback") initSyncback();
   else if (view === "activity") loadActivity();
   else if (view === "settings") initSettings();
 }
@@ -1227,7 +2182,69 @@ function startScan() {
   var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
   var recursive = document.getElementById("scanRecursive").checked;
 
-  // Check for resumable checkpoint
+  // Check if this is a OneDrive path
+  api("POST", "/api/staging/check", { directory: dir }).then(function(result) {
+    if (result.is_onedrive) {
+      // Show staging dialog
+      var msg = result.file_count + " files (~" + result.estimated_gb + " GB). "
+        + "Free space: " + (result.free_space_gb || "?") + " GB.";
+      if (result.existing_session) {
+        msg += "\nA previous staging session exists (" + result.existing_session.file_count
+          + " files staged on " + new Date(result.existing_session.created).toLocaleString() + ").";
+      }
+      showStagingDialog(dir, result.staging_dir, msg, result.existing_session,
+        mode, threshold, recursive);
+    } else {
+      _checkResumeAndStart(dir, mode, threshold, recursive);
+    }
+  }).catch(function() {
+    _checkResumeAndStart(dir, mode, threshold, recursive);
+  });
+}
+
+function showStagingDialog(dir, stagingDir, info, existingSession, mode, threshold, recursive) {
+  document.getElementById("dialogTitle").textContent = "OneDrive Detected";
+  var html = '<div style="margin-bottom:12px;">This folder is managed by OneDrive. '
+    + 'Stage files locally for reliable scanning?</div>'
+    + '<div style="font-size:12px;color:var(--text-dim);font-family:monospace;margin-bottom:16px;">'
+    + escHtml(info) + '</div>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">'
+    + '<button class="btn btn-secondary" id="stagingSkipBtn">Scan Directly (risky)</button>';
+  if (existingSession) {
+    html += '<button class="btn btn-secondary" id="stagingReuseBtn">Use Existing Staging</button>';
+  }
+  html += '<button class="btn btn-primary" id="stagingGoBtn">Stage Locally</button></div>';
+
+  document.getElementById("dialogMessage").innerHTML = html;
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+
+  document.getElementById("stagingGoBtn").onclick = function() {
+    closeDialog();
+    document.getElementById("dialogConfirmBtn").style.display = "";
+    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    startStaging(dir, stagingDir, mode, threshold, recursive);
+  };
+  document.getElementById("stagingSkipBtn").onclick = function() {
+    closeDialog();
+    document.getElementById("dialogConfirmBtn").style.display = "";
+    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    _checkResumeAndStart(dir, mode, threshold, recursive);
+  };
+  if (existingSession) {
+    document.getElementById("stagingReuseBtn").onclick = function() {
+      closeDialog();
+      document.getElementById("dialogConfirmBtn").style.display = "";
+      document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+      _stagingSession = { source_dir: dir, staging_dir: existingSession.staging_dir,
+                          mode: mode, threshold: threshold, recursive: recursive };
+      _checkResumeAndStart(existingSession.staging_dir, mode, threshold, recursive);
+    };
+  }
+}
+
+function _checkResumeAndStart(dir, mode, threshold, recursive) {
   fetch("/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -1369,7 +2386,16 @@ function cancelScan() {
 /* ==================================================================
    REVIEW
    ================================================================== */
-function initReview(report) {
+function initReview(report, returnTo) {
+  // Update back button destination
+  var backBtn = document.getElementById("reviewBackBtn");
+  if (returnTo === "wizard") {
+    backBtn.onclick = function() { navigate("wizard"); };
+    state._reviewReturnTo = "wizard";
+  } else {
+    backBtn.onclick = function() { navigate("dashboard"); };
+    state._reviewReturnTo = null;
+  }
   if (!report) {
     document.getElementById("reviewContent").innerHTML =
       '<div class="empty-state"><h3>No report selected</h3><p>Go to the dashboard and choose a scan to review.</p></div>';
@@ -1784,6 +2810,22 @@ function showActionResult(d) {
     document.getElementById("actResultErrors").innerHTML = html;
   } else {
     document.getElementById("actResultErrors").innerHTML = "";
+  }
+
+  // Show return-to-wizard or sync-back button
+  if (state._reviewReturnTo === "wizard") {
+    wizardState.completedSteps[3] = true;
+    document.getElementById("actResultErrors").innerHTML +=
+      '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">'
+      + '<button class="btn btn-primary" onclick="navigate(\'wizard\')">Return to Wizard</button>'
+      + '</div>';
+  } else if (_stagingSession) {
+    document.getElementById("actResultErrors").innerHTML +=
+      '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">'
+      + '<p style="color:var(--text-dim);margin-bottom:8px;">Staging session active. '
+      + 'Sync changes back to OneDrive to apply your cleanup.</p>'
+      + '<button class="btn btn-primary" onclick="navigate(\'syncback\')">Sync Back to OneDrive</button>'
+      + '</div>';
   }
 
   // Clear decisions
