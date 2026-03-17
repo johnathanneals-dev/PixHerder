@@ -956,8 +956,11 @@
       <div class="form-group">
         <label class="form-label">Folder to scan</label>
         <input class="form-input" type="text" id="scanDir"
-               placeholder="C:\Users\repom\OneDrive\Pictures">
-        <div class="form-hint">Paste or type the full path to the folder you want to scan.</div>
+               placeholder="copy/paste your path to what you want scanned here">
+        <div style="margin-top:6px;display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="fillScanDir('staging')">Staged Files</button>
+          <button class="btn btn-secondary btn-sm" onclick="fillScanDir('dupes')">Dupes Folder</button>
+        </div>
       </div>
 
       <div class="form-group">
@@ -2062,13 +2065,18 @@ function cleanupStaging() {
   if (!_stagingSession) return;
   showDialog("Clean Up Staging", "Delete the local staging folder? This cannot be undone.",
     "Delete", "btn-danger", function() {
-      api("POST", "/api/staging/cleanup", {
-        staging_dir: _stagingSession.staging_dir
-      }).then(function() {
-        toast("Staging folder cleaned up");
-        _stagingSession = null;
-        navigate("dashboard");
-      });
+      // Second confirmation - make them really mean it
+      showDialog("FINAL WARNING",
+        "THIS WILL DELETE THESE FILES. PROCEED?",
+        "Delete Forever", "btn-danger", function() {
+          api("POST", "/api/staging/cleanup", {
+            staging_dir: _stagingSession.staging_dir
+          }).then(function() {
+            toast("Staging folder cleaned up");
+            _stagingSession = null;
+            navigate("dashboard");
+          });
+        });
     });
 }
 
@@ -2246,6 +2254,28 @@ function deleteScan(filename) {
 /* ==================================================================
    SCAN CONFIG
    ================================================================== */
+function fillScanDir(type) {
+  if (type === "staging") {
+    // Try staging session, then API, then settings default
+    if (_stagingSession && _stagingSession.staging_dir) {
+      document.getElementById("scanDir").value = _stagingSession.staging_dir;
+      return;
+    }
+    fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.staging_dir) {
+        document.getElementById("scanDir").value = d.staging_dir;
+      } else {
+        fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+          document.getElementById("scanDir").value = s.staging_dir || "C:\\Temp\\DupeFinder_Staging";
+        });
+      }
+    }).catch(function() {});
+  } else if (type === "dupes") {
+    var s = state.settings || {};
+    document.getElementById("scanDir").value = s.move_destination || "C:\\Temp\\dupes";
+  }
+}
+
 function initScanConfig() {
   api("GET", "/api/settings").then(function(settings) {
     state.settings = settings;
