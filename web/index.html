@@ -125,6 +125,11 @@
     background: var(--surface);
     transition: all 0.3s;
   }
+  .wizard-step.clickable { cursor: pointer; }
+  .wizard-step.clickable:hover .wizard-step-circle {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(110, 231, 183, 0.3);
+  }
   .wizard-step.active .wizard-step-circle {
     border-color: var(--accent);
     color: var(--accent);
@@ -1570,15 +1575,27 @@ function updateStepper() {
   var steps = document.querySelectorAll(".wizard-step");
   for (var i = 0; i < steps.length; i++) {
     var stepNum = parseInt(steps[i].getAttribute("data-step"));
-    steps[i].classList.remove("active", "completed");
+    steps[i].classList.remove("active", "completed", "clickable");
+    steps[i].onclick = null;
+
     if (wizardState.completedSteps[stepNum]) {
-      steps[i].classList.add("completed");
+      steps[i].classList.add("completed", "clickable");
       document.getElementById("wizStep" + stepNum + "Circle").innerHTML = "&#10003;";
+      (function(n) {
+        steps[i].onclick = function() { wizardGoToStep(n); };
+      })(stepNum);
     } else if (stepNum === wizardState.currentStep) {
       steps[i].classList.add("active");
       document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
     } else {
       document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
+      // Allow clicking steps up to current
+      if (stepNum <= wizardState.currentStep) {
+        steps[i].classList.add("clickable");
+        (function(n) {
+          steps[i].onclick = function() { wizardGoToStep(n); };
+        })(stepNum);
+      }
     }
   }
   // Update connecting lines
