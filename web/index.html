@@ -93,6 +93,39 @@
     border-color: var(--danger);
   }
 
+  /* ---- Bookmark Notice ---- */
+  .bookmark-notice {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-dim);
+    border-radius: var(--radius-sm);
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .bookmark-notice.dismissed { display: none; }
+  .bookmark-notice-text { flex: 1; }
+  .bookmark-notice .btn-bookmark {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .bookmark-notice .btn-dismiss {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .bookmark-notice .btn-dismiss:hover { color: var(--text); }
+
   /* ---- Wizard Stepper ---- */
   .wizard-stepper {
     display: flex;
@@ -706,6 +739,16 @@
 
   <!-- Dashboard View -->
   <div class="view active" id="view-dashboard">
+    <div class="bookmark-notice" id="bookmarkNotice" style="display:none;">
+      <div class="bookmark-notice-text">
+        If multiple DupeFinder tabs appear after restarting your browser,
+        close the extras and bookmark this page. Your browser restores old
+        tabs from previous sessions -- a bookmark gives you a single,
+        reliable way to get back here.
+      </div>
+      <button class="btn btn-secondary btn-sm btn-bookmark" id="bookmarkBtn" onclick="bookmarkPage()">Bookmark This Page</button>
+      <button class="btn-dismiss" onclick="dismissBookmarkNotice()" title="Dismiss">&times;</button>
+    </div>
     <h1>DupeFinder</h1>
     <p class="subtitle">Find and clean up duplicate images on your computer.</p>
 
@@ -1365,6 +1408,20 @@ function openLightbox(encodedPath) {
 function closeLightbox() {
   document.getElementById("lightbox").classList.remove("active");
   document.getElementById("lightboxImg").src = "";
+}
+
+// ---- Bookmark ----
+function bookmarkPage() {
+  toast("Press Ctrl+D to bookmark this page");
+  localStorage.setItem("dupefinder_bookmarked", "1");
+  var btn = document.getElementById("bookmarkBtn");
+  btn.disabled = true;
+  btn.innerHTML = "&#10003; Bookmarked";
+}
+
+function dismissBookmarkNotice() {
+  localStorage.setItem("dupefinder_bookmarked", "1");
+  document.getElementById("bookmarkNotice").style.display = "none";
 }
 
 // ---- Shutdown ----
@@ -2115,6 +2172,14 @@ function selectRadio(el, name) {
    DASHBOARD
    ================================================================== */
 function initDashboard() {
+  // Show bookmark notice if not yet dismissed
+  var bmNotice = document.getElementById("bookmarkNotice");
+  if (localStorage.getItem("dupefinder_bookmarked")) {
+    bmNotice.style.display = "none";
+  } else {
+    bmNotice.style.display = "flex";
+  }
+
   api("GET", "/api/scans").then(function(scans) {
     var list = document.getElementById("scanList");
     var statsBox = document.getElementById("dashboardStats");
