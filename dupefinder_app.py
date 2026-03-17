@@ -58,8 +58,21 @@ def main():
     print("  Press Ctrl+C to stop")
     print("")
 
-    # Open browser after a short delay
-    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    # Open browser, but skip if a restored tab already connected
+    def _maybe_open_browser():
+        import time
+        # Wait for any restored browser tabs to connect via heartbeat
+        time.sleep(4)
+        from web.server import _last_heartbeat, _heartbeat_lock
+        with _heartbeat_lock:
+            # Server sets _last_heartbeat at startup. If a browser tab
+            # sent a heartbeat since then, the timestamp will be newer.
+            age = time.time() - _last_heartbeat
+        if age < 3:
+            # A tab already connected -- don't open another
+            return
+        webbrowser.open(url)
+    threading.Timer(0.1, _maybe_open_browser).start()
 
     # Serve forever
     try:
