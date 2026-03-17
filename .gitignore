@@ -1,6 +1,7 @@
 # Scan results and logs (generated data)
 scans/
 logs/
+checkpoints/
 settings.json
 
 # Legacy reports

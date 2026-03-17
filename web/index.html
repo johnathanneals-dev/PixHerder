@@ -38,7 +38,96 @@
     color: var(--text);
     min-height: 100vh;
     line-height: 1.5;
+    padding-bottom: 32px;
   }
+
+  /* ---- Status Bar ---- */
+  .status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 4px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: monospace;
+    height: 28px;
+  }
+  .status-bar .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .status-bar-left, .status-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .status-bar .btn-shutdown {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: monospace;
+    padding: 1px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .status-bar .btn-shutdown:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+
+  /* ---- Activity Log ---- */
+  .activity-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .activity-entry:last-child { border-bottom: none; }
+  .activity-time {
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 140px;
+  }
+  .activity-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: monospace;
+    text-transform: uppercase;
+    min-width: 80px;
+    text-align: center;
+  }
+  .activity-badge.started { background: var(--accent-bg); color: var(--accent); }
+  .activity-badge.completed { background: var(--accent-bg); color: var(--accent); }
+  .activity-badge.cancelled { background: var(--warning-bg); color: var(--warning); }
+  .activity-badge.error { background: var(--danger-bg); color: var(--danger); }
+  .activity-badge.shutdown { background: var(--surface-3); color: var(--text-dim); }
+  .activity-badge.resumed { background: var(--accent-bg); color: var(--accent); }
+  .activity-details { color: var(--text-dim); }
 
   /* ---- Top Nav ---- */
   .topnav {
@@ -412,6 +501,7 @@
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</button>
       <button class="nav-link" data-view="scan-config" onclick="navigate('scan-config')">Scan</button>
+      <button class="nav-link" data-view="activity" onclick="navigate('activity')">Activity</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
     </div>
   </div>
@@ -701,6 +791,19 @@
     </div>
   </div>
 
+  <!-- Activity View -->
+  <div class="view" id="view-activity">
+    <h1>Activity Log</h1>
+    <p class="subtitle">Recent events and operations.</p>
+    <div style="margin-bottom:16px;">
+      <button class="btn btn-secondary" onclick="loadActivity()">Refresh</button>
+      <button class="btn btn-secondary" onclick="clearActivity()" style="margin-left:8px;">Clear Log</button>
+    </div>
+    <div id="activityList" class="card" style="max-height:70vh;overflow-y:auto;padding:0;">
+      <div style="padding:24px;color:var(--text-dim);">Loading...</div>
+    </div>
+  </div>
+
   <!-- Settings View -->
   <div class="view" id="view-settings">
     <h1>Settings</h1>
@@ -839,6 +942,116 @@ function closeLightbox() {
   document.getElementById("lightboxImg").src = "";
 }
 
+// ---- Shutdown ----
+function shutdownServer() {
+  showDialog(
+    "Shut Down Server",
+    "This will stop DupeFinder. You will need to relaunch it from the desktop shortcut.",
+    "Shut Down",
+    "btn-danger",
+    function() {
+      fetch("/api/shutdown", { method: "POST" }).catch(function() {});
+      document.querySelector(".status-dot").style.background = "var(--danger)";
+      document.querySelector(".status-dot").style.animation = "none";
+      document.querySelector(".status-bar-left span:first-child").innerHTML =
+        '<span class="status-dot" style="background:var(--danger);animation:none"></span>Server stopped';
+      document.querySelector(".btn-shutdown").disabled = true;
+      document.querySelector(".btn-shutdown").textContent = "Stopped";
+    }
+  );
+}
+
+// ---- Resume Dialog ----
+function showResumeDialog(title, detail, onResume, onFresh) {
+  document.getElementById("dialogTitle").textContent = "Resume Previous Scan?";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="margin-bottom:12px;">' + escHtml(title) + '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim);font-family:monospace;margin-bottom:16px;">' +
+    escHtml(detail) + '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+    '<button class="btn btn-secondary" id="resumeFreshBtn">Start Fresh</button>' +
+    '<button class="btn btn-primary" id="resumeResumeBtn">Resume Scan</button>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+
+  document.getElementById("resumeResumeBtn").onclick = function() {
+    closeDialog();
+    document.getElementById("dialogConfirmBtn").style.display = "";
+    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    onResume();
+  };
+  document.getElementById("resumeFreshBtn").onclick = function() {
+    closeDialog();
+    document.getElementById("dialogConfirmBtn").style.display = "";
+    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    onFresh();
+  };
+}
+
+// ---- Activity Log ----
+function loadActivity() {
+  fetch("/api/activity?limit=100").then(function(r) { return r.json(); }).then(function(data) {
+    var el = document.getElementById("activityList");
+    var entries = data.entries || [];
+    if (entries.length === 0) {
+      el.innerHTML = '<div style="padding:24px;color:var(--text-dim);">No activity recorded yet.</div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var ts = new Date(e.timestamp).toLocaleString();
+      var evt = e.event || "";
+      var badge = "shutdown";
+      if (evt.indexOf("started") >= 0 || evt === "server_started") badge = "started";
+      else if (evt.indexOf("completed") >= 0) badge = "completed";
+      else if (evt.indexOf("cancelled") >= 0) badge = "cancelled";
+      else if (evt.indexOf("error") >= 0) badge = "error";
+      else if (evt.indexOf("resumed") >= 0) badge = "resumed";
+
+      var details = "";
+      var d = e.details || {};
+      if (d.directory) details += d.directory + " ";
+      if (d.mode) details += "(" + d.mode + ") ";
+      if (d.groups) details += d.groups + " groups ";
+      if (d.reclaimable_mb) details += d.reclaimable_mb + " MB ";
+      if (d.duration) details += "in " + d.duration + "s ";
+      if (d.progress) details += "at " + d.progress + " ";
+      if (d.error) details += d.error + " ";
+      if (d.reason) details += d.reason + " ";
+      if (d.port) details += "port " + d.port + " ";
+      if (d.cached_hashes) details += d.cached_hashes + " cached hashes ";
+      if (d.source) details += "(" + d.source + ") ";
+
+      html += '<div class="activity-entry">' +
+        '<span class="activity-time">' + escHtml(ts) + '</span>' +
+        '<span class="activity-badge ' + badge + '">' + escHtml(evt.replace(/_/g, " ")) + '</span>' +
+        '<span class="activity-details">' + escHtml(details.trim()) + '</span>' +
+        '</div>';
+    }
+    el.innerHTML = html;
+  }).catch(function() {
+    document.getElementById("activityList").innerHTML =
+      '<div style="padding:24px;color:var(--text-dim);">Failed to load activity log.</div>';
+  });
+}
+
+function clearActivity() {
+  showDialog("Clear Activity Log", "This will remove all activity history.", "Clear", "btn-danger", function() {
+    fetch("/api/activity/clear", { method: "POST" }).then(function() {
+      loadActivity();
+      toast("Activity log cleared");
+    });
+  });
+}
+
+// ---- Heartbeat ----
+setInterval(function() {
+  fetch("/api/heartbeat").catch(function() {});
+}, 5000);
+
 // ---- API Helper ----
 function api(method, path, body) {
   var opts = { method: method, headers: {} };
@@ -912,6 +1125,7 @@ function route() {
   else if (view === "review") initReview(params.report);
   else if (view === "actions") initActions();
   else if (view === "oddball") initOddball(params.report);
+  else if (view === "activity") loadActivity();
   else if (view === "settings") initSettings();
 }
 
@@ -1013,8 +1227,33 @@ function startScan() {
   var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
   var recursive = document.getElementById("scanRecursive").checked;
 
+  // Check for resumable checkpoint
+  fetch("/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.has_checkpoint) {
+        var info = data.checkpoint_info;
+        var cached = (info.md5_hashed || 0) + (info.phash_hashed || 0);
+        var ts = info.timestamp ? new Date(info.timestamp).toLocaleString() : "unknown";
+        showResumeDialog(
+          "An interrupted scan was found for this folder.",
+          "Stage: " + info.stage + " | Hashes cached: " + cached + " | Last active: " + ts,
+          function() { _doStartScan(dir, mode, threshold, recursive, true); },
+          function() { _doStartScan(dir, mode, threshold, recursive, false); }
+        );
+      } else {
+        _doStartScan(dir, mode, threshold, recursive, false);
+      }
+    })
+    .catch(function() {
+      _doStartScan(dir, mode, threshold, recursive, false);
+    });
+}
+
+function _doStartScan(dir, mode, threshold, recursive, resume) {
   api("POST", "/api/scan/start", {
-    directory: dir, mode: mode, threshold: threshold, recursive: recursive
+    directory: dir, mode: mode, threshold: threshold, recursive: recursive,
+    resume: resume
   }).then(function() {
     navigate("scan-progress");
   }).catch(function(err) {
@@ -1726,5 +1965,18 @@ function escAttr(str) {
    ================================================================== */
 route();
 </script>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-bar-left">
+    <span><span class="status-dot"></span>Server running</span>
+    <span>127.0.0.1:8787</span>
+  </div>
+  <div class="status-bar-right">
+    <span id="statusBarInfo">DupeFinder</span>
+    <button class="btn-shutdown" onclick="shutdownServer()">Shut Down</button>
+  </div>
+</div>
+
 </body>
 </html>

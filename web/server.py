@@ -19,7 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from engine.config import (
-    SCANS_DIR, LOGS_DIR, PROJECT_ROOT as ROOT,
+    SCANS_DIR, LOGS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
     load_settings, save_settings, ensure_dirs,
 )
 from engine.scanner import find_images, count_images
@@ -29,6 +29,88 @@ from engine.comparator import (
 )
 from engine.actions import move_files, delete_files, rescue_file
 from engine.oddball import verify_pairs, filter_oddballs
+from engine.checkpoint import (
+    checkpoint_path, save_checkpoint, load_checkpoint, delete_checkpoint,
+    find_checkpoint, validate_checkpoint,
+)
+
+
+# ---- Activity Log ----
+
+def _log_activity(event, details=None):
+    """Append an activity entry to the log file."""
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "event": event,
+        "details": details or {},
+    }
+    try:
+        with open(str(ACTIVITY_LOG), "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
+
+
+def _read_activity(limit=50):
+    """Read recent activity entries (newest first)."""
+    entries = []
+    try:
+        with open(str(ACTIVITY_LOG), "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        entries.append(json.loads(line))
+                    except Exception:
+                        pass
+    except FileNotFoundError:
+        pass
+    entries.reverse()
+    if limit > 0:
+        entries = entries[:limit]
+    return entries
+
+
+# ---- Heartbeat / Auto-shutdown ----
+
+_last_heartbeat = time.time()
+_heartbeat_lock = threading.Lock()
+_shutdown_grace_seconds = 30
+
+
+def _touch_heartbeat():
+    global _last_heartbeat
+    with _heartbeat_lock:
+        _last_heartbeat = time.time()
+
+
+def _heartbeat_checker():
+    """Background thread: shuts down server if browser stops pinging."""
+    while True:
+        time.sleep(5)
+        with _heartbeat_lock:
+            elapsed = time.time() - _last_heartbeat
+
+        if elapsed > _shutdown_grace_seconds:
+            # Don't shut down if a scan or action is running
+            if scan_thread and scan_thread.is_alive():
+                _touch_heartbeat()  # keep alive during scans
+                continue
+            if action_thread and action_thread.is_alive():
+                _touch_heartbeat()
+                continue
+            if oddball_thread and oddball_thread.is_alive():
+                _touch_heartbeat()
+                continue
+
+            _log_activity("auto_shutdown", {
+                "reason": "No browser connection for "
+                          + str(int(elapsed)) + " seconds",
+            })
+            time.sleep(0.5)
+            if _server_instance:
+                _server_instance.shutdown()
+            os._exit(0)
 
 
 # ---- Shared state (accessed by handler and background threads) ----
@@ -85,7 +167,7 @@ def _update_oddball_progress(current, total, stage):
 
 
 def _run_scan(directory, mode, threshold, recursive, hash_size,
-              keep_strategy, extensions):
+              keep_strategy, extensions, resume_data=None):
     """Background scan thread target."""
     global scan_progress
     start_time = time.time()
@@ -101,6 +183,8 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         "result_file": None,
     })
 
+    ckpt_path = checkpoint_path(directory, mode)
+
     try:
         ext_set = set(extensions) if extensions else None
         image_paths = list(find_images(directory, recursive, ext_set))
@@ -112,13 +196,67 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         if total_images < 2:
             scan_progress.update({
                 "status": "complete",
-                "message": "Not enough images to compare (" + str(total_images) + " found)",
+                "message": "Not enough images to compare ("
+                           + str(total_images) + " found)",
             })
             return
+
+        # Prepare precomputed hashes from checkpoint
+        md5_precomputed = {}
+        phash_precomputed = {}
+        file_info = {}
+        if resume_data:
+            resume_data = validate_checkpoint(resume_data, image_paths)
+            md5_precomputed = resume_data.get("md5_hashes", {})
+            phash_precomputed = resume_data.get("phash_hashes", {})
+            file_info = resume_data.get("file_info", {})
+            skipped = len(md5_precomputed) + len(phash_precomputed)
+            _log_activity("scan_resumed", {
+                "directory": directory,
+                "mode": mode,
+                "cached_hashes": skipped,
+                "stale_removed": resume_data.get("stale_removed", 0),
+            })
+        else:
+            _log_activity("scan_started", {
+                "directory": directory,
+                "mode": mode,
+                "total_images": total_images,
+            })
 
         all_errors = []
         exact_groups_data = []
         perceptual_groups_data = []
+
+        # Checkpoint callback for MD5 phase
+        def _ckpt_md5(hashes, finfo):
+            file_info.update(finfo)
+            save_checkpoint(ckpt_path, {
+                "directory": directory,
+                "mode": mode,
+                "threshold": threshold,
+                "recursive": recursive,
+                "hash_size": hash_size,
+                "stage": "md5",
+                "md5_hashes": hashes,
+                "phash_hashes": phash_precomputed,
+                "file_info": file_info,
+            })
+
+        # Checkpoint callback for pHash phase
+        def _ckpt_phash(hashes, finfo):
+            file_info.update(finfo)
+            save_checkpoint(ckpt_path, {
+                "directory": directory,
+                "mode": mode,
+                "threshold": threshold,
+                "recursive": recursive,
+                "hash_size": hash_size,
+                "stage": "phash",
+                "md5_hashes": md5_precomputed,
+                "phash_hashes": hashes,
+                "file_info": file_info,
+            })
 
         # Exact duplicates
         if mode in ("exact", "both"):
@@ -128,12 +266,34 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 image_paths,
                 progress_cb=_update_scan_progress,
                 cancel_event=scan_cancel,
+                precomputed_hashes=md5_precomputed,
+                checkpoint_cb=_ckpt_md5,
             )
             all_errors.extend(result["errors"])
+            md5_precomputed = result.get("hashes", {})
+            file_info.update(result.get("file_info", {}))
 
             if result["cancelled"]:
+                # Save checkpoint on cancel
+                save_checkpoint(ckpt_path, {
+                    "directory": directory,
+                    "mode": mode,
+                    "threshold": threshold,
+                    "recursive": recursive,
+                    "hash_size": hash_size,
+                    "stage": "md5",
+                    "md5_hashes": md5_precomputed,
+                    "phash_hashes": phash_precomputed,
+                    "file_info": file_info,
+                })
                 scan_progress["status"] = "cancelled"
                 scan_progress["message"] = "Scan cancelled by user"
+                _log_activity("scan_cancelled", {
+                    "directory": directory,
+                    "stage": "md5",
+                    "progress": str(scan_progress["current"]) + "/"
+                                + str(scan_progress["total"]),
+                })
                 return
 
             for group in result["groups"]:
@@ -166,12 +326,33 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 hash_size=hash_size,
                 progress_cb=_update_scan_progress,
                 cancel_event=scan_cancel,
+                precomputed_hashes=phash_precomputed,
+                checkpoint_cb=_ckpt_phash,
             )
             all_errors.extend(result["errors"])
+            phash_precomputed = result.get("hashes", {})
+            file_info.update(result.get("file_info", {}))
 
             if result["cancelled"]:
+                save_checkpoint(ckpt_path, {
+                    "directory": directory,
+                    "mode": mode,
+                    "threshold": threshold,
+                    "recursive": recursive,
+                    "hash_size": hash_size,
+                    "stage": "phash",
+                    "md5_hashes": md5_precomputed,
+                    "phash_hashes": phash_precomputed,
+                    "file_info": file_info,
+                })
                 scan_progress["status"] = "cancelled"
                 scan_progress["message"] = "Scan cancelled by user"
+                _log_activity("scan_cancelled", {
+                    "directory": directory,
+                    "stage": "phash",
+                    "progress": str(scan_progress["current"]) + "/"
+                                + str(scan_progress["total"]),
+                })
                 return
 
             for g in result["groups"]:
@@ -223,6 +404,9 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         with open(str(result_path), "w") as f:
             json.dump(report, f, indent=2)
 
+        # Scan succeeded -- delete checkpoint
+        delete_checkpoint(ckpt_path)
+
         total_groups = len(exact_groups_data) + len(perceptual_groups_data)
         total_reclaimable = (
             sum(g["reclaimable_bytes"] for g in exact_groups_data) +
@@ -249,10 +433,39 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
             },
         })
 
+        _log_activity("scan_completed", {
+            "directory": directory,
+            "mode": mode,
+            "result_file": filename,
+            "groups": total_groups,
+            "reclaimable_mb": round(mb, 1),
+            "duration": round(elapsed, 1),
+        })
+
     except Exception as e:
+        # Save checkpoint on error too
+        try:
+            save_checkpoint(ckpt_path, {
+                "directory": directory,
+                "mode": mode,
+                "threshold": threshold,
+                "recursive": recursive,
+                "hash_size": hash_size,
+                "stage": scan_progress.get("stage", "unknown"),
+                "md5_hashes": md5_precomputed,
+                "phash_hashes": phash_precomputed,
+                "file_info": file_info,
+            })
+        except Exception:
+            pass
+
         scan_progress.update({
             "status": "error",
             "message": "Scan failed: " + str(e),
+        })
+        _log_activity("scan_error", {
+            "directory": directory,
+            "error": str(e),
         })
 
 
@@ -265,6 +478,12 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest"):
         "current": 0,
         "total": 0,
         "result": None,
+    })
+
+    _log_activity("action_started", {
+        "type": action_type,
+        "groups_count": len(groups),
+        "move_destination": move_dir,
     })
 
     try:
@@ -284,9 +503,17 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest"):
             action_progress["result"] = result
 
         action_progress["status"] = "complete"
+        _log_activity("action_completed", {
+            "type": action_type,
+            "result": action_progress.get("result"),
+        })
     except Exception as e:
         action_progress["status"] = "error"
         action_progress["result"] = {"error": str(e)}
+        _log_activity("action_error", {
+            "type": action_type,
+            "error": str(e),
+        })
 
 
 def _run_oddball(report_data, dupes_folder):
@@ -360,6 +587,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_get_scans()
         elif path == "/api/scan/progress":
             self._handle_scan_progress_sse()
+        elif path == "/api/scan/check-resume":
+            self._handle_check_resume(params)
         elif path == "/api/groups":
             report = params.get("report", [""])[0]
             self._handle_get_groups(report)
@@ -372,6 +601,11 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_action_progress_sse()
         elif path == "/api/oddball/progress":
             self._handle_oddball_progress_sse()
+        elif path == "/api/heartbeat":
+            self._handle_heartbeat()
+        elif path == "/api/activity":
+            limit = int(params.get("limit", ["50"])[0])
+            self._handle_get_activity(limit)
         else:
             self.send_error(404)
 
@@ -397,6 +631,10 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_oddball_run()
         elif path == "/api/scans/delete":
             self._handle_delete_scan()
+        elif path == "/api/shutdown":
+            self._handle_shutdown()
+        elif path == "/api/activity/clear":
+            self._handle_clear_activity()
         else:
             self.send_error(404)
 
@@ -415,6 +653,48 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
         except Exception as e:
             self.send_error_json("Could not load index.html: " + str(e), 500)
+
+    def _handle_heartbeat(self):
+        _touch_heartbeat()
+        self.send_json({"status": "ok"})
+
+    def _handle_get_activity(self, limit=50):
+        entries = _read_activity(limit)
+        self.send_json({"entries": entries})
+
+    def _handle_clear_activity(self):
+        try:
+            with open(str(ACTIVITY_LOG), "w") as f:
+                f.truncate(0)
+            self.send_json({"status": "cleared"})
+        except Exception as e:
+            self.send_error_json("Failed to clear log: " + str(e), 500)
+
+    def _handle_check_resume(self, params):
+        directory = params.get("directory", [""])[0]
+        mode = params.get("mode", ["both"])[0]
+
+        if not directory:
+            self.send_json({"has_checkpoint": False})
+            return
+
+        ckpt, data = find_checkpoint(directory, mode)
+        if data:
+            md5_count = len(data.get("md5_hashes", {}))
+            phash_count = len(data.get("phash_hashes", {}))
+            self.send_json({
+                "has_checkpoint": True,
+                "checkpoint_info": {
+                    "stage": data.get("stage", "unknown"),
+                    "md5_hashed": md5_count,
+                    "phash_hashed": phash_count,
+                    "timestamp": data.get("timestamp", ""),
+                    "threshold": data.get("threshold"),
+                    "mode": data.get("mode", mode),
+                },
+            })
+        else:
+            self.send_json({"has_checkpoint": False})
 
     def _handle_get_scans(self):
         scans = []
@@ -654,16 +934,32 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         keep_strategy = settings.get("keep_strategy", "largest")
         extensions = settings.get("extensions")
 
+        # Handle resume
+        resume = body.get("resume", False)
+        resume_data = None
+        if resume:
+            _, resume_data = find_checkpoint(directory, mode)
+
+        # If not resuming, delete any stale checkpoint
+        if not resume:
+            ckpt = checkpoint_path(directory, mode)
+            delete_checkpoint(ckpt)
+
         scan_cancel = threading.Event()
         scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
-                  keep_strategy, extensions),
+                  keep_strategy, extensions, resume_data),
             daemon=True,
         )
         scan_thread.start()
 
-        self.send_json({"status": "started", "directory": directory, "mode": mode})
+        self.send_json({
+            "status": "started",
+            "directory": directory,
+            "mode": mode,
+            "resumed": bool(resume_data),
+        })
 
     def _handle_scan_cancel(self):
         scan_cancel.set()
@@ -688,7 +984,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         settings = load_settings()
-        move_dir = body.get("destination", settings.get("move_destination", "C:\\Temp\\dupes"))
+        move_dir = body.get("destination",
+                            settings.get("move_destination", "C:\\Temp\\dupes"))
         keep_strategy = settings.get("keep_strategy", "largest")
 
         action_cancel = threading.Event()
@@ -834,11 +1131,38 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error_json("Failed to delete: " + str(e), 500)
 
+    def _handle_shutdown(self):
+        _log_activity("shutdown", {"source": "user"})
+        self.send_json({"status": "shutting_down"})
+        # Cancel any running operations
+        scan_cancel.set()
+        action_cancel.set()
+        # Shut down the server in a separate thread so this response completes
+        def _shutdown():
+            time.sleep(0.5)
+            if _server_instance:
+                _server_instance.shutdown()
+            os._exit(0)
+        threading.Thread(target=_shutdown, daemon=True).start()
+
+
+_server_instance = None
+
 
 def create_server(port=8787):
     """Create and return a ThreadingHTTPServer instance."""
+    global _server_instance
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", port),
         DupeFinderHandler,
     )
+    _server_instance = server
+
+    # Start heartbeat checker
+    _touch_heartbeat()
+    checker = threading.Thread(target=_heartbeat_checker, daemon=True)
+    checker.start()
+
+    _log_activity("server_started", {"port": port})
+
     return server

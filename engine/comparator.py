@@ -3,49 +3,77 @@ DupeFinder duplicate detection and grouping logic.
 Groups images by exact match (MD5) or visual similarity (pHash).
 """
 
+import os
 from collections import defaultdict
 from pathlib import Path
 
 from engine.hasher import md5_hash, perceptual_hash
 
 
-def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None):
+def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
+                          precomputed_hashes=None, checkpoint_cb=None):
     """Group images by identical MD5 hash.
 
     Args:
         image_paths: List of Path objects.
         progress_cb: Optional callback(current, total, stage).
         cancel_event: Optional threading.Event for cancellation.
+        precomputed_hashes: Optional dict {filepath_str: md5_hex} to skip rehashing.
+        checkpoint_cb: Optional callback(hashes_dict, file_info_dict) for saving state.
 
     Returns:
         Dict with keys: groups (list of lists of paths), errors (list),
-        cancelled (bool).
+        cancelled (bool), hashes (dict of computed hashes), file_info (dict).
     """
     hash_map = defaultdict(list)
     errors = []
     total = len(image_paths)
     cancelled = False
+    computed_hashes = dict(precomputed_hashes or {})
+    file_info = {}
 
     for i, path in enumerate(image_paths):
         if cancel_event and cancel_event.is_set():
             cancelled = True
             break
 
-        digest, err = md5_hash(path)
-        if err:
-            errors.append({"path": str(path), "error": err})
-        if digest is not None:
+        path_str = str(path)
+        if path_str in computed_hashes:
+            # Use cached hash
+            digest = computed_hashes[path_str]
             hash_map[digest].append(path)
+        else:
+            digest, err = md5_hash(path)
+            if err:
+                errors.append({"path": path_str, "error": err})
+            if digest is not None:
+                hash_map[digest].append(path)
+                computed_hashes[path_str] = digest
+                try:
+                    st = os.stat(path_str)
+                    file_info[path_str] = {"mtime": st.st_mtime, "size": st.st_size}
+                except Exception:
+                    pass
 
         if progress_cb:
             progress_cb(i + 1, total, "md5")
 
+        if checkpoint_cb and (i + 1) % 500 == 0:
+            checkpoint_cb(computed_hashes, file_info)
+
     groups = [v for v in hash_map.values() if len(v) > 1]
-    return {"groups": groups, "errors": errors, "cancelled": cancelled}
+    return {
+        "groups": groups,
+        "errors": errors,
+        "cancelled": cancelled,
+        "hashes": computed_hashes,
+        "file_info": file_info,
+    }
 
 
 def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
-                               progress_cb=None, cancel_event=None):
+                               progress_cb=None, cancel_event=None,
+                               precomputed_hashes=None, checkpoint_cb=None):
     """Group images by perceptual similarity within a hamming distance threshold.
 
     Two phases: hashing (I/O bound) then comparison (CPU bound).
@@ -56,29 +84,64 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
         hash_size: Hash size for pHash (default 16).
         progress_cb: Optional callback(current, total, stage).
         cancel_event: Optional threading.Event for cancellation.
+        precomputed_hashes: Optional dict {filepath_str: hash_hex_str} to skip rehashing.
+        checkpoint_cb: Optional callback(hashes_dict, file_info_dict) for saving state.
 
     Returns:
         Dict with keys: groups (list of dicts with keep/duplicates/distances),
-        errors (list), cancelled (bool).
+        errors (list), cancelled (bool), hashes (dict), file_info (dict).
     """
+    import imagehash
+    from PIL import Image as PILImage
+
     hashes = []
     errors = []
     total = len(image_paths)
     cancelled = False
+    computed_hashes = dict(precomputed_hashes or {})
+    file_info = {}
 
     # Phase 1: compute all perceptual hashes
     for i, path in enumerate(image_paths):
         if cancel_event and cancel_event.is_set():
-            return {"groups": [], "errors": errors, "cancelled": True}
+            return {
+                "groups": [], "errors": errors, "cancelled": True,
+                "hashes": computed_hashes, "file_info": file_info,
+            }
 
-        h, err = perceptual_hash(path, hash_size=hash_size)
-        if err:
-            errors.append({"path": str(path), "error": err})
-        if h is not None:
-            hashes.append((path, h))
+        path_str = str(path)
+        if path_str in computed_hashes:
+            # Reconstruct hash object from hex string
+            try:
+                h = imagehash.hex_to_hash(computed_hashes[path_str])
+                hashes.append((path, h))
+            except Exception:
+                # Stored hash is corrupt, recompute
+                computed_hashes.pop(path_str, None)
+                h, err = perceptual_hash(path, hash_size=hash_size)
+                if err:
+                    errors.append({"path": path_str, "error": err})
+                if h is not None:
+                    hashes.append((path, h))
+                    computed_hashes[path_str] = str(h)
+        else:
+            h, err = perceptual_hash(path, hash_size=hash_size)
+            if err:
+                errors.append({"path": path_str, "error": err})
+            if h is not None:
+                hashes.append((path, h))
+                computed_hashes[path_str] = str(h)
+                try:
+                    st = os.stat(path_str)
+                    file_info[path_str] = {"mtime": st.st_mtime, "size": st.st_size}
+                except Exception:
+                    pass
 
         if progress_cb:
             progress_cb(i + 1, total, "phash_hash")
+
+        if checkpoint_cb and (i + 1) % 500 == 0:
+            checkpoint_cb(computed_hashes, file_info)
 
     # Phase 2: cluster by similarity (O(n^2))
     n = len(hashes)
@@ -105,7 +168,7 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
                 continue
 
             path_b, hash_b = hashes[j]
-            distance = hash_a - hash_b  # hamming distance
+            distance = int(hash_a - hash_b)  # hamming distance
 
             if distance <= threshold:
                 group.append(path_b)
@@ -127,7 +190,13 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
     if progress_cb and total_comparisons > 0:
         progress_cb(total_comparisons, total_comparisons, "phash_compare")
 
-    return {"groups": groups, "errors": errors, "cancelled": cancelled}
+    return {
+        "groups": groups,
+        "errors": errors,
+        "cancelled": cancelled,
+        "hashes": computed_hashes,
+        "file_info": file_info,
+    }
 
 
 def pick_original(group, strategy="largest"):

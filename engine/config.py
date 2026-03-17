@@ -12,6 +12,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 SETTINGS_PATH = PROJECT_ROOT / "settings.json"
 SCANS_DIR = PROJECT_ROOT / "scans"
 LOGS_DIR = PROJECT_ROOT / "logs"
+CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
+ACTIVITY_LOG = LOGS_DIR / "activity.log"
 
 DEFAULTS = {
     "threshold": 5,
@@ -31,6 +33,7 @@ def ensure_dirs():
     """Create scans/ and logs/ directories if they do not exist."""
     os.makedirs(str(SCANS_DIR), exist_ok=True)
     os.makedirs(str(LOGS_DIR), exist_ok=True)
+    os.makedirs(str(CHECKPOINTS_DIR), exist_ok=True)
 
 
 def load_settings():
