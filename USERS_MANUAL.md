@@ -3,7 +3,7 @@
 ## Quick Start
 
 1. Double-click the **DupeFinder** shortcut on your desktop (see setup below)
-2. Your browser opens to `http://127.0.0.1:8787` (first time only -- after that, use your bookmark)
+2. Your browser opens to `http://127.0.0.1:8787`
 3. **Bookmark the page** (Ctrl+D) when prompted on the dashboard
 4. Click **Start Guided Cleanup** and follow the 4-step wizard
 5. Click **Shut Down** in the status bar when done
@@ -20,11 +20,11 @@
 3. Click **Next**, name it **DupeFinder**, click **Finish**
 4. (Optional) Right-click the shortcut > **Properties** and set a custom icon
 
-The server runs hidden in the background. The status bar at the bottom of the browser shows it's running. Use the **Shut Down** button to stop it cleanly. If you need to debug, use `launch.bat` instead (shows a terminal window with error output).
+The server runs hidden in the background. The status bar at the bottom of the browser shows it's running. Use **Shut Down** to stop it cleanly, or **Restart** to apply setting changes or recover from errors. If you need to debug, use `launch.bat` instead (shows a terminal window with error output).
 
 ### Bookmarking
 
-DupeFinder only auto-opens a browser tab on the very first launch. After that, it relies on your bookmark to avoid duplicate tabs. If you see multiple DupeFinder tabs after restarting your browser, close the extras and bookmark the page (Ctrl+D). The dashboard shows a notice to remind you.
+The desktop shortcut opens a browser tab every time you launch DupeFinder. If you see multiple tabs after restarting your browser, close the extras. Bookmarking (Ctrl+D) is still handy for quick access without relaunching.
 
 ---
 
@@ -95,7 +95,7 @@ Each duplicate group shows:
 - Bulk actions: Mark All for Move, Skip All
 - Click any image to zoom in (lightbox)
 
-When done reviewing, click **Execute Actions** to carry out your decisions. After actions complete, click **Return to Wizard** to proceed to Step 4.
+When done reviewing, click **Execute Actions** to carry out your decisions. After actions complete, click **Return to Wizard** to proceed to Step 4. If all files in a scan are successfully processed, the scan report is automatically removed from the Previous Scans list.
 
 ### Step 4: Explore & Finalize
 
@@ -116,7 +116,7 @@ The built-in file browser shows image thumbnails in a grid. Features:
 - Sort by name, size (largest first), or date (newest first)
 - Infinite scroll -- loads more images as you scroll down
 - Click any image to view full-size in the lightbox
-- **Return** button goes back to the wizard
+- **Back to Finalize** button stays visible as you scroll and returns to the wizard
 
 The browser is restricted to the staging and dupes folders for security.
 
@@ -144,9 +144,9 @@ Use **Clear** to reset the log.
 
 ## Auto-Shutdown
 
-DupeFinder automatically shuts down if no browser tab is connected for 30 seconds. This prevents orphaned server processes. The server stays alive during long-running operations (scans, staging, actions) regardless of browser connection.
+DupeFinder automatically shuts down if no browser tab is connected for 10 seconds. This prevents orphaned server processes. The server stays alive during long-running operations (scans, staging, actions) regardless of browser connection.
 
-If the browser tab is accidentally closed, just reopen `http://127.0.0.1:8787` within 30 seconds. Or relaunch from the desktop shortcut.
+If the browser tab is accidentally closed, just reopen `http://127.0.0.1:8787` within 10 seconds. Or relaunch from the desktop shortcut.
 
 ---
 
@@ -167,7 +167,7 @@ Click the **Settings** tab to customize defaults:
   - Newest file -- keeps the most recent version
   - Shortest filename -- keeps the cleanest name
 - **Extensions**: which file types to scan (comma-separated)
-- **Port**: server port (default 8787, requires restart)
+- **Port**: server port (default 8787, requires restart -- you will be prompted to restart when saving a port change)
 
 ---
 
@@ -199,7 +199,7 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 
 | Problem | Solution |
 |---------|----------|
-| Browser doesn't open | The browser only opens on first launch. Use your bookmark or navigate to `http://127.0.0.1:8787` |
+| Browser doesn't open | The desktop shortcut should always open the browser. If not, navigate to `http://127.0.0.1:8787` manually. If using `launch.bat` or `python dupefinder_app.py` directly, the browser only opens on first run |
 | Multiple tabs appear | Your browser restored old tabs. Close the extras and bookmark the page (Ctrl+D) |
 | "Address already in use" | Another instance is running. Close it or change the port in Settings |
 | Images don't load | Check that the image files still exist at their original paths |
@@ -207,5 +207,5 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | Scan seems stuck | Check the progress bar -- perceptual scans on large folders take time. Cancel and try exact-only |
 | Server won't start | Make sure Python 3.13 is being used, not 3.14 |
 | "File not found" errors during move | Files may be OneDrive cloud-only. Use the Guided Cleanup wizard to stage files locally first |
-| Server shuts down unexpectedly | Auto-shutdown triggered (no browser tab for 30s). Relaunch from shortcut |
+| Server shuts down unexpectedly | Auto-shutdown triggered (no browser tab for 10s). Relaunch from shortcut |
 | Wizard shows wrong step | The wizard auto-detects your progress. If it's wrong, start fresh from Step 1 |

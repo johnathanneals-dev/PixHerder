@@ -149,6 +149,9 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
     comparisons_done = 0
     used = set()
     groups = []
+    # Report progress roughly every 1% (min every 500 comparisons)
+    report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
+    last_reported = 0
 
     for i in range(n):
         if i in used:
@@ -177,8 +180,9 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
 
             comparisons_done += 1
 
-        if progress_cb and comparisons_done % 5000 == 0:
+        if progress_cb and (comparisons_done - last_reported) >= report_interval:
             progress_cb(comparisons_done, total_comparisons, "phash_compare")
+            last_reported = comparisons_done
 
         if len(group) > 1:
             groups.append({

@@ -6,6 +6,7 @@ Uses copy+delete instead of shutil.move for OneDrive compatibility.
 
 import json
 import os
+import stat
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -54,6 +55,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
     os.makedirs(str(move_dir), exist_ok=True)
 
     moved = 0
+    skipped = 0
     error_list = []
     cancelled = False
 
@@ -95,10 +97,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
             dupe_path = Path(dupe_path_str)
 
             if not dupe_path.exists():
-                error_list.append({
-                    "path": dupe_path_str,
-                    "error": "File not found",
-                })
+                skipped += 1
                 if progress_cb:
                     progress_cb(current, total, "move")
                 continue
@@ -115,6 +114,9 @@ def move_files(groups, move_dir, keep_strategy="largest",
 
             try:
                 shutil.copy2(str(dupe_path), str(dest))
+                # Clear read-only flag if set (common with OneDrive staged files)
+                if not os.access(str(dupe_path), os.W_OK):
+                    os.chmod(str(dupe_path), stat.S_IWRITE | stat.S_IREAD)
                 os.remove(str(dupe_path))
                 moved += 1
                 log_action("move", {
@@ -140,7 +142,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
         if cancelled:
             break
 
-    return {"moved": moved, "errors": error_list, "cancelled": cancelled}
+    return {"moved": moved, "skipped": skipped, "errors": error_list, "cancelled": cancelled}
 
 
 def delete_files(groups, keep_strategy="largest",
@@ -158,6 +160,7 @@ def delete_files(groups, keep_strategy="largest",
         Dict with deleted (int), errors (list of dicts), cancelled (bool).
     """
     deleted = 0
+    skipped = 0
     error_list = []
     cancelled = False
 
@@ -195,7 +198,16 @@ def delete_files(groups, keep_strategy="largest",
 
             current += 1
 
+            if not os.path.exists(dupe_path_str):
+                skipped += 1
+                if progress_cb:
+                    progress_cb(current, total, "delete")
+                continue
+
             try:
+                # Clear read-only flag if set (common with OneDrive staged files)
+                if not os.access(dupe_path_str, os.W_OK):
+                    os.chmod(dupe_path_str, stat.S_IWRITE | stat.S_IREAD)
                 os.remove(dupe_path_str)
                 deleted += 1
                 log_action("delete", {
@@ -220,7 +232,7 @@ def delete_files(groups, keep_strategy="largest",
         if cancelled:
             break
 
-    return {"deleted": deleted, "errors": error_list, "cancelled": cancelled}
+    return {"deleted": deleted, "skipped": skipped, "errors": error_list, "cancelled": cancelled}
 
 
 def rescue_file(source_path, original_path):

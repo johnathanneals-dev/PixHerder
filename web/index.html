@@ -92,6 +92,21 @@
     color: var(--danger);
     border-color: var(--danger);
   }
+  .status-bar .btn-restart {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: monospace;
+    padding: 1px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .status-bar .btn-restart:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
 
   /* ---- Bookmark Notice ---- */
   .bookmark-notice {
@@ -211,10 +226,14 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 0;
-    margin-bottom: 16px;
+    padding: 12px 32px;
+    margin: 0 -32px 16px;
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 50;
   }
   .browser-breadcrumb {
     display: flex;
@@ -930,7 +949,7 @@
   <!-- File Browser View -->
   <div class="view" id="view-browser">
     <div class="browser-toolbar">
-      <button class="btn btn-ghost" onclick="closeBrowser()">&larr; Return</button>
+      <button class="btn btn-ghost" onclick="closeBrowser()">&larr; Back to Finalize</button>
       <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
         <select class="form-input" id="browserSort" onchange="browserRefresh()"
@@ -1309,7 +1328,7 @@
         <div class="form-group">
           <label class="form-label">Server port</label>
           <input class="form-input" type="number" id="setPort" value="8787">
-          <div class="form-hint">Requires restart to take effect.</div>
+          <div class="form-hint">Requires restart to take effect. <a href="#" onclick="restartServer();return false;" style="color:var(--accent);">Restart now</a></div>
         </div>
       </div>
 
@@ -1442,6 +1461,37 @@ function shutdownServer() {
         '<span class="status-dot" style="background:var(--danger);animation:none"></span>Server stopped';
       document.querySelector(".btn-shutdown").disabled = true;
       document.querySelector(".btn-shutdown").textContent = "Stopped";
+    }
+  );
+}
+
+function restartServer() {
+  showDialog(
+    "Restart Server",
+    "This will restart DupeFinder. The page will reload automatically once the server is back up.",
+    "Restart",
+    "btn-secondary",
+    function() {
+      fetch("/api/restart", { method: "POST" }).catch(function() {});
+      document.querySelector(".status-dot").style.background = "var(--warning)";
+      document.querySelector(".status-dot").style.animation = "none";
+      document.querySelector(".status-bar-left span:first-child").innerHTML =
+        '<span class="status-dot" style="background:var(--warning);animation:none"></span>Restarting...';
+      // Poll until server is back
+      var attempts = 0;
+      var poll = setInterval(function() {
+        attempts++;
+        fetch("/api/heartbeat").then(function() {
+          clearInterval(poll);
+          location.reload();
+        }).catch(function() {
+          if (attempts > 30) {
+            clearInterval(poll);
+            document.querySelector(".status-bar-left span:first-child").innerHTML =
+              '<span class="status-dot" style="background:var(--danger);animation:none"></span>Restart failed';
+          }
+        });
+      }, 1000);
     }
   );
 }
@@ -1841,6 +1891,13 @@ function browserLoadPage(replace) {
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     browserState.loading = false;
     document.getElementById("browserLoading").style.display = "none";
+
+    if (data.error) {
+      document.getElementById("browserGrid").innerHTML =
+        '<div class="browser-loading">Error: ' + escHtml(data.error) + '</div>';
+      return;
+    }
+
     browserState.hasMore = data.has_more;
 
     // Update breadcrumb
@@ -2380,6 +2437,7 @@ function _checkResumeAndStart(dir, mode, threshold, recursive) {
 }
 
 function _doStartScan(dir, mode, threshold, recursive, resume) {
+  _lastScanMode = mode;
   api("POST", "/api/scan/start", {
     directory: dir, mode: mode, threshold: threshold, recursive: recursive,
     resume: resume
@@ -2395,6 +2453,7 @@ function _doStartScan(dir, mode, threshold, recursive, resume) {
    ================================================================== */
 var _scanSSE = null;
 var _scanStartTime = null;
+var _lastScanMode = "exact";
 
 function initScanProgress() {
   // Reset UI
@@ -2425,28 +2484,63 @@ function initScanProgress() {
 
 function updateScanUI(d) {
   var stageNames = {
-    "discovering": "Discovering images",
-    "md5": "Computing MD5 hashes",
-    "phash_hash": "Computing perceptual hashes",
-    "phash_compare": "Comparing images",
+    "discovering": "Discovering images...",
+    "md5": "Computing checksums...",
+    "phash_hash": "Computing perceptual hashes...",
+    "phash_compare": "Comparing images...",
+    "saving": "Saving results...",
     "done": "Complete"
   };
-  document.getElementById("scanStage").textContent = stageNames[d.stage] || d.stage || "Working";
+  document.getElementById("scanStage").textContent = stageNames[d.stage] || d.stage || "Working...";
   document.getElementById("scanErrors").textContent = d.errors || 0;
 
+  // Weighted overall progress so the bar never sits at 100% while work remains.
+  // Weights depend on which scan mode is active.
   var pct = 0;
-  if (d.total > 0) pct = Math.round((d.current / d.total) * 100);
+  var stage = d.stage || "";
+  var stagePct = (d.total > 0) ? (d.current / d.total) : 0;
+  var mode = d.mode || _lastScanMode || "exact";
+
+  if (mode === "exact") {
+    // exact only: discovering 0-5, md5 5-95, saving 95-100
+    if (stage === "discovering") pct = stagePct * 5;
+    else if (stage === "md5") pct = 5 + stagePct * 90;
+    else if (stage === "saving") pct = 95;
+    else if (stage === "done") pct = 100;
+  } else if (mode === "perceptual") {
+    // perceptual only: discovering 0-5, phash_hash 5-55, phash_compare 55-95, saving 95-100
+    if (stage === "discovering") pct = stagePct * 5;
+    else if (stage === "phash_hash") pct = 5 + stagePct * 50;
+    else if (stage === "phash_compare") pct = 55 + stagePct * 40;
+    else if (stage === "saving") pct = 95;
+    else if (stage === "done") pct = 100;
+  } else {
+    // both: discovering 0-5, md5 5-25, phash_hash 25-60, phash_compare 60-95, saving 95-100
+    if (stage === "discovering") pct = stagePct * 5;
+    else if (stage === "md5") pct = 5 + stagePct * 20;
+    else if (stage === "phash_hash") pct = 25 + stagePct * 35;
+    else if (stage === "phash_compare") pct = 60 + stagePct * 35;
+    else if (stage === "saving") pct = 95;
+    else if (stage === "done") pct = 100;
+  }
+
+  pct = Math.round(pct);
   document.getElementById("scanProgressFill").style.width = pct + "%";
   document.getElementById("scanProgressPct").textContent = pct + "%";
-  document.getElementById("scanProgressLeft").textContent =
-    (d.current || 0).toLocaleString() + " / " + (d.total || 0).toLocaleString();
+
+  // Show per-stage counts for context
+  if (d.total > 0) {
+    document.getElementById("scanProgressLeft").textContent =
+      (d.current || 0).toLocaleString() + " / " + (d.total || 0).toLocaleString();
+  } else {
+    document.getElementById("scanProgressLeft").textContent = "";
+  }
 
   var elapsed = (Date.now() - _scanStartTime) / 1000;
   document.getElementById("scanElapsed").textContent = formatTime(elapsed);
 
-  if (d.current > 0 && d.total > 0 && pct < 100) {
-    var rate = d.current / elapsed;
-    var remaining = (d.total - d.current) / rate;
+  if (pct > 0 && pct < 95) {
+    var remaining = (elapsed / pct) * (100 - pct);
     document.getElementById("scanETA").textContent = formatTime(remaining);
   } else {
     document.getElementById("scanETA").textContent = "--";
@@ -2867,12 +2961,13 @@ function _doExecute(moveGroups, deleteGroups, moveDir) {
   document.getElementById("actionProgressBox").style.display = "block";
   document.getElementById("actionResultBox").style.display = "none";
 
+  var reportFile = state.currentReport || null;
   var pendingOps = [];
   if (moveGroups.length > 0) {
-    pendingOps.push(api("POST", "/api/action/move", { groups: moveGroups, destination: moveDir }));
+    pendingOps.push(api("POST", "/api/action/move", { groups: moveGroups, destination: moveDir, report: reportFile }));
   }
   if (deleteGroups.length > 0) {
-    pendingOps.push(api("POST", "/api/action/delete", { groups: deleteGroups }));
+    pendingOps.push(api("POST", "/api/action/delete", { groups: deleteGroups, report: reportFile }));
   }
 
   Promise.all(pendingOps).then(function() {
@@ -2910,11 +3005,14 @@ function showActionResult(d) {
   var result = d.result || {};
   var moved = result.moved || 0;
   var deleted = result.deleted || 0;
+  var skipped = result.skipped || 0;
   var errors = result.errors || [];
 
   document.getElementById("actResultTitle").textContent = "Actions Complete";
-  document.getElementById("actResultMsg").textContent =
-    "Moved: " + moved + " files. Deleted: " + deleted + " files. Errors: " + errors.length + ".";
+  var msg = "Moved: " + moved + " files. Deleted: " + deleted + " files.";
+  if (skipped > 0) msg += " Skipped: " + skipped + " (already processed).";
+  if (errors.length > 0) msg += " Errors: " + errors.length + ".";
+  document.getElementById("actResultMsg").textContent = msg;
 
   if (errors.length > 0) {
     var html = '<h4 style="color:var(--danger);margin-bottom:8px;">Errors (' + errors.length + ')</h4>';
@@ -3073,17 +3171,30 @@ function saveSettings() {
   var extsStr = document.getElementById("setExtensions").value;
   var exts = extsStr.split(",").map(function(s) { return s.trim(); }).filter(function(s) { return s; });
 
+  var oldPort = (state.settings && state.settings.port) || 8787;
+  var newPort = parseInt(document.getElementById("setPort").value) || 8787;
+
   var data = {
     threshold: parseInt(document.getElementById("setThreshold").value) || 5,
     move_destination: document.getElementById("setMoveDir").value.trim(),
     keep_strategy: document.getElementById("setKeepStrategy").value,
-    port: parseInt(document.getElementById("setPort").value) || 8787,
+    port: newPort,
     extensions: exts
   };
 
   api("POST", "/api/settings", data).then(function(saved) {
     state.settings = saved;
-    toast("Settings saved");
+    if (newPort !== oldPort) {
+      showDialog(
+        "Port Changed",
+        "The server port was changed from " + oldPort + " to " + newPort + ". Restart the server for this to take effect.",
+        "Restart Now",
+        "btn-primary",
+        function() { restartServer(); }
+      );
+    } else {
+      toast("Settings saved");
+    }
   }).catch(function(err) {
     toast("Error saving settings: " + err.message, "error");
   });
@@ -3135,6 +3246,7 @@ route();
   </div>
   <div class="status-bar-right">
     <span id="statusBarInfo">DupeFinder</span>
+    <button class="btn-restart" onclick="restartServer()" title="Restart the server to apply setting changes or recover from errors">Restart</button>
     <button class="btn-shutdown" onclick="shutdownServer()">Shut Down</button>
   </div>
 </div>

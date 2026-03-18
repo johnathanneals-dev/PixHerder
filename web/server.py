@@ -79,7 +79,7 @@ def _read_activity(limit=50):
 
 _last_heartbeat = time.time()
 _heartbeat_lock = threading.Lock()
-_shutdown_grace_seconds = 30
+_shutdown_grace_seconds = 10
 
 
 def _touch_heartbeat():
@@ -213,6 +213,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
     scan_progress.update({
         "status": "running",
         "stage": "discovering",
+        "mode": mode,
         "current": 0,
         "total": 0,
         "elapsed": 0,
@@ -417,6 +418,10 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 })
 
         # Save results
+        scan_progress["stage"] = "saving"
+        scan_progress["message"] = "Saving results..."
+        scan_progress["current"] = 0
+        scan_progress["total"] = 0
         elapsed = time.time() - start_time
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = "scan_" + timestamp + "_" + mode + ".json"
@@ -507,7 +512,8 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         })
 
 
-def _run_action(action_type, groups, move_dir=None, keep_strategy="largest"):
+def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
+                report_file=None):
     """Background action thread target."""
     global action_progress
 
@@ -545,6 +551,19 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest"):
             "type": action_type,
             "result": action_progress.get("result"),
         })
+
+        # Clean up the scan report if all files were processed (no real errors)
+        if report_file and result and not result.get("errors"):
+            try:
+                report_path = SCANS_DIR / report_file
+                if report_path.exists():
+                    report_path.unlink()
+                    _log_activity("scan_report_removed", {
+                        "file": report_file,
+                        "reason": "All actions completed successfully",
+                    })
+            except Exception:
+                pass
     except Exception as e:
         action_progress["status"] = "error"
         action_progress["result"] = {"error": str(e)}
@@ -833,6 +852,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_delete_scan()
         elif path == "/api/shutdown":
             self._handle_shutdown()
+        elif path == "/api/restart":
+            self._handle_restart()
         elif path == "/api/activity/clear":
             self._handle_clear_activity()
         elif path == "/api/staging/check":
@@ -1199,11 +1220,12 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         move_dir = body.get("destination",
                             settings.get("move_destination", "C:\\Temp\\dupes"))
         keep_strategy = settings.get("keep_strategy", "largest")
+        report_file = body.get("report")
 
         action_cancel = threading.Event()
         action_thread = threading.Thread(
             target=_run_action,
-            args=("move", groups, move_dir, keep_strategy),
+            args=("move", groups, move_dir, keep_strategy, report_file),
             daemon=True,
         )
         action_thread.start()
@@ -1230,11 +1252,12 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         settings = load_settings()
         keep_strategy = settings.get("keep_strategy", "largest")
+        report_file = body.get("report")
 
         action_cancel = threading.Event()
         action_thread = threading.Thread(
             target=_run_action,
-            args=("delete", groups, None, keep_strategy),
+            args=("delete", groups, None, keep_strategy, report_file),
             daemon=True,
         )
         action_thread.start()
@@ -1356,6 +1379,18 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                 _server_instance.shutdown()
             os._exit(0)
         threading.Thread(target=_shutdown, daemon=True).start()
+
+    def _handle_restart(self):
+        _log_activity("restart", {"source": "user"})
+        self.send_json({"status": "restarting"})
+        scan_cancel.set()
+        action_cancel.set()
+        def _restart():
+            time.sleep(0.5)
+            if _server_instance:
+                _server_instance.shutdown()
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        threading.Thread(target=_restart, daemon=True).start()
 
     # ---- Staging handlers ----
 
