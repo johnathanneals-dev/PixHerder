@@ -27,6 +27,14 @@ __pycache__/
 venv/
 .venv/
 
+# Embedded Python runtime (created by setup.bat)
+python/
+
+# Generated launchers (created by setup.bat)
+launch.vbs
+launch.bat
+setup_info.json
+
 # Output folders
 exact_dupes/
 final_review/

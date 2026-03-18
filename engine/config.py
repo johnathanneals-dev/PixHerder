@@ -5,6 +5,7 @@ Handles settings persistence, directory paths, and defaults.
 
 import json
 import os
+import tempfile
 from pathlib import Path
 
 
@@ -17,7 +18,7 @@ ACTIVITY_LOG = LOGS_DIR / "activity.log"
 
 DEFAULTS = {
     "threshold": 5,
-    "move_destination": "C:\\Temp\\dupes",
+    "move_destination": os.path.join(tempfile.gettempdir(), "DupeFinder_dupes"),
     "keep_strategy": "largest",
     "extensions": [
         ".jpg", ".jpeg", ".png", ".gif", ".bmp",
@@ -26,9 +27,22 @@ DEFAULTS = {
     "recursive": True,
     "port": 8787,
     "hash_size": 16,
-    "staging_dir": "C:\\Temp\\DupeFinder_Staging",
+    "staging_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Staging"),
     "onedrive_safe_mode": True,
 }
+
+
+def default_pictures_path():
+    """Return the likely OneDrive Pictures path for the current user."""
+    userprofile = os.environ.get("USERPROFILE", "")
+    onedrive_pics = os.path.join(userprofile, "OneDrive", "Pictures")
+    if os.path.isdir(onedrive_pics):
+        return onedrive_pics
+    # Fallback to regular Pictures folder
+    pics = os.path.join(userprofile, "Pictures")
+    if os.path.isdir(pics):
+        return pics
+    return ""
 
 
 def ensure_dirs():

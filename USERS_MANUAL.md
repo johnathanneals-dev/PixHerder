@@ -10,17 +10,24 @@
 
 ---
 
-## Desktop Shortcut Setup
+## First-Time Setup
 
-1. Right-click your Desktop and choose **New > Shortcut**
-2. In the location field, paste:
-   ```
-   C:\Projects\Duped\launch.vbs
-   ```
-3. Click **Next**, name it **DupeFinder**, click **Finish**
-4. (Optional) Right-click the shortcut > **Properties** and set a custom icon
+1. Copy the DupeFinder folder to wherever you want it (your PC, a thumb drive, etc.)
+2. Double-click **setup.bat** inside the folder
+3. Setup will download Python, install dependencies, and generate launchers
+4. When prompted, choose **Y** to create a desktop shortcut
+5. That's it -- double-click the shortcut (or `launch.vbs`) to start
+
+Setup only needs to run once. If you move the folder to a new location, run `setup.bat` again.
 
 The server runs hidden in the background. The status bar at the bottom of the browser shows it's running. Use **Shut Down** to stop it cleanly, or **Restart** to apply setting changes or recover from errors. If you need to debug, use `launch.bat` instead (shows a terminal window with error output).
+
+### Uninstalling
+
+1. Shut down the server from the browser
+2. Delete the DupeFinder folder
+3. Delete the desktop shortcut if you created one
+4. Optionally delete temp folders used for staging and dupes (found in your system temp directory)
 
 ### Bookmarking
 
@@ -199,13 +206,30 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 
 | Problem | Solution |
 |---------|----------|
-| Browser doesn't open | The desktop shortcut should always open the browser. If not, navigate to `http://127.0.0.1:8787` manually. If using `launch.bat` or `python dupefinder_app.py` directly, the browser only opens on first run |
-| Multiple tabs appear | Your browser restored old tabs. Close the extras and bookmark the page (Ctrl+D) |
-| "Address already in use" | Another instance is running. Close it or change the port in Settings |
-| Images don't load | Check that the image files still exist at their original paths |
-| "Access denied" on file operations | Pause OneDrive sync, check Controlled Folder Access |
-| Scan seems stuck | Check the progress bar -- perceptual scans on large folders take time. Cancel and try exact-only |
-| Server won't start | Make sure Python 3.13 is being used, not 3.14 |
-| "File not found" errors during move | Files may be OneDrive cloud-only. Use the Guided Cleanup wizard to stage files locally first |
-| Server shuts down unexpectedly | Auto-shutdown triggered (no browser tab for 10s). Relaunch from shortcut |
-| Wizard shows wrong step | The wizard auto-detects your progress. If it's wrong, start fresh from Step 1 |
+| **Launching** | |
+| Double-clicking the shortcut does nothing | Make sure Python is installed at `C:\Program Files\Python313\python.exe`. Try `launch.bat` instead to see error messages in a terminal window |
+| Browser doesn't open | The desktop shortcut should always open the browser. If not, navigate to `http://127.0.0.1:8787` manually |
+| Page is blank or says "Unable to connect" | The server may still be starting up. Wait a few seconds and refresh. If it persists, try `launch.bat` to check for errors |
+| "Address already in use" | Another instance is already running. Check your browser for an existing DupeFinder tab, or restart your computer to clear it |
+| Multiple tabs appear | Your browser restored old tabs from a previous session. Close the extras and bookmark the page (Ctrl+D) |
+| **Scanning** | |
+| Scan seems stuck at a percentage | The progress bar tracks multiple phases. During "Comparing images..." the bar may move slowly on large collections -- this is normal. You can cancel and try an exact-only scan first |
+| "Not enough images to compare" | The selected folder has fewer than 2 image files. Check the path and make sure "Include subfolders" is checked if your images are in subdirectories |
+| Scan finds too many false positives | Lower the perceptual threshold. Start with exact-only scans, then try perceptual at threshold 2-3. Higher thresholds (10+) will match images that only look vaguely similar |
+| Scan finds no duplicates | Your folder may not have duplicates at the current threshold. Try a higher threshold for perceptual scans, or check that you scanned the right folder |
+| **Actions** | |
+| "Access denied" on file operations | This is usually Windows Defender's Controlled Folder Access blocking Python. See the Controlled Folder Access section above to whitelist Python |
+| "Skipped: X (already processed)" | Those files were already moved or deleted in a previous run. This is normal when re-running actions on the same scan |
+| My scan disappeared from the list | Scan reports are automatically removed after all their files have been successfully processed. This is expected -- the scan's work is done |
+| Images don't load in the review screen | The image files may have been moved or deleted since the scan. Rescan to get a fresh report |
+| **File Browser** | |
+| Error when clicking a folder | The folder may not exist or may be outside the allowed directories (staging and dupes folders only). Use the breadcrumb trail to navigate back |
+| Folder shows "This folder is empty" | The folder contains no image files. It may have subfolders (not shown) or non-image files |
+| **Server** | |
+| Server shuts down unexpectedly | DupeFinder auto-shuts down 10 seconds after you close the browser tab. Relaunch from the desktop shortcut |
+| Server seems unresponsive | Click **Restart** in the status bar at the bottom of the page. If the page is completely unresponsive, close the tab and relaunch from the shortcut |
+| Changed a setting but nothing happened | Most settings apply immediately. The server port requires a restart -- you will be prompted to restart when saving a port change |
+| **OneDrive** | |
+| Migration/staging is slow | Copying thousands of images takes time, especially from OneDrive. The first migration is the slowest; subsequent ones can reuse the existing staging folder |
+| OneDrive asks to "Keep" or "Delete" after sync-back | Choose **Delete**. If you choose "Keep", OneDrive will restore the files you just removed |
+| "File not found" errors during move | Files may be OneDrive cloud-only (not downloaded locally). Use the Guided Cleanup wizard to stage files locally first |

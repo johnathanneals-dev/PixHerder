@@ -824,7 +824,7 @@
         <div class="form-group">
           <label class="form-label">Source folder (OneDrive)</label>
           <input class="form-input" type="text" id="wizSourceDir"
-                 placeholder="C:\Users\repom\OneDrive\Pictures">
+                 placeholder="C:\Users\YourName\OneDrive\Pictures">
         </div>
         <div id="wizMigrateInfo" style="display:none;margin-bottom:16px;">
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizMigrateInfoText"></div>
@@ -1218,7 +1218,7 @@
 
         <div class="form-group">
           <label class="form-label">Move destination folder</label>
-          <input class="form-input" type="text" id="actMoveDir" placeholder="C:\Temp\dupes">
+          <input class="form-input" type="text" id="actMoveDir" placeholder="Folder for duplicate files">
         </div>
 
         <div style="display:flex;gap:12px;margin-top:16px;">
@@ -1261,7 +1261,7 @@
       <div class="card" id="oddballSetup">
         <div class="form-group">
           <label class="form-label">Dupes folder (where moved files are)</label>
-          <input class="form-input" type="text" id="oddballDupesFolder" placeholder="C:\Temp\dupes">
+          <input class="form-input" type="text" id="oddballDupesFolder" placeholder="Folder for duplicate files">
         </div>
         <button class="btn btn-primary" onclick="runOddball()">Run Verification</button>
       </div>
@@ -1312,7 +1312,7 @@
 
         <div class="form-group">
           <label class="form-label">Move destination</label>
-          <input class="form-input" type="text" id="setMoveDir" placeholder="C:\Temp\dupes">
+          <input class="form-input" type="text" id="setMoveDir" placeholder="Folder for duplicate files">
         </div>
 
         <div class="form-group">
@@ -1598,8 +1598,8 @@ var _wizStagingSSE = null;
 function initWizard() {
   // Load settings first
   fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
-    wizardState.dupesDir = s.move_destination || "C:\\Temp\\dupes";
-    var defaultSource = "C:\\Users\\repom\\OneDrive\\Pictures";
+    wizardState.dupesDir = s.move_destination || "";
+    var defaultSource = s.default_pictures_path || "";
     document.getElementById("wizSourceDir").value = wizardState.sourceDir || defaultSource;
 
     // Check for existing staging session (in-memory first, then on-disk manifest)
@@ -1853,7 +1853,7 @@ function openBrowser(type) {
     browserState.rootPath = wizardState.stagingDir;
     browserState.type = "staging";
   } else if (type === "dupes") {
-    browserState.rootPath = wizardState.dupesDir || "C:\\Temp\\dupes";
+    browserState.rootPath = wizardState.dupesDir || (state.settings && state.settings.move_destination) || "";
     browserState.type = "dupes";
   }
   browserState.currentPath = browserState.rootPath;
@@ -2323,13 +2323,13 @@ function fillScanDir(type) {
         document.getElementById("scanDir").value = d.staging_dir;
       } else {
         fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
-          document.getElementById("scanDir").value = s.staging_dir || "C:\\Temp\\DupeFinder_Staging";
+          document.getElementById("scanDir").value = s.staging_dir || "";
         });
       }
     }).catch(function() {});
   } else if (type === "dupes") {
     var s = state.settings || {};
-    document.getElementById("scanDir").value = s.move_destination || "C:\\Temp\\dupes";
+    document.getElementById("scanDir").value = s.move_destination || "";
   }
 }
 
@@ -2924,7 +2924,7 @@ function initActions() {
   document.getElementById("actSpaceCount").textContent = formatBytes(moveBytes + deleteBytes);
 
   var settings = state.settings || {};
-  document.getElementById("actMoveDir").value = settings.move_destination || "C:\\Temp\\dupes";
+  document.getElementById("actMoveDir").value = settings.move_destination || "";
 
   // Reset UI state
   document.getElementById("actionsSummaryCard").style.display = "block";
@@ -3056,7 +3056,7 @@ function showActionResult(d) {
 function initOddball(report) {
   state._oddballReport = report || state.currentReport;
   var settings = state.settings || {};
-  document.getElementById("oddballDupesFolder").value = settings.move_destination || "C:\\Temp\\dupes";
+  document.getElementById("oddballDupesFolder").value = settings.move_destination || "";
   document.getElementById("oddballSetup").style.display = "block";
   document.getElementById("oddballProgress").style.display = "none";
   document.getElementById("oddballResults").style.display = "none";

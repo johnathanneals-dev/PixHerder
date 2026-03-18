@@ -20,7 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from engine.config import (
     SCANS_DIR, LOGS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
-    load_settings, save_settings, ensure_dirs,
+    DEFAULTS, load_settings, save_settings, ensure_dirs,
+    default_pictures_path,
 )
 from engine.scanner import find_images, count_images
 from engine.hasher import md5_hash, perceptual_hash
@@ -1139,7 +1140,9 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, str(e))
 
     def _handle_get_settings(self):
-        self.send_json(load_settings())
+        settings = load_settings()
+        settings["default_pictures_path"] = default_pictures_path()
+        self.send_json(settings)
 
     def _handle_scan_start(self):
         global scan_thread, scan_cancel
@@ -1218,7 +1221,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         settings = load_settings()
         move_dir = body.get("destination",
-                            settings.get("move_destination", "C:\\Temp\\dupes"))
+                            settings.get("move_destination", DEFAULTS["move_destination"]))
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = body.get("report")
 
@@ -1403,8 +1406,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         real = os.path.realpath(dirpath).lower()
         settings = load_settings()
         allowed = []
-        staging_base = settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging")
-        dupes_dir = settings.get("move_destination", "C:\\Temp\\dupes")
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
         if os.path.isdir(staging_base):
             allowed.append(os.path.realpath(staging_base).lower())
         if os.path.isdir(dupes_dir):
@@ -1490,7 +1493,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         is_od = is_onedrive_path(directory)
         settings = load_settings()
         staging_dir = get_staging_dir(
-            directory, settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging"))
+            directory, settings.get("staging_dir", DEFAULTS["staging_dir"]))
 
         result = {"is_onedrive": is_od, "staging_dir": staging_dir}
 
@@ -1544,7 +1547,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         settings = load_settings()
         staging_dir = body.get("staging_dir") or get_staging_dir(
-            source_dir, settings.get("staging_dir", "C:\\Temp\\DupeFinder_Staging"))
+            source_dir, settings.get("staging_dir", DEFAULTS["staging_dir"]))
         extensions = settings.get("extensions")
 
         staging_cancel = threading.Event()

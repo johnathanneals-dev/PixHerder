@@ -25,7 +25,8 @@ def is_onedrive_path(directory):
 def get_staging_dir(source_dir, base_staging_dir=None):
     """Return a deterministic staging subdirectory for a source path."""
     if base_staging_dir is None:
-        base_staging_dir = "C:\\Temp\\DupeFinder_Staging"
+        import tempfile
+        base_staging_dir = os.path.join(tempfile.gettempdir(), "DupeFinder_Staging")
     key = os.path.normpath(source_dir).lower()
     short_hash = hashlib.md5(key.encode("utf-8")).hexdigest()[:10]
     return os.path.join(base_staging_dir, short_hash)
