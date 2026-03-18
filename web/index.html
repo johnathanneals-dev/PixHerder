@@ -226,13 +226,13 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 32px;
+    padding: 14px 32px;
     margin: 0 -32px 16px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--accent-dim);
     flex-wrap: wrap;
     position: sticky;
     top: 0;
-    background: var(--bg);
+    background: var(--surface);
     z-index: 50;
   }
   .browser-breadcrumb {
@@ -253,6 +253,16 @@
   }
   .browser-crumb:hover { text-decoration: underline; }
   .browser-crumb-sep { color: var(--text-muted); margin: 0 2px; }
+  .browser-folder-del {
+    position: absolute; top: 4px; right: 4px;
+    background: rgba(220,40,40,0.7); color: #fff; border: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 11px; line-height: 20px; text-align: center;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s;
+    padding: 0;
+  }
+  .browser-item:hover .browser-folder-del { opacity: 1; }
+  .browser-folder-del:hover { background: rgba(220,40,40,1); }
   .browser-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -260,6 +270,7 @@
     padding-bottom: 32px;
   }
   .browser-item {
+    position: relative;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -661,6 +672,17 @@
   }
   .lightbox.active { display: flex; }
   .lightbox img { max-width: 95vw; max-height: 95vh; object-fit: contain; }
+  .lightbox-controls {
+    position: fixed; bottom: 24px; right: 24px; z-index: 5001;
+    display: none;
+  }
+  .lightbox.active .lightbox-controls { display: flex; gap: 8px; }
+  .lightbox-controls button {
+    background: rgba(220,40,40,0.85); color: #fff; border: none;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .lightbox-controls button:hover { background: rgba(220,40,40,1); }
 
   /* ---- Scan progress ---- */
   .progress-center {
@@ -751,6 +773,9 @@
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="">
+  <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
+    <button onclick="deleteBrowserFile()">Delete This File</button>
+  </div>
 </div>
 
 <!-- Main content area -->
@@ -780,6 +805,32 @@
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
       <button class="btn btn-primary btn-lg" onclick="navigate('wizard')">Start Guided Cleanup</button>
       <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')">Advanced Scan</button>
+    </div>
+
+    <div id="dashFolders" style="display:none;margin-bottom:32px;">
+      <h2>Browse Files</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <button class="btn btn-secondary" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>Cleaned Files</button>
+          <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn btn-secondary" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
+          <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+        </div>
+      </div>
+      <div id="dashDupeActions" style="display:none;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <button class="btn btn-primary" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Some duplicates might be worth keeping. This cycles them back through scanning so you can separate the keepers from the junk, one pass at a time.</div>
+          </div>
+          <div>
+            <button class="btn btn-danger" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in the Removed Duplicates folder. Only do this when you're confident nothing important remains.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <h2>Previous Scans</h2>
@@ -949,9 +1000,12 @@
   <!-- File Browser View -->
   <div class="view" id="view-browser">
     <div class="browser-toolbar">
-      <button class="btn btn-ghost" onclick="closeBrowser()">&larr; Back to Finalize</button>
+      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
+      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
+      <span style="color:var(--text-dim);font-size:11px;margin-right:-4px;">Location:</span>
       <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
         <select class="form-input" id="browserSort" onchange="browserRefresh()"
                 style="width:auto;padding:4px 8px;font-size:12px;">
           <option value="name">Name</option>
@@ -1191,10 +1245,10 @@
       <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
       <div class="action-buttons">
         <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Skip (keep all)</button>
-        <button class="btn btn-danger btn-sm" onclick="reviewMarkMove()">Mark for Move</button>
+        <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Mark for Move</button>
         <button class="btn btn-sm" style="background:#f472b6;color:#0a0a0c;" onclick="reviewMarkDelete()">Mark for Delete</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-warning btn-sm" onclick="reviewBulkMove()">All: Move</button>
+        <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()">All: Move</button>
         <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">All: Skip</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-primary btn-sm" onclick="goToActions()">Execute Actions</button>
@@ -1423,13 +1477,54 @@ function dialogConfirmAction() {
 }
 
 // ---- Lightbox ----
+var _lightboxFilePath = "";
 function openLightbox(encodedPath) {
+  _lightboxFilePath = decodeURIComponent(encodedPath);
   document.getElementById("lightboxImg").src = "/api/image?path=" + encodedPath;
   document.getElementById("lightbox").classList.add("active");
+  // Only show delete button when in file browser view
+  var inBrowser = parseHash().view === "browser";
+  document.getElementById("lightboxControls").style.display = inBrowser ? "flex" : "none";
 }
 function closeLightbox() {
   document.getElementById("lightbox").classList.remove("active");
   document.getElementById("lightboxImg").src = "";
+  _lightboxFilePath = "";
+}
+function deleteBrowserFile() {
+  if (!_lightboxFilePath) return;
+  var filename = _lightboxFilePath.split("\\").pop();
+  showDialog(
+    "Delete File",
+    "Permanently delete " + filename + "? This cannot be undone.",
+    "Delete",
+    "btn-danger",
+    function() {
+      api("POST", "/api/browser/delete", { path: _lightboxFilePath }).then(function(r) {
+        if (r.success) {
+          closeLightbox();
+          // Remove the item from the grid
+          var items = document.querySelectorAll(".browser-item");
+          for (var i = 0; i < items.length; i++) {
+            var img = items[i].querySelector("img");
+            if (img && img.src.indexOf(encodeURIComponent(_lightboxFilePath)) !== -1) {
+              items[i].remove();
+              break;
+            }
+          }
+          // Update count
+          var countEl = document.getElementById("browserCount");
+          var match = (countEl.textContent || "").match(/(\d+)/);
+          if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+          toast("File deleted");
+        } else {
+          toast("Delete failed: " + (r.error || "Unknown error"), "error");
+        }
+      }).catch(function(err) {
+        toast("Delete failed: " + err.message, "error");
+      });
+    }
+  );
 }
 
 // ---- Bookmark ----
@@ -1844,7 +1939,8 @@ var browserState = {
   currentPage: 1,
   hasMore: false,
   loading: false,
-  type: null
+  type: null,
+  returnTo: "wizard"
 };
 var _browserObserver = null;
 
@@ -1858,17 +1954,39 @@ function openBrowser(type) {
   }
   browserState.currentPath = browserState.rootPath;
   browserState.currentPage = 1;
+  browserState.returnTo = "wizard";
   navigate("browser");
 }
 
 function initBrowser() {
   if (!browserState.rootPath) {
-    document.getElementById("browserGrid").innerHTML =
-      '<div class="browser-loading">No folder selected.</div>';
+    // No folder in memory (page refresh/restart) — go to dashboard
+    navigate("dashboard");
     return;
   }
+  var backLabel = browserState.returnTo === "dashboard" ? "Back to Dashboard" : "Back to Finalize";
+  document.getElementById("browserBackBtn").innerHTML = "&larr; " + backLabel;
+  // Show scan button for both staging and dupes folders
+  document.getElementById("browserScanBtn").style.display = "";
   browserState.currentPage = 1;
   document.getElementById("browserGrid").innerHTML = "";
+
+  // Delegated click handler for folder items and folder delete buttons
+  var grid = document.getElementById("browserGrid");
+  grid.onclick = function(ev) {
+    // Check if delete button was clicked
+    var delBtn = ev.target.closest(".browser-folder-del");
+    if (delBtn && delBtn.dataset.delpath) {
+      ev.stopPropagation();
+      deleteFolderItem(delBtn.dataset.delpath);
+      return;
+    }
+    var item = ev.target.closest(".browser-folder");
+    if (item && item.dataset.path) {
+      browserNavigate(item.dataset.path);
+    }
+  };
+
   browserLoadPage(true);
   // Set up infinite scroll
   if (_browserObserver) _browserObserver.disconnect();
@@ -1910,10 +2028,12 @@ function browserLoadPage(replace) {
     for (var i = 0; i < data.entries.length; i++) {
       var e = data.entries[i];
       if (e.is_dir) {
-        html += '<div class="browser-item" onclick="browserNavigate(\'' + escAttr(e.path) + '\')">'
+        html += '<div class="browser-item browser-folder" data-path="' + escHtml(e.path) + '">'
           + '<div class="browser-thumb"><div class="browser-folder-icon">&#128193;</div></div>'
           + '<div class="browser-meta"><div class="browser-name">' + escHtml(e.name) + '</div>'
-          + '<div class="browser-size">Folder</div></div></div>';
+          + '<div class="browser-size">Folder</div></div>'
+          + '<button class="browser-folder-del" data-delpath="' + escHtml(e.path) + '" title="Delete folder">&#10005;</button>'
+          + '</div>';
       } else {
         var imgUrl = "/api/image?path=" + encodeURIComponent(e.path);
         var sizeStr = e.size > 1048576 ? (e.size / 1048576).toFixed(1) + " MB"
@@ -1933,8 +2053,14 @@ function browserLoadPage(replace) {
     browserState.currentPage++;
 
     if (data.total === 0) {
-      document.getElementById("browserGrid").innerHTML =
-        '<div class="browser-loading">This folder is empty.</div>';
+      var isRoot = browserState.currentPath === browserState.rootPath;
+      var emptyHtml = '<div class="browser-loading">This folder is empty.';
+      if (!isRoot) {
+        emptyHtml += '<br><button class="btn btn-danger" style="margin-top:12px;" '
+          + 'onclick="deleteCurrentFolder()">Delete This Folder</button>';
+      }
+      emptyHtml += '</div>';
+      document.getElementById("browserGrid").innerHTML = emptyHtml;
     }
   }).catch(function(err) {
     browserState.loading = false;
@@ -1962,7 +2088,7 @@ function buildBreadcrumb(fullPath) {
   var current = fullPath.replace(/\\/g, "/");
   var rootLabel = browserState.type === "staging" ? "Cleaned Files" : "Removed Duplicates";
 
-  var html = '<span class="browser-crumb" onclick="browserNavigate(\'' + escAttr(browserState.rootPath) + '\')">'
+  var html = '<span class="browser-crumb" data-nav="' + escHtml(browserState.rootPath) + '">'
     + escHtml(rootLabel) + '</span>';
 
   if (current !== root && current.indexOf(root) === 0) {
@@ -1973,16 +2099,111 @@ function buildBreadcrumb(fullPath) {
       if (!parts[i]) continue;
       built = built + "\\" + parts[i];
       html += '<span class="browser-crumb-sep">/</span>'
-        + '<span class="browser-crumb" onclick="browserNavigate(\'' + escAttr(built) + '\')">'
+        + '<span class="browser-crumb" data-nav="' + escHtml(built) + '">'
         + escHtml(parts[i]) + '</span>';
     }
   }
-  document.getElementById("browserBreadcrumb").innerHTML = html;
+
+  var bc = document.getElementById("browserBreadcrumb");
+  bc.innerHTML = html;
+  bc.onclick = function(ev) {
+    var crumb = ev.target.closest(".browser-crumb");
+    if (crumb && crumb.dataset.nav) {
+      browserNavigate(crumb.dataset.nav);
+    }
+  };
 }
 
 function closeBrowser() {
   if (_browserObserver) _browserObserver.disconnect();
-  navigate("wizard");
+  navigate(browserState.returnTo || "wizard");
+}
+
+function deleteCurrentFolder() {
+  var dir = browserState.currentPath;
+  if (!dir || dir === browserState.rootPath) return;
+  var folderName = dir.split("\\").pop();
+  showDialog(
+    "Delete Folder",
+    "Delete the empty folder \"" + folderName + "\"?",
+    "Delete",
+    "btn-danger",
+    function() {
+      api("POST", "/api/browser/delete-folder", { path: dir }).then(function(r) {
+        if (r.success) {
+          // Navigate to parent
+          var parent = dir.substring(0, dir.lastIndexOf("\\"));
+          if (!parent || parent.length < browserState.rootPath.length) {
+            parent = browserState.rootPath;
+          }
+          browserNavigate(parent);
+          toast("Folder deleted");
+        } else {
+          toast("Delete failed: " + (r.error || "Unknown error"), "error");
+        }
+      }).catch(function(err) {
+        toast("Delete failed: " + err.message, "error");
+      });
+    }
+  );
+}
+
+function deleteFolderItem(path) {
+  var folderName = path.split("\\").pop();
+  showDialog(
+    "Delete Folder",
+    "Delete the folder \"" + folderName + "\" and all its contents? This cannot be undone.",
+    "Delete",
+    "btn-danger",
+    function() {
+      api("POST", "/api/browser/delete-folder", { path: path }).then(function(r) {
+        if (r.success) {
+          // Remove from grid
+          var items = document.querySelectorAll(".browser-folder");
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].dataset.path === path) {
+              items[i].remove();
+              break;
+            }
+          }
+          var countEl = document.getElementById("browserCount");
+          var match = (countEl.textContent || "").match(/(\d+)/);
+          if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+          toast("Folder deleted");
+        } else {
+          toast("Delete failed: " + (r.error || "Unknown error"), "error");
+        }
+      }).catch(function(err) {
+        toast("Delete failed: " + err.message, "error");
+      });
+    }
+  );
+}
+
+function openInExplorer() {
+  var dir = browserState.currentPath || browserState.rootPath;
+  if (!dir) return;
+  api("POST", "/api/browser/open-explorer", { path: dir }).catch(function(err) {
+    toast("Could not open Explorer: " + err.message, "error");
+  });
+}
+
+// Auto-refresh browser when tab regains focus (catches changes made in Explorer)
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden && parseHash().view === "browser" && browserState.rootPath) {
+    browserRefresh();
+  }
+});
+
+function scanFromBrowser() {
+  var dir = browserState.rootPath;
+  if (!dir) return;
+  // Pre-fill scan config with this folder and navigate there
+  navigate("scan-config");
+  // Wait for view to render, then set the directory
+  setTimeout(function() {
+    document.getElementById("scanDir").value = dir;
+  }, 100);
 }
 
 function escAttr(str) {
@@ -2236,6 +2457,137 @@ function selectRadio(el, name) {
 /* ==================================================================
    DASHBOARD
    ================================================================== */
+var _dashFolderPaths = { staging: "", dupes: "" };
+
+function _dashUpdateFolders() {
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var box = document.getElementById("dashFolders");
+    var stagingBtn = document.getElementById("dashStagingBtn");
+    var dupesBtn = document.getElementById("dashDupesBtn");
+    var stagingHint = document.getElementById("dashStagingHint");
+    var dupesHint = document.getElementById("dashDupesHint");
+
+    var hasAny = false;
+
+    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+      stagingBtn.disabled = false;
+      stagingBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+      stagingHint.textContent = "";
+      _dashFolderPaths.staging = data.staging.path;
+      hasAny = true;
+    } else {
+      stagingBtn.disabled = true;
+      stagingBtn.textContent = "Cleaned Files";
+      stagingHint.textContent = "No staged files";
+      _dashFolderPaths.staging = "";
+    }
+
+    if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
+      dupesBtn.disabled = false;
+      dupesBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+      dupesHint.textContent = "";
+      _dashFolderPaths.dupes = data.dupes.path;
+      hasAny = true;
+    } else {
+      dupesBtn.disabled = true;
+      dupesBtn.textContent = "Removed Duplicates";
+      dupesHint.textContent = "No files yet";
+      _dashFolderPaths.dupes = "";
+    }
+
+    box.style.display = hasAny ? "block" : "none";
+
+    // Show rescue/purge actions when dupes folder has files
+    var dupeActions = document.getElementById("dashDupeActions");
+    var hasDupes = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
+    dupeActions.style.display = hasDupes ? "block" : "none";
+  }).catch(function() {});
+}
+
+function rescueAndReview() {
+  showDialog(
+    "Rescue & Review",
+    "This will move all files from the duplicates folder into your workspace for scanning and review. " +
+    "If your workspace (cleaned files) is not empty, sync those back to OneDrive first.\n\nContinue?",
+    "Start",
+    "btn-primary",
+    function() {
+      document.getElementById("dashRescueBtn").disabled = true;
+      document.getElementById("dashRescueBtn").textContent = "Moving files...";
+      api("POST", "/api/staging/recycle").then(function(r) {
+        if (r.success) {
+          toast("Moved " + r.files_moved + " files to workspace");
+          // Navigate to wizard step 2 (scan)
+          wizardState.stagingDir = r.staging_path;
+          wizardState.completedSteps = { 1: true };
+          wizardState.currentStep = 2;
+          navigate("wizard");
+        } else {
+          toast("Failed: " + (r.error || "Unknown error"), "error");
+        }
+        document.getElementById("dashRescueBtn").disabled = false;
+        document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+      }).catch(function(err) {
+        toast(err.message || "Failed to recycle", "error");
+        document.getElementById("dashRescueBtn").disabled = false;
+        document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+      });
+    }
+  );
+}
+
+function purgeAllDupes() {
+  // First get the count for the confirmation
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var count = (data.dupes && data.dupes.file_count) || 0;
+    if (count === 0) {
+      toast("No files to delete");
+      return;
+    }
+    showDialog(
+      "Delete All Duplicates",
+      "This will permanently delete " + count.toLocaleString() + " files from the Removed Duplicates folder. " +
+      "This cannot be undone. Are you absolutely sure?",
+      "Delete All",
+      "btn-danger",
+      function() {
+        document.getElementById("dashPurgeBtn").disabled = true;
+        document.getElementById("dashPurgeBtn").textContent = "Deleting...";
+        api("POST", "/api/dupes/purge").then(function(r) {
+          if (r.success) {
+            toast("Deleted " + r.deleted + " files" + (r.errors ? " (" + r.errors + " errors)" : ""));
+            _dashUpdateFolders();
+          } else {
+            toast("Failed: " + (r.error || "Unknown error"), "error");
+          }
+          document.getElementById("dashPurgeBtn").disabled = false;
+          document.getElementById("dashPurgeBtn").textContent = "Delete All Remaining";
+        }).catch(function(err) {
+          toast(err.message || "Purge failed", "error");
+          document.getElementById("dashPurgeBtn").disabled = false;
+          document.getElementById("dashPurgeBtn").textContent = "Delete All Remaining";
+        });
+      }
+    );
+  });
+}
+
+function openBrowserFromDashboard(type) {
+  if (type === "staging" && _dashFolderPaths.staging) {
+    browserState.rootPath = _dashFolderPaths.staging;
+    browserState.type = "staging";
+  } else if (type === "dupes" && _dashFolderPaths.dupes) {
+    browserState.rootPath = _dashFolderPaths.dupes;
+    browserState.type = "dupes";
+  } else {
+    return;
+  }
+  browserState.currentPath = browserState.rootPath;
+  browserState.currentPage = 1;
+  browserState.returnTo = "dashboard";
+  navigate("browser");
+}
+
 function initDashboard() {
   // Show bookmark notice if not yet dismissed
   var bmNotice = document.getElementById("bookmarkNotice");
@@ -2244,6 +2596,14 @@ function initDashboard() {
   } else {
     bmNotice.style.display = "flex";
   }
+
+  // Load settings for later use
+  api("GET", "/api/settings").then(function(s) {
+    state.settings = s;
+  }).catch(function() {});
+
+  // Fetch folder status for browse buttons
+  _dashUpdateFolders();
 
   api("GET", "/api/scans").then(function(scans) {
     var list = document.getElementById("scanList");
@@ -2627,12 +2987,20 @@ function initReview(report, returnTo) {
 
   api("GET", "/api/groups?report=" + encodeURIComponent(report)).then(function(data) {
     state.groups = data.groups || [];
+    state._scanMetadata = data.metadata || {};
     state.filteredIndices = [];
     for (var i = 0; i < state.groups.length; i++) state.filteredIndices.push(i);
 
     document.getElementById("reviewTotalLabel").textContent = state.groups.length;
     document.getElementById("reviewTitle").textContent =
       "Review: " + report + " (" + state.groups.length + " groups)";
+
+    // Hide Move buttons if scan was on the dupes folder (move would be circular)
+    var scanDir = (state._scanMetadata.directory || "").replace(/\\/g, "/").toLowerCase();
+    var dupesDir = ((state.settings && state.settings.move_destination) || "").replace(/\\/g, "/").toLowerCase();
+    var isDupesScan = scanDir && dupesDir && scanDir.indexOf(dupesDir) === 0;
+    document.getElementById("reviewMoveSingleBtn").style.display = isDupesScan ? "none" : "";
+    document.getElementById("reviewMoveBulkBtn").style.display = isDupesScan ? "none" : "";
 
     applyReviewFilters();
   }).catch(function(err) {

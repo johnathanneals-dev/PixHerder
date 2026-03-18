@@ -122,10 +122,27 @@ The built-in file browser shows image thumbnails in a grid. Features:
 - Folder navigation with clickable breadcrumb trail
 - Sort by name, size (largest first), or date (newest first)
 - Infinite scroll -- loads more images as you scroll down
-- Click any image to view full-size in the lightbox
-- **Back to Finalize** button stays visible as you scroll and returns to the wizard
+- Click any image to view full-size in the lightbox with a **Delete** button
+- Delete empty folders by hovering and clicking the red X
+- **Open in Explorer** -- opens the current folder in Windows File Explorer for bulk operations. DupeFinder minimizes automatically and refreshes when you switch back.
+- **Scan for Duplicates** -- kicks off a scan on the folder you're browsing
+- **Back** button stays visible as you scroll and returns to where you came from (dashboard or wizard)
 
 The browser is restricted to the staging and dupes folders for security.
+
+---
+
+## Rescue & Review
+
+After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back through the scan and review process:
+
+1. Click **Rescue & Review** -- this moves all files from the Removed Duplicates folder into your workspace (staging folder)
+2. Scan the workspace to find duplicates among the recycled files
+3. Review groups -- keep what matters, delete the rest
+4. Repeat until you're confident nothing important remains
+5. Click **Delete All Remaining** to permanently purge whatever's left
+
+This is designed to be an iterative loop. Each pass reduces the file count as you separate keepers from junk.
 
 ---
 

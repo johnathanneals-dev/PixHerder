@@ -811,6 +811,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_oddball_progress_sse()
         elif path == "/api/heartbeat":
             self._handle_heartbeat()
+        elif path == "/api/folders/status":
+            self._handle_folders_status()
         elif path == "/api/activity":
             limit = int(params.get("limit", ["50"])[0])
             self._handle_get_activity(limit)
@@ -867,6 +869,16 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_syncback_start()
         elif path == "/api/staging/cleanup":
             self._handle_staging_cleanup()
+        elif path == "/api/browser/delete":
+            self._handle_browser_delete()
+        elif path == "/api/browser/delete-folder":
+            self._handle_browser_delete_folder()
+        elif path == "/api/browser/open-explorer":
+            self._handle_open_explorer()
+        elif path == "/api/staging/recycle":
+            self._handle_staging_recycle()
+        elif path == "/api/dupes/purge":
+            self._handle_dupes_purge()
         else:
             self.send_error(404)
 
@@ -891,6 +903,39 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
     def _handle_heartbeat(self):
         _touch_heartbeat()
         self.send_json({"status": "ok"})
+
+    def _handle_folders_status(self):
+        settings = load_settings()
+        image_exts = {
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+            ".tiff", ".tif", ".webp", ".heic", ".heif",
+        }
+
+        def _count_images(dirpath):
+            if not dirpath or not os.path.isdir(dirpath):
+                return {"exists": False, "path": dirpath or "", "file_count": 0}
+            count = 0
+            for root, dirs, files in os.walk(dirpath):
+                for f in files:
+                    if os.path.splitext(f)[1].lower() in image_exts:
+                        count += 1
+            return {"exists": True, "path": dirpath, "file_count": count}
+
+        # Find staging session subfolder (the hash subfolder)
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        staging_path = ""
+        if os.path.isdir(staging_base):
+            subs = [d for d in os.listdir(staging_base)
+                    if os.path.isdir(os.path.join(staging_base, d))]
+            if subs:
+                staging_path = os.path.join(staging_base, subs[0])
+
+        dupes_path = settings.get("move_destination", DEFAULTS["move_destination"])
+
+        self.send_json({
+            "staging": _count_images(staging_path),
+            "dupes": _count_images(dupes_path),
+        })
 
     def _handle_get_activity(self, limit=50):
         entries = _read_activity(limit)
@@ -1389,11 +1434,284 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         scan_cancel.set()
         action_cancel.set()
         def _restart():
+            import subprocess
             time.sleep(0.5)
+            # Spawn new process before shutting down
+            subprocess.Popen(
+                [sys.executable] + sys.argv,
+                cwd=str(ROOT),
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
             if _server_instance:
                 _server_instance.shutdown()
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+            os._exit(0)
         threading.Thread(target=_restart, daemon=True).start()
+
+    def _handle_browser_delete(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        filepath = body.get("path", "")
+        if not filepath or not os.path.isfile(filepath):
+            self.send_error_json("File not found", 404)
+            return
+
+        # Security: only allow deleting within staging or dupes directories
+        real = os.path.realpath(filepath).lower()
+        settings = load_settings()
+        allowed = []
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        if os.path.isdir(staging_base):
+            allowed.append(os.path.realpath(staging_base).lower())
+        if os.path.isdir(dupes_dir):
+            allowed.append(os.path.realpath(dupes_dir).lower())
+        if not any(real.startswith(a) for a in allowed):
+            self.send_error_json("Access denied: path outside allowed directories", 403)
+            return
+
+        try:
+            import stat
+            if not os.access(filepath, os.W_OK):
+                os.chmod(filepath, stat.S_IWRITE | stat.S_IREAD)
+            os.remove(filepath)
+            _log_activity("browser_delete", {"path": filepath})
+            self.send_json({"success": True})
+        except Exception as e:
+            self.send_json({"success": False, "error": str(e)})
+
+    def _handle_open_explorer(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        dirpath = body.get("path", "")
+        if not dirpath or not os.path.isdir(dirpath):
+            self.send_error_json("Directory not found", 404)
+            return
+
+        # Security: only allow opening staging or dupes directories
+        real = os.path.realpath(dirpath).lower()
+        settings = load_settings()
+        allowed = []
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        if os.path.isdir(staging_base):
+            allowed.append(os.path.realpath(staging_base).lower())
+        if os.path.isdir(dupes_dir):
+            allowed.append(os.path.realpath(dupes_dir).lower())
+        if not any(real.startswith(a) for a in allowed):
+            self.send_error_json("Access denied", 403)
+            return
+
+        try:
+            import subprocess
+            normpath = os.path.normpath(dirpath)
+            # Write a temp Python script that minimizes browser then opens Explorer
+            helper_path = str(ROOT / "_open_explorer.py")
+            helper_code = (
+                "import ctypes, subprocess, time, sys\n"
+                "u = ctypes.windll.user32\n"
+                "h = u.FindWindowW(None, 'DupeFinder')\n"
+                "if h: u.ShowWindow(h, 6)\n"
+                "time.sleep(0.3)\n"
+                "subprocess.Popen(['explorer.exe', sys.argv[1]])\n"
+            )
+            with open(helper_path, "w") as f:
+                f.write(helper_code)
+            proc = subprocess.Popen(
+                [sys.executable, helper_path, normpath],
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            self.send_json({"success": True})
+            def _cleanup():
+                proc.wait()
+                try:
+                    os.remove(helper_path)
+                except Exception:
+                    pass
+            threading.Thread(target=_cleanup, daemon=True).start()
+        except Exception as e:
+            self.send_json({"success": False, "error": str(e)})
+
+    def _handle_browser_delete_folder(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        dirpath = body.get("path", "")
+        if not dirpath or not os.path.isdir(dirpath):
+            self.send_error_json("Directory not found", 404)
+            return
+
+        # Security: only allow deleting within staging or dupes directories
+        real = os.path.realpath(dirpath).lower()
+        settings = load_settings()
+        allowed = []
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        if os.path.isdir(staging_base):
+            allowed.append(os.path.realpath(staging_base).lower())
+        if os.path.isdir(dupes_dir):
+            allowed.append(os.path.realpath(dupes_dir).lower())
+
+        # Must be inside an allowed dir but NOT the allowed dir itself
+        inside = any(real.startswith(a + os.sep) or real.startswith(a + "/")
+                     for a in allowed)
+        if not inside:
+            self.send_error_json("Access denied: cannot delete this directory", 403)
+            return
+
+        try:
+            import shutil
+            import stat
+
+            def _force_remove_readonly(func, path, exc_info):
+                os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
+                func(path)
+
+            shutil.rmtree(dirpath, onerror=_force_remove_readonly)
+            _log_activity("browser_delete_folder", {"path": dirpath})
+            self.send_json({"success": True})
+        except Exception as e:
+            self.send_json({"success": False, "error": str(e)})
+
+    def _handle_staging_recycle(self):
+        """Move dupes folder contents into the staging folder for re-review."""
+        settings = load_settings()
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+
+        if not os.path.isdir(dupes_dir):
+            self.send_error_json("Duplicates folder not found", 404)
+            return
+
+        # Find or create staging session subfolder
+        staging_path = ""
+        if os.path.isdir(staging_base):
+            subs = [d for d in os.listdir(staging_base)
+                    if os.path.isdir(os.path.join(staging_base, d))]
+            if subs:
+                staging_path = os.path.join(staging_base, subs[0])
+
+        if not staging_path:
+            # Create a new staging subfolder
+            import hashlib
+            key = os.path.normpath(dupes_dir).lower()
+            short_hash = hashlib.md5(key.encode("utf-8")).hexdigest()[:10]
+            staging_path = os.path.join(staging_base, short_hash)
+
+        os.makedirs(staging_path, exist_ok=True)
+
+        # Check if staging has image files already
+        image_exts = {
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+            ".tiff", ".tif", ".webp", ".heic", ".heif",
+        }
+        staging_files = 0
+        for root, dirs, files in os.walk(staging_path):
+            for f in files:
+                if os.path.splitext(f)[1].lower() in image_exts:
+                    staging_files += 1
+                    break
+            if staging_files:
+                break
+
+        if staging_files > 0:
+            self.send_error_json(
+                "Staging folder is not empty. Sync cleaned files back to "
+                "OneDrive first, or clean up the staging folder.", 409)
+            return
+
+        # Move all files from dupes into staging
+        import stat
+        moved = 0
+        errors = 0
+        for item in os.listdir(dupes_dir):
+            src = os.path.join(dupes_dir, item)
+            dst = os.path.join(staging_path, item)
+            try:
+                if not os.access(src, os.W_OK) and os.path.isfile(src):
+                    os.chmod(src, stat.S_IWRITE | stat.S_IREAD)
+                os.rename(src, dst)
+                moved += 1
+            except Exception:
+                # rename failed (cross-device?), try copy+delete
+                try:
+                    import shutil
+                    if os.path.isdir(src):
+                        shutil.copytree(src, dst)
+                        shutil.rmtree(src, onerror=lambda f, p, e: (
+                            os.chmod(p, stat.S_IWRITE), f(p)))
+                    else:
+                        shutil.copy2(src, dst)
+                        os.remove(src)
+                    moved += 1
+                except Exception:
+                    errors += 1
+
+        _log_activity("staging_recycle", {
+            "from": dupes_dir,
+            "to": staging_path,
+            "moved": moved,
+            "errors": errors,
+        })
+
+        self.send_json({
+            "success": True,
+            "files_moved": moved,
+            "errors": errors,
+            "staging_path": staging_path,
+        })
+
+    def _handle_dupes_purge(self):
+        """Delete all files in the dupes folder."""
+        settings = load_settings()
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+
+        if not os.path.isdir(dupes_dir):
+            self.send_error_json("Duplicates folder not found", 404)
+            return
+
+        import stat
+        deleted = 0
+        errors = 0
+        for root, dirs, files in os.walk(dupes_dir, topdown=False):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    if not os.access(fp, os.W_OK):
+                        os.chmod(fp, stat.S_IWRITE | stat.S_IREAD)
+                    os.remove(fp)
+                    deleted += 1
+                except Exception:
+                    errors += 1
+            # Remove empty subdirectories
+            for d in dirs:
+                dp = os.path.join(root, d)
+                try:
+                    os.rmdir(dp)
+                except Exception:
+                    pass
+
+        _log_activity("dupes_purge", {
+            "path": dupes_dir,
+            "deleted": deleted,
+            "errors": errors,
+        })
+
+        self.send_json({
+            "success": True,
+            "deleted": deleted,
+            "errors": errors,
+        })
 
     # ---- Staging handlers ----
 
