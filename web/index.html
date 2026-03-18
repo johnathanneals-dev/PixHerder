@@ -2508,6 +2508,10 @@ function initReview(report, returnTo) {
     backBtn.onclick = function() { navigate("dashboard"); };
     state._reviewReturnTo = null;
   }
+  // Fall back to last loaded report or wizard report
+  if (!report) {
+    report = state.currentReport || (typeof wizardState !== "undefined" && wizardState.lastReport) || null;
+  }
   if (!report) {
     document.getElementById("reviewContent").innerHTML =
       '<div class="empty-state"><h3>No report selected</h3><p>Go to the dashboard and choose a scan to review.</p></div>';
@@ -2928,9 +2932,12 @@ function showActionResult(d) {
   if (state._reviewReturnTo === "wizard") {
     wizardState.completedSteps[3] = true;
     document.getElementById("actResultErrors").innerHTML +=
-      '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">'
-      + '<button class="btn btn-primary" onclick="navigate(\'wizard\')">Return to Wizard</button>'
+      '<div style="margin-top:24px;padding:20px;border:2px solid var(--accent-dim);border-radius:var(--radius);background:var(--accent-bg);text-align:center;">'
+      + '<p style="color:var(--accent);font-weight:600;margin-bottom:12px;">Actions complete. Returning to wizard...</p>'
+      + '<button class="btn btn-primary btn-lg" onclick="navigate(\'wizard\')">Return to Wizard Now</button>'
       + '</div>';
+    // Auto-return after 3 seconds
+    setTimeout(function() { navigate("wizard"); }, 3000);
   } else if (_stagingSession) {
     document.getElementById("actResultErrors").innerHTML +=
       '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">'
