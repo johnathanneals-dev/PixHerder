@@ -875,6 +875,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_browser_delete_folder()
         elif path == "/api/browser/open-explorer":
             self._handle_open_explorer()
+        elif path == "/api/staging/restore":
+            self._handle_staging_restore()
         elif path == "/api/staging/recycle":
             self._handle_staging_recycle()
         elif path == "/api/dupes/purge":
@@ -1582,6 +1584,66 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"success": True})
         except Exception as e:
             self.send_json({"success": False, "error": str(e)})
+
+    def _handle_staging_restore(self):
+        """Copy cleaned files from staging back to OneDrive source directory."""
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        staging_dir = body.get("staging_dir", "")
+        source_dir = body.get("source_dir", "")
+
+        if not staging_dir or not os.path.isdir(staging_dir):
+            self.send_error_json("Staging directory not found", 404)
+            return
+        if not source_dir:
+            self.send_error_json("Source directory not specified")
+            return
+
+        os.makedirs(source_dir, exist_ok=True)
+
+        import shutil
+        import stat
+        copied = 0
+        skipped = 0
+        errors = 0
+
+        for root, dirs, files in os.walk(staging_dir):
+            rel_root = os.path.relpath(root, staging_dir)
+            for f in files:
+                src = os.path.join(root, f)
+                if rel_root == ".":
+                    dst = os.path.join(source_dir, f)
+                else:
+                    dst_dir = os.path.join(source_dir, rel_root)
+                    os.makedirs(dst_dir, exist_ok=True)
+                    dst = os.path.join(dst_dir, f)
+                try:
+                    if os.path.exists(dst):
+                        skipped += 1
+                        continue
+                    shutil.copy2(src, dst)
+                    copied += 1
+                except Exception:
+                    errors += 1
+
+        _log_activity("staging_restore", {
+            "staging_dir": staging_dir,
+            "source_dir": source_dir,
+            "copied": copied,
+            "skipped": skipped,
+            "errors": errors,
+        })
+
+        self.send_json({
+            "success": True,
+            "copied": copied,
+            "skipped": skipped,
+            "errors": errors,
+        })
 
     def _handle_staging_recycle(self):
         """Move dupes folder contents into the staging folder for re-review."""

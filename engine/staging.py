@@ -402,8 +402,14 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
 
 def cleanup_staging(staging_dir):
     """Remove the staging directory."""
+    import stat
+
+    def _force_remove_readonly(func, path, exc_info):
+        os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
+        func(path)
+
     try:
-        shutil.rmtree(staging_dir, ignore_errors=True)
+        shutil.rmtree(staging_dir, onerror=_force_remove_readonly)
         return {"status": "cleaned"}
     except Exception as e:
         return {"status": "error", "error": str(e)}

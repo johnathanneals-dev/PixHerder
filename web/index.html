@@ -864,7 +864,7 @@
     </div>
 
     <!-- Step 1: Migration -->
-    <div class="wizard-panel active" id="wizardStep1">
+    <div class="wizard-panel" id="wizardStep1">
       <div class="card">
         <h2>Step 1: Migrate Files</h2>
         <div class="wizard-explanation">
@@ -1463,6 +1463,8 @@ function showDialog(title, message, confirmText, confirmClass, onConfirm) {
   var btn = document.getElementById("dialogConfirmBtn");
   btn.textContent = confirmText || "Confirm";
   btn.className = "btn " + (confirmClass || "btn-danger");
+  btn.style.display = "";
+  document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
   _dialogCallback = onConfirm;
   document.getElementById("dialogOverlay").classList.add("active");
 }
@@ -1691,7 +1693,14 @@ var _wizScanSSE = null;
 var _wizStagingSSE = null;
 
 function initWizard() {
-  // Load settings first
+  // If RnR already set up the wizard state, jump to the right step immediately
+  // before any async fetches (prevents Step 1 flash)
+  if (wizardState.completedSteps[1] && wizardState.stagingDir) {
+    _wizardDetermineStep();
+  }
+
+  // Load settings first — also detect existing staging session
+  // so restart/refresh lands on the right step
   fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
     wizardState.dupesDir = s.move_destination || "";
     var defaultSource = s.default_pictures_path || "";
@@ -1717,7 +1726,15 @@ function initWizard() {
           _stagingSession = { source_dir: src, staging_dir: result.existing_session.staging_dir };
           return _wizardCheckScans();
         }
-        _wizardDetermineStep();
+        // Last resort: check if staging folder has files (e.g. from Rescue & Review)
+        return fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
+          if (fs.staging && fs.staging.exists && fs.staging.file_count > 0) {
+            wizardState.stagingDir = fs.staging.path;
+            wizardState.completedSteps[1] = true;
+            return _wizardCheckScans();
+          }
+          _wizardDetermineStep();
+        });
       });
     });
   }).catch(function() { _wizardDetermineStep(); });
@@ -2505,35 +2522,133 @@ function _dashUpdateFolders() {
 }
 
 function rescueAndReview() {
-  showDialog(
-    "Rescue & Review",
-    "This will move all files from the duplicates folder into your workspace for scanning and review. " +
-    "If your workspace (cleaned files) is not empty, sync those back to OneDrive first.\n\nContinue?",
-    "Start",
-    "btn-primary",
-    function() {
-      document.getElementById("dashRescueBtn").disabled = true;
-      document.getElementById("dashRescueBtn").textContent = "Moving files...";
-      api("POST", "/api/staging/recycle").then(function(r) {
-        if (r.success) {
-          toast("Moved " + r.files_moved + " files to workspace");
-          // Navigate to wizard step 2 (scan)
-          wizardState.stagingDir = r.staging_path;
+  // Check folder status first to give actionable guidance
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var stagingHasFiles = data.staging && data.staging.exists && data.staging.file_count > 0;
+    var dupesHasFiles = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
+
+    if (!dupesHasFiles) {
+      toast("No files in the Removed Duplicates folder to review", "warning");
+      return;
+    }
+
+    if (stagingHasFiles) {
+      // Build a dialog with two action buttons
+      document.getElementById("dialogTitle").textContent = "Workspace Not Empty";
+      document.getElementById("dialogMessage").innerHTML =
+        '<div style="margin-bottom:16px;">Your Cleaned Files workspace still has <strong>' +
+        data.staging.file_count.toLocaleString() + '</strong> files. ' +
+        'These need to go back to OneDrive before the duplicates can move in.</div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+        '<button class="btn btn-secondary" onclick="document.getElementById(\'dialogOverlay\').classList.remove(\'active\')">Cancel</button>' +
+        '<button class="btn btn-primary" id="rnrSyncBtn" onclick="_rnrSyncAndRecycle()">Sync Back to OneDrive &amp; Continue</button>' +
+        '</div>';
+      document.getElementById("dialogConfirmBtn").style.display = "none";
+      document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+      document.getElementById("dialogOverlay").classList.add("active");
+      return;
+    }
+
+    showDialog(
+      "Rescue & Review",
+      "This will move " + data.dupes.file_count.toLocaleString() + " files from Removed Duplicates " +
+      "into your workspace for scanning and review.\n\nContinue?",
+      "Start",
+      "btn-primary",
+      function() {
+        document.getElementById("dashRescueBtn").disabled = true;
+        document.getElementById("dashRescueBtn").textContent = "Moving files...";
+        api("POST", "/api/staging/recycle").then(function(r) {
+          if (r.success) {
+            toast("Moved " + r.files_moved + " files to workspace");
+            wizardState.stagingDir = r.staging_path;
+            wizardState.completedSteps = { 1: true };
+            wizardState.currentStep = 2;
+            navigate("wizard");
+          } else {
+            toast("Failed: " + (r.error || "Unknown error"), "error");
+          }
+          document.getElementById("dashRescueBtn").disabled = false;
+          document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+        }).catch(function(err) {
+          toast(err.message || "Failed to recycle", "error");
+          document.getElementById("dashRescueBtn").disabled = false;
+          document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+        });
+      }
+    );
+  });
+}
+
+function _rnrSyncAndRecycle() {
+  // Close the dialog
+  document.getElementById("dialogOverlay").classList.remove("active");
+
+  // Show progress on the rescue button
+  var btn = document.getElementById("dashRescueBtn");
+  btn.disabled = true;
+  btn.textContent = "Syncing back to OneDrive...";
+
+  // Get staging info to find source and staging dirs
+  fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
+    var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
+    var sourceDir = status.source_dir || (state.settings && state.settings.default_pictures_path) || "";
+
+    if (!stagingDir || !sourceDir) {
+      toast("Could not determine staging or source directories", "error");
+      btn.disabled = false;
+      btn.innerHTML = "Rescue &amp; Review";
+      return;
+    }
+
+  // Step 1: Restore cleaned files back to OneDrive (copy, not destructive sync)
+  btn.textContent = "Restoring files to OneDrive...";
+  api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
+    if (!r.success) {
+      toast("Restore failed: " + (r.error || "Unknown error"), "error");
+      btn.disabled = false;
+      btn.innerHTML = "Rescue &amp; Review";
+      return;
+    }
+    var restoreMsg = "Restored " + r.copied + " files to OneDrive";
+    if (r.skipped) restoreMsg += " (" + r.skipped + " already there)";
+    toast(restoreMsg);
+
+    // Step 2: Clean up staging
+    btn.textContent = "Cleaning workspace...";
+    api("POST", "/api/staging/cleanup", { staging_dir: stagingDir }).then(function() {
+
+      // Step 3: Move dupes into staging
+      btn.textContent = "Moving duplicates to workspace...";
+      api("POST", "/api/staging/recycle").then(function(r2) {
+        if (r2.success) {
+          toast("Moved " + r2.files_moved + " files to workspace");
+          wizardState.stagingDir = r2.staging_path;
           wizardState.completedSteps = { 1: true };
           wizardState.currentStep = 2;
           navigate("wizard");
         } else {
-          toast("Failed: " + (r.error || "Unknown error"), "error");
+          toast("Failed: " + (r2.error || "Unknown error"), "error");
         }
-        document.getElementById("dashRescueBtn").disabled = false;
-        document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+        btn.disabled = false;
+        btn.innerHTML = "Rescue &amp; Review";
       }).catch(function(err) {
-        toast(err.message || "Failed to recycle", "error");
-        document.getElementById("dashRescueBtn").disabled = false;
-        document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
+        toast("Recycle failed: " + err.message, "error");
+        btn.disabled = false;
+        btn.innerHTML = "Rescue &amp; Review";
       });
-    }
-  );
+    }).catch(function(err) {
+      toast("Cleanup failed: " + err.message, "error");
+      btn.disabled = false;
+      btn.innerHTML = "Rescue &amp; Review";
+    });
+  }).catch(function(err) {
+    toast("Restore failed: " + err.message, "error");
+    btn.disabled = false;
+    btn.innerHTML = "Rescue &amp; Review";
+  });
+
+  }); // end staging status fetch
 }
 
 function purgeAllDupes() {
