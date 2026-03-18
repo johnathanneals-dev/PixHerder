@@ -646,11 +646,12 @@
 
   /* ---- Review action bar ---- */
   .action-bar {
-    position: sticky; bottom: 0; background: rgba(10, 10, 12, 0.92);
-    backdrop-filter: blur(20px); border-top: 1px solid var(--border);
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10, 10, 12, 0.95);
+    backdrop-filter: blur(20px); border-top: 2px solid var(--accent-dim);
     padding: 12px 32px; display: flex; align-items: center;
     justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    margin: 0 -32px;
+    z-index: 100;
   }
   .action-info { font-size: 13px; color: var(--text-dim); font-family: monospace; }
   .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -774,7 +775,8 @@
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="">
   <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
-    <button onclick="deleteBrowserFile()">Delete This File</button>
+    <button onclick="deleteLightboxFile()">Delete This File</button>
+    <button onclick="closeLightbox()" style="background:rgba(80,80,80,0.85);">Back</button>
   </div>
 </div>
 
@@ -916,7 +918,7 @@
           <label class="form-label">Scan mode</label>
           <div style="display:flex;gap:16px;">
             <label><input type="radio" name="wizScanMode" value="exact" checked> Exact (MD5)</label>
-            <label><input type="radio" name="wizScanMode" value="perceptual"> Perceptual</label>
+            <label><input type="radio" name="wizScanMode" value="perceptual"> Perceptual (visual)</label>
             <label><input type="radio" name="wizScanMode" value="both"> Both</label>
           </div>
         </div>
@@ -984,8 +986,8 @@
         </div>
         <h3 style="margin-top:20px;">Browse Files</h3>
         <div style="display:flex;gap:12px;margin:12px 0 24px;">
-          <button class="btn btn-primary" onclick="openBrowser('staging')">Cleaned Files</button>
-          <button class="btn btn-secondary" onclick="openBrowser('dupes')">Removed Duplicates</button>
+          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">Cleaned Files</button>
+          <button class="btn btn-secondary" id="wizDupesBtn" onclick="openBrowser('dupes')">Removed Duplicates</button>
         </div>
         <h3>Next Steps</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
@@ -1031,8 +1033,8 @@
         <input class="form-input" type="text" id="scanDir"
                placeholder="copy/paste your path to what you want scanned here">
         <div style="margin-top:6px;display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="fillScanDir('staging')">Staged Files</button>
-          <button class="btn btn-secondary btn-sm" onclick="fillScanDir('dupes')">Dupes Folder</button>
+          <button class="btn btn-secondary btn-sm" id="scanFillStagingBtn" onclick="fillScanDir('staging')">Cleaned Files</button>
+          <button class="btn btn-secondary btn-sm" id="scanFillDupesBtn" onclick="fillScanDir('dupes')">Removed Duplicates</button>
         </div>
       </div>
 
@@ -1194,7 +1196,7 @@
   </div>
 
   <!-- Review View -->
-  <div class="view" id="view-review">
+  <div class="view" id="view-review" style="padding-bottom:80px;">
     <div class="review-header">
       <div style="display:flex;align-items:center;gap:16px;">
         <button class="btn btn-ghost" id="reviewBackBtn" onclick="navigate('dashboard')">&larr; Back</button>
@@ -1242,16 +1244,20 @@
     </div>
 
     <div class="action-bar">
-      <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="reviewNav(-1)" title="Previous group">&larr;</button>
+        <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
+        <button class="btn btn-ghost btn-sm" onclick="reviewNav(1)" title="Next group">&rarr;</button>
+      </div>
       <div class="action-buttons">
-        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Skip (keep all)</button>
-        <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Mark for Move</button>
-        <button class="btn btn-sm" style="background:#f472b6;color:#0a0a0c;" onclick="reviewMarkDelete()">Mark for Delete</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Skip</button>
+        <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Move</button>
+        <button class="btn btn-sm" style="background:#f472b6;color:#0a0a0c;" onclick="reviewMarkDelete()">Delete</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()">All: Move</button>
         <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">All: Skip</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-primary btn-sm" onclick="goToActions()">Execute Actions</button>
+        <button class="btn btn-primary btn-sm" onclick="goToActions()">Execute</button>
       </div>
     </div>
   </div>
@@ -1484,16 +1490,17 @@ function openLightbox(encodedPath) {
   _lightboxFilePath = decodeURIComponent(encodedPath);
   document.getElementById("lightboxImg").src = "/api/image?path=" + encodedPath;
   document.getElementById("lightbox").classList.add("active");
-  // Only show delete button when in file browser view
-  var inBrowser = parseHash().view === "browser";
-  document.getElementById("lightboxControls").style.display = inBrowser ? "flex" : "none";
+  // Show controls in browser and review views
+  var view = parseHash().view;
+  var showControls = (view === "browser" || view === "review");
+  document.getElementById("lightboxControls").style.display = showControls ? "flex" : "none";
 }
 function closeLightbox() {
   document.getElementById("lightbox").classList.remove("active");
   document.getElementById("lightboxImg").src = "";
   _lightboxFilePath = "";
 }
-function deleteBrowserFile() {
+function deleteLightboxFile() {
   if (!_lightboxFilePath) return;
   var filename = _lightboxFilePath.split("\\").pop();
   showDialog(
@@ -1505,19 +1512,24 @@ function deleteBrowserFile() {
       api("POST", "/api/browser/delete", { path: _lightboxFilePath }).then(function(r) {
         if (r.success) {
           closeLightbox();
-          // Remove the item from the grid
-          var items = document.querySelectorAll(".browser-item");
-          for (var i = 0; i < items.length; i++) {
-            var img = items[i].querySelector("img");
-            if (img && img.src.indexOf(encodeURIComponent(_lightboxFilePath)) !== -1) {
-              items[i].remove();
-              break;
+          var view = parseHash().view;
+          if (view === "browser") {
+            // Remove the item from the browser grid
+            var items = document.querySelectorAll(".browser-item");
+            for (var i = 0; i < items.length; i++) {
+              var img = items[i].querySelector("img");
+              if (img && img.src.indexOf(encodeURIComponent(_lightboxFilePath)) !== -1) {
+                items[i].remove();
+                break;
+              }
             }
+            var countEl = document.getElementById("browserCount");
+            var match = (countEl.textContent || "").match(/(\d+)/);
+            if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+          } else if (view === "review") {
+            // Re-render current group (file removed from disk)
+            renderReviewGroup();
           }
-          // Update count
-          var countEl = document.getElementById("browserCount");
-          var match = (countEl.textContent || "").match(/(\d+)/);
-          if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
           toast("File deleted");
         } else {
           toast("Delete failed: " + (r.error || "Unknown error"), "error");
@@ -1790,6 +1802,27 @@ function wizardGoToStep(n) {
   if (n === 3 && wizardState.lastReport) {
     document.getElementById("wizReviewInfoText").textContent =
       "Report: " + wizardState.lastReport;
+  }
+  if (n === 4) {
+    // Fetch file counts for browse buttons
+    fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+      var sBtn = document.getElementById("wizStagingBtn");
+      var dBtn = document.getElementById("wizDupesBtn");
+      if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+        sBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+        sBtn.disabled = false;
+      } else {
+        sBtn.textContent = "Cleaned Files (empty)";
+        sBtn.disabled = true;
+      }
+      if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
+        dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+        dBtn.disabled = false;
+      } else {
+        dBtn.textContent = "Removed Duplicates (empty)";
+        dBtn.disabled = true;
+      }
+    }).catch(function() {});
   }
 }
 
@@ -2394,7 +2427,9 @@ function api(method, path, body) {
 }
 
 // ---- Router ----
+var _appNavigated = false;
 function navigate(view, params) {
+  _appNavigated = true;
   var hash = "#" + view;
   if (params) {
     var parts = [];
@@ -2444,6 +2479,12 @@ function route() {
   } else {
     document.getElementById("view-dashboard").classList.add("active");
     view = "dashboard";
+  }
+
+  // On fresh page load, redirect stateful views to dashboard
+  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity") {
+    navigate("dashboard");
+    return;
   }
 
   // View-specific init
@@ -2815,6 +2856,25 @@ function initScanConfig() {
     document.getElementById("thresholdVal").textContent = settings.threshold || 5;
     document.getElementById("scanRecursive").checked = settings.recursive !== false;
   });
+  // Update quick-fill buttons with file counts
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var sBtn = document.getElementById("scanFillStagingBtn");
+    var dBtn = document.getElementById("scanFillDupesBtn");
+    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+      sBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+      sBtn.disabled = false;
+    } else {
+      sBtn.textContent = "Cleaned Files (empty)";
+      sBtn.disabled = true;
+    }
+    if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
+      dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+      dBtn.disabled = false;
+    } else {
+      dBtn.textContent = "Removed Duplicates (empty)";
+      dBtn.disabled = true;
+    }
+  }).catch(function() {});
 }
 
 function startScan() {
@@ -3201,7 +3261,12 @@ function renderReviewGroup() {
   var content = document.getElementById("reviewContent");
 
   if (state.filteredIndices.length === 0) {
-    content.innerHTML = '<div class="empty-state"><h3>No groups to show</h3><p>Adjust your filters or start a new scan.</p></div>';
+    content.innerHTML = '<div class="empty-state"><h3>No groups to show</h3>'
+      + '<p>No duplicates were found with the current settings. Try a different scan mode or a higher perceptual threshold.</p>'
+      + '<div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">'
+      + '<button class="btn btn-primary" onclick="navigate(\'dashboard\')">Back to Dashboard</button>'
+      + '<button class="btn btn-secondary" onclick="navigate(\'scan-config\')">Rescan with Different Settings</button>'
+      + '</div></div>';
     return;
   }
 

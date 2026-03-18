@@ -100,9 +100,18 @@ Each duplicate group shows:
 - Filter: all, unreviewed, move, delete, skip
 - Search by filename or folder
 - Bulk actions: Mark All for Move, Skip All
-- Click any image to zoom in (lightbox)
+- Click any image to zoom in -- use **Delete This File** to remove it, or **Back** to return to the group
 
-When done reviewing, click **Execute Actions** to carry out your decisions. After actions complete, click **Return to Wizard** to proceed to Step 4. If all files in a scan are successfully processed, the scan report is automatically removed from the Previous Scans list.
+**Action bar (bottom of screen):**
+The action bar stays fixed at the bottom of your screen so you always have access to:
+- Arrow buttons to navigate between groups
+- Skip, Move, Delete for the current group
+- All: Move and All: Skip for bulk decisions
+- Execute to carry out your decisions
+
+If no duplicate groups are found, you'll see buttons to go back to the dashboard or rescan with different settings.
+
+When done reviewing, click **Execute** to carry out your decisions. After actions complete, click **Return to Wizard** to proceed to Step 4. If all files in a scan are successfully processed, the scan report is automatically removed from the Previous Scans list.
 
 ### Step 4: Explore & Finalize
 
