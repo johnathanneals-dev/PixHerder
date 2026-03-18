@@ -145,11 +145,14 @@ The browser is restricted to the staging and dupes folders for security.
 
 After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back through the scan and review process:
 
-1. Click **Rescue & Review** -- this moves all files from the Removed Duplicates folder into your workspace (staging folder)
-2. Scan the workspace to find duplicates among the recycled files
-3. Review groups -- keep what matters, delete the rest
-4. Repeat until you're confident nothing important remains
-5. Click **Delete All Remaining** to permanently purge whatever's left
+1. Click **Rescue & Review**
+2. If your workspace (Cleaned Files) already has files, you'll be asked:
+   - **Merge Dupes Into Workspace** -- adds the duplicates alongside your existing files so you can rescan everything together
+   - **Sync Back to OneDrive First** -- sends your cleaned files back to OneDrive, then loads the duplicates
+3. Scan the workspace to find duplicates among the recycled files
+4. Review groups -- keep what matters, delete the rest
+5. Repeat until you're confident nothing important remains
+6. Click **Delete All Remaining** to permanently purge whatever's left
 
 This is designed to be an iterative loop. Each pass reduces the file count as you separate keepers from junk.
 

@@ -646,12 +646,12 @@
 
   /* ---- Review action bar ---- */
   .action-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
+    position: fixed; bottom: 32px; left: 0; right: 0;
     background: rgba(10, 10, 12, 0.95);
     backdrop-filter: blur(20px); border-top: 2px solid var(--accent-dim);
     padding: 12px 32px; display: flex; align-items: center;
     justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    z-index: 100;
+    z-index: 101;
   }
   .action-info { font-size: 13px; color: var(--text-dim); font-family: monospace; }
   .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1245,9 +1245,9 @@
 
     <div class="action-bar">
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="reviewNav(-1)" title="Previous group">&larr;</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewNav(-1)" style="min-width:60px;">&larr; Prev</button>
         <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
-        <button class="btn btn-ghost btn-sm" onclick="reviewNav(1)" title="Next group">&rarr;</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewNav(1)" style="min-width:60px;">Next &rarr;</button>
       </div>
       <div class="action-buttons">
         <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Skip</button>
@@ -1509,7 +1509,8 @@ function deleteLightboxFile() {
     "Delete",
     "btn-danger",
     function() {
-      api("POST", "/api/browser/delete", { path: _lightboxFilePath }).then(function(r) {
+      var deletedPath = _lightboxFilePath;
+      api("POST", "/api/browser/delete", { path: deletedPath }).then(function(r) {
         if (r.success) {
           closeLightbox();
           var view = parseHash().view;
@@ -1518,7 +1519,7 @@ function deleteLightboxFile() {
             var items = document.querySelectorAll(".browser-item");
             for (var i = 0; i < items.length; i++) {
               var img = items[i].querySelector("img");
-              if (img && img.src.indexOf(encodeURIComponent(_lightboxFilePath)) !== -1) {
+              if (img && img.src.indexOf(encodeURIComponent(deletedPath)) !== -1) {
                 items[i].remove();
                 break;
               }
@@ -1527,7 +1528,20 @@ function deleteLightboxFile() {
             var match = (countEl.textContent || "").match(/(\d+)/);
             if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
           } else if (view === "review") {
-            // Re-render current group (file removed from disk)
+            // Remove the deleted file from group data and re-render
+            var realIdx = state.filteredIndices[state.currentGroupIndex];
+            var group = state.groups[realIdx];
+            if (group) {
+              if (group.keep === deletedPath) {
+                // Deleted the keep file — promote first dupe to keep
+                if (group.duplicates && group.duplicates.length > 0) {
+                  group.keep = group.duplicates.shift();
+                }
+              } else if (group.duplicates) {
+                group.duplicates = group.duplicates.filter(function(d) { return d !== deletedPath; });
+              }
+              group.files = 1 + (group.duplicates ? group.duplicates.length : 0);
+            }
             renderReviewGroup();
           }
           toast("File deleted");
@@ -2574,15 +2588,18 @@ function rescueAndReview() {
     }
 
     if (stagingHasFiles) {
-      // Build a dialog with two action buttons
-      document.getElementById("dialogTitle").textContent = "Workspace Not Empty";
+      document.getElementById("dialogTitle").textContent = "Workspace Has Files";
       document.getElementById("dialogMessage").innerHTML =
         '<div style="margin-bottom:16px;">Your Cleaned Files workspace still has <strong>' +
-        data.staging.file_count.toLocaleString() + '</strong> files. ' +
-        'These need to go back to OneDrive before the duplicates can move in.</div>' +
+        data.staging.file_count.toLocaleString() + '</strong> files. How would you like to proceed?</div>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
         '<button class="btn btn-secondary" onclick="document.getElementById(\'dialogOverlay\').classList.remove(\'active\')">Cancel</button>' +
-        '<button class="btn btn-primary" id="rnrSyncBtn" onclick="_rnrSyncAndRecycle()">Sync Back to OneDrive &amp; Continue</button>' +
+        '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes Into Workspace</button>' +
+        '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Sync Back to OneDrive First</button>' +
+        '</div>' +
+        '<div style="margin-top:12px;font-size:11px;color:var(--text-dim);">' +
+        '<strong>Merge</strong> adds the duplicates alongside your existing files for rescanning together.<br>' +
+        '<strong>Sync Back</strong> sends your cleaned files to OneDrive first, then loads the duplicates.' +
         '</div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
       document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
@@ -2618,6 +2635,30 @@ function rescueAndReview() {
         });
       }
     );
+  });
+}
+
+function _rnrMerge() {
+  document.getElementById("dialogOverlay").classList.remove("active");
+  var btn = document.getElementById("dashRescueBtn");
+  btn.disabled = true;
+  btn.textContent = "Merging duplicates...";
+  api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
+    if (r.success) {
+      toast("Merged " + r.files_moved + " files into workspace");
+      wizardState.stagingDir = r.staging_path;
+      wizardState.completedSteps = { 1: true };
+      wizardState.currentStep = 2;
+      navigate("wizard");
+    } else {
+      toast("Failed: " + (r.error || "Unknown error"), "error");
+    }
+    btn.disabled = false;
+    btn.innerHTML = "Rescue &amp; Review";
+  }).catch(function(err) {
+    toast("Merge failed: " + err.message, "error");
+    btn.disabled = false;
+    btn.innerHTML = "Rescue &amp; Review";
   });
 }
 

@@ -1647,6 +1647,12 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
     def _handle_staging_recycle(self):
         """Move dupes folder contents into the staging folder for re-review."""
+        try:
+            body = self.read_json_body()
+        except Exception:
+            body = {}
+        force = body.get("force", False)
+
         settings = load_settings()
         staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
@@ -1686,7 +1692,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             if staging_files:
                 break
 
-        if staging_files > 0:
+        if staging_files > 0 and not force:
             self.send_error_json(
                 "Staging folder is not empty. Sync cleaned files back to "
                 "OneDrive first, or clean up the staging folder.", 409)
