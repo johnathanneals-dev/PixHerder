@@ -2896,7 +2896,12 @@ function navigate(view, params) {
     for (var k in params) parts.push(k + "=" + encodeURIComponent(params[k]));
     if (parts.length) hash += "?" + parts.join("&");
   }
-  window.location.hash = hash;
+  if (window.location.hash === hash) {
+    // Already on this view — force a refresh
+    route();
+  } else {
+    window.location.hash = hash;
+  }
 }
 
 function parseHash() {
