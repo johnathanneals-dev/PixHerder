@@ -1760,11 +1760,21 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         # Move all files from dupes into staging
         import stat
+        import shutil as _shutil
         moved = 0
         errors = 0
+        error_details = []
         for item in os.listdir(dupes_dir):
             src = os.path.join(dupes_dir, item)
             dst = os.path.join(staging_path, item)
+            # Collision avoidance — file may already exist in staging
+            if os.path.exists(dst):
+                stem, ext = os.path.splitext(item)
+                counter = 1
+                while os.path.exists(dst):
+                    dst = os.path.join(
+                        staging_path, stem + "_" + str(counter) + ext)
+                    counter += 1
             try:
                 if not os.access(src, os.W_OK) and os.path.isfile(src):
                     os.chmod(src, stat.S_IWRITE | stat.S_IREAD)
@@ -1773,23 +1783,24 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             except Exception:
                 # rename failed (cross-device?), try copy+delete
                 try:
-                    import shutil
                     if os.path.isdir(src):
-                        shutil.copytree(src, dst)
-                        shutil.rmtree(src, onerror=lambda f, p, e: (
+                        _shutil.copytree(src, dst)
+                        _shutil.rmtree(src, onerror=lambda f, p, e: (
                             os.chmod(p, stat.S_IWRITE), f(p)))
                     else:
-                        shutil.copy2(src, dst)
+                        _shutil.copy2(src, dst)
                         os.remove(src)
                     moved += 1
-                except Exception:
+                except Exception as e2:
                     errors += 1
+                    error_details.append(item + ": " + str(e2))
 
         _log_activity("staging_recycle", {
             "from": dupes_dir,
             "to": staging_path,
             "moved": moved,
             "errors": errors,
+            "error_details": error_details[:10],
         })
 
         self.send_json({
