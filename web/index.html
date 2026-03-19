@@ -1769,6 +1769,10 @@ function showResumeDialog(title, detail, onResume, onFresh) {
     '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
     '<button class="btn btn-secondary" id="resumeFreshBtn">Start Fresh</button>' +
     '<button class="btn btn-primary" id="resumeResumeBtn">Resume Scan</button>' +
+    '</div>' +
+    '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
+    '<span style="color:#fff;font-weight:600;">Resume</span> picks up where the last scan left off, saving time.<br><br>' +
+    '<span style="color:#fff;font-weight:600;">Start Fresh</span> starts a brand new scan from scratch.' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
   document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
@@ -2631,7 +2635,7 @@ function cleanupStaging() {
       return;
     }
     // Has files -- show decision dialog
-    document.getElementById("dialogTitle").textContent = "Clean Up Workspace";
+    document.getElementById("dialogTitle").textContent = "Remove Workspace";
     document.getElementById("dialogMessage").innerHTML =
       '<div style="margin-bottom:16px;">You have <strong>' + count.toLocaleString() +
       '</strong> files in Cleaned Files. What would you like to do with them?</div>' +
@@ -2639,6 +2643,10 @@ function cleanupStaging() {
       '<button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>' +
       '<button class="btn btn-danger" onclick="_recycleStagingConfirm(' + count + ')">Send to Recycle Bin</button>' +
       '<button class="btn btn-primary" onclick="closeDialog(); sendFilesHome()">Send Files Home</button>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
+      '<span style="color:#fff;font-weight:600;">Send Files Home</span> puts everything back where it came from. Nothing gets deleted.<br><br>' +
+      '<span style="color:#fff;font-weight:600;">Send to Recycle Bin</span> removes the files but you can recover them from the Recycle Bin if needed.' +
       '</div>';
     document.getElementById("dialogConfirmBtn").style.display = "none";
     document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
@@ -3051,18 +3059,18 @@ function rescueAndReview() {
     }
 
     if (stagingHasFiles) {
-      document.getElementById("dialogTitle").textContent = "Workspace Has Files";
+      document.getElementById("dialogTitle").textContent = "Cleaned Files Has Files";
       document.getElementById("dialogMessage").innerHTML =
-        '<div style="margin-bottom:16px;">Your Cleaned Files workspace still has <strong>' +
+        '<div style="margin-bottom:16px;">Cleaned Files still has <strong>' +
         data.staging.file_count.toLocaleString() + '</strong> files. How would you like to proceed?</div>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
-        '<button class="btn btn-secondary" onclick="document.getElementById(\'dialogOverlay\').classList.remove(\'active\')">Cancel</button>' +
-        '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes Into Workspace</button>' +
-        '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Send Home First, Then Load Dupes</button>' +
+        '<button class="btn btn-secondary" onclick="closeDialog()">Cancel</button>' +
+        '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes</button>' +
+        '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Return / Reload</button>' +
         '</div>' +
-        '<div style="margin-top:12px;font-size:11px;color:var(--text-dim);">' +
-        '<strong>Merge</strong> adds the duplicates alongside your existing files for rescanning together.<br>' +
-        '<strong>Send Home First</strong> copies your cleaned files back to OneDrive, clears the workspace, then loads the duplicates.' +
+        '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
+        '<span style="color:#fff;font-weight:600;">Merge Dupes</span> adds the duplicates alongside your existing files so you can rescan everything together.<br><br>' +
+        '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your cleaned files home first, then brings the duplicates back for another review.' +
         '</div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
       document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
@@ -3543,15 +3551,19 @@ function startScan() {
 function showStagingDialog(dir, stagingDir, info, existingSession, mode, threshold, recursive) {
   document.getElementById("dialogTitle").textContent = "OneDrive Detected";
   var html = '<div style="margin-bottom:12px;">This folder is managed by OneDrive. '
-    + 'Stage files locally for reliable scanning?</div>'
+    + 'Make a local copy for reliable scanning?</div>'
     + '<div style="font-size:12px;color:var(--text-dim);font-family:monospace;margin-bottom:16px;">'
     + escHtml(info) + '</div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">'
-    + '<button class="btn btn-secondary" id="stagingSkipBtn">Scan Directly (risky)</button>';
+    + '<button class="btn btn-secondary" id="stagingSkipBtn">Scan Directly</button>';
   if (existingSession) {
-    html += '<button class="btn btn-secondary" id="stagingReuseBtn">Use Existing Staging</button>';
+    html += '<button class="btn btn-secondary" id="stagingReuseBtn">Use Existing Copy</button>';
   }
-  html += '<button class="btn btn-primary" id="stagingGoBtn">Stage Locally</button></div>';
+  html += '<button class="btn btn-primary" id="stagingGoBtn">Copy Locally First</button></div>'
+    + '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">'
+    + '<span style="color:#fff;font-weight:600;">Copy Locally First</span> is recommended. It avoids OneDrive sync issues during scanning.<br><br>'
+    + '<span style="color:#fff;font-weight:600;">Scan Directly</span> scans the OneDrive folder as-is. May have issues with cloud-only files or sync locks.'
+    + '</div>';
 
   document.getElementById("dialogMessage").innerHTML = html;
   document.getElementById("dialogConfirmBtn").style.display = "none";
