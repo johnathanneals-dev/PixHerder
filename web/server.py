@@ -2099,14 +2099,22 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             except Exception:
                 pass
 
-            # Check for existing staging session
+            # Check for existing staging session (only if it has files)
             manifest = load_manifest(directory)
             if manifest:
-                result["existing_session"] = {
-                    "staging_dir": manifest.get("staging_dir", ""),
-                    "file_count": manifest.get("file_count", 0),
-                    "created": manifest.get("created", ""),
-                }
+                mf_staging = manifest.get("staging_dir", "")
+                has_files = False
+                if mf_staging and os.path.isdir(mf_staging):
+                    has_files = any(
+                        f for _, _, files in os.walk(mf_staging)
+                        for f in files
+                    )
+                if has_files:
+                    result["existing_session"] = {
+                        "staging_dir": mf_staging,
+                        "file_count": manifest.get("file_count", 0),
+                        "created": manifest.get("created", ""),
+                    }
 
         self.send_json(result)
 
