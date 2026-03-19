@@ -2185,29 +2185,35 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                         if os.path.isdir(os.path.join(staging_base, d))]
                 if subs:
                     staging_path = os.path.join(staging_base, subs[0])
-                    result["staging_dir"] = staging_path
-                    result["status"] = "complete"
+                    # Only report session if folder actually has files
+                    has_files = any(
+                        f for _, _, files in os.walk(staging_path)
+                        for f in files
+                    )
+                    if has_files:
+                        result["staging_dir"] = staging_path
+                        result["status"] = "complete"
 
-                    # Try to find source_dir from settings or manifest
-                    source = settings.get("default_pictures_path", "")
-                    if not source:
-                        source = default_pictures_path()
-                    # Check manifests in scans folder for this staging dir
-                    scans_dir = Path(__file__).parent.parent / "scans"
-                    if scans_dir.is_dir():
-                        for mf in scans_dir.glob("staging_manifest_*.json"):
-                            try:
-                                with open(str(mf), "r",
-                                          encoding="utf-8") as f:
-                                    manifest = json.load(f)
-                                if manifest.get(
-                                        "staging_dir") == staging_path:
-                                    source = manifest.get(
-                                        "source_dir", source)
-                                    break
-                            except Exception:
-                                pass
-                    result["source_dir"] = source
+                        # Try to find source_dir from settings or manifest
+                        source = settings.get("default_pictures_path", "")
+                        if not source:
+                            source = default_pictures_path()
+                        scans_dir = Path(__file__).parent.parent / "scans"
+                        if scans_dir.is_dir():
+                            for mf in scans_dir.glob(
+                                    "staging_manifest_*.json"):
+                                try:
+                                    with open(str(mf), "r",
+                                              encoding="utf-8") as f:
+                                        manifest = json.load(f)
+                                    if manifest.get(
+                                            "staging_dir") == staging_path:
+                                        source = manifest.get(
+                                            "source_dir", source)
+                                        break
+                                except Exception:
+                                    pass
+                        result["source_dir"] = source
 
         self.send_json(result)
 
