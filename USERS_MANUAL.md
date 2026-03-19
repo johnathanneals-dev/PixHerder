@@ -186,6 +186,20 @@ After rescanning and deleting the real duplicates, click **Move to Keepers** to 
 
 ---
 
+## Scanning Multiple Folders
+
+DupeFinder currently scans one folder at a time. To find duplicates across multiple folders (e.g., Pictures and Desktop), run them as separate passes:
+
+1. **First folder:** Start the wizard, migrate your first folder, scan, review, and finish
+2. **Send files home** when you're satisfied with the first folder's results
+3. **Start again:** Click Start Guided Cleanup, pick your second folder, and repeat
+
+Each pass is independent -- your originals are never changed until you explicitly send files home or finish.
+
+**Tip:** If you want to find duplicates *between* two folders (not just within each one), copy both folders into a single parent folder first, then scan that parent folder with "Include subfolders" checked.
+
+---
+
 ## Advanced Scan
 
 For users who don't need the wizard, click **Advanced Scan** on the dashboard. This gives you direct access to the scan configuration without the migration step. Useful for scanning folders that don't need a working copy made first.
