@@ -28,7 +28,9 @@ DEFAULTS = {
     "port": 8787,
     "hash_size": 16,
     "staging_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Staging"),
+    "keepers_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Keepers"),
     "onedrive_safe_mode": True,
+    "scan_batch_size": 2000,
 }
 
 

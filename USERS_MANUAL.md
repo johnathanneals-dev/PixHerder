@@ -43,7 +43,7 @@ The recommended way to use DupeFinder. Click **Start Guided Cleanup** on the das
 
 OneDrive sync interferes with scanning (cloud-only files, file locks, sync prompts). This step copies your images to a local staging folder where DupeFinder can work without interruption. Your originals remain untouched.
 
-- Enter your OneDrive Pictures path (e.g. `C:\Users\repom\OneDrive\Pictures`)
+- Use the quick-fill buttons (**OneDrive Pictures**, **Pictures**, **Desktop**) or click **Browse** to select your source folder
 - Click **Begin Migration**
 - Watch the progress bar as files are copied locally
 - When complete, the step shows a checkmark and Step 2 opens
@@ -183,6 +183,10 @@ After running scans and moving duplicates, the Removed Duplicates folder may con
 
 This is designed to be an iterative loop. Each pass reduces the file count as you separate keepers from junk.
 
+### Verified Keepers
+
+After rescanning duplicates and deleting the real dupes, click **Move to Keepers** to promote the remaining files to the Verified Keepers folder. These files are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
+
 ---
 
 ## Advanced Scan
@@ -230,6 +234,7 @@ Click the **Settings** tab to customize defaults:
   - Newest file -- keeps the most recent version
   - Shortest filename -- keeps the cleanest name
 - **Extensions**: which file types to scan (comma-separated)
+- **Scan batch size**: how often DupeFinder saves progress during scanning (default 2000). Lower values protect against crashes but scan slightly slower.
 - **Port**: server port (default 8787, requires restart -- you will be prompted to restart when saving a port change)
 
 ---

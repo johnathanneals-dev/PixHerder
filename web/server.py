@@ -211,6 +211,8 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
     """Background scan thread target."""
     global scan_progress
     start_time = time.time()
+    settings = load_settings()
+    batch_size = settings.get("scan_batch_size", DEFAULTS.get("scan_batch_size", 500))
 
     scan_progress.update({
         "status": "running",
@@ -309,6 +311,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 cancel_event=scan_cancel,
                 precomputed_hashes=md5_precomputed,
                 checkpoint_cb=_ckpt_md5,
+                batch_size=batch_size,
             )
             all_errors.extend(result["errors"])
             md5_precomputed = result.get("hashes", {})
@@ -369,6 +372,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 cancel_event=scan_cancel,
                 precomputed_hashes=phash_precomputed,
                 checkpoint_cb=_ckpt_phash,
+                batch_size=batch_size,
             )
             all_errors.extend(result["errors"])
             phash_precomputed = result.get("hashes", {})
@@ -829,6 +833,9 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_browse(dirpath, page, page_size, sort_by)
         elif path == "/api/staging/syncback/progress":
             self._handle_syncback_progress_sse()
+        elif path == "/api/browse-folders":
+            dirpath = params.get("path", [""])[0]
+            self._handle_browse_folders(dirpath)
         else:
             self.send_error(404)
 
@@ -884,6 +891,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_staging_recycle()
         elif path == "/api/dupes/purge":
             self._handle_dupes_purge()
+        elif path == "/api/dupes/promote":
+            self._handle_dupes_promote()
         else:
             self.send_error(404)
 
@@ -936,10 +945,12 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                 staging_path = os.path.join(staging_base, subs[0])
 
         dupes_path = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_path = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
 
         self.send_json({
             "staging": _count_images(staging_path),
             "dupes": _count_images(dupes_path),
+            "keepers": _count_images(keepers_path),
         })
 
     def _handle_get_activity(self, limit=50):
@@ -1470,10 +1481,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         allowed = []
         staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
         if os.path.isdir(staging_base):
             allowed.append(os.path.realpath(staging_base).lower())
         if os.path.isdir(dupes_dir):
             allowed.append(os.path.realpath(dupes_dir).lower())
+        if keepers_dir and os.path.isdir(keepers_dir):
+            allowed.append(os.path.realpath(keepers_dir).lower())
         if not any(real.startswith(a) for a in allowed):
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
@@ -1506,10 +1520,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         allowed = []
         staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
         if os.path.isdir(staging_base):
             allowed.append(os.path.realpath(staging_base).lower())
         if os.path.isdir(dupes_dir):
             allowed.append(os.path.realpath(dupes_dir).lower())
+        if keepers_dir and os.path.isdir(keepers_dir):
+            allowed.append(os.path.realpath(keepers_dir).lower())
         if not any(real.startswith(a) for a in allowed):
             self.send_error_json("Access denied", 403)
             return
@@ -1562,10 +1579,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         allowed = []
         staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
         if os.path.isdir(staging_base):
             allowed.append(os.path.realpath(staging_base).lower())
         if os.path.isdir(dupes_dir):
             allowed.append(os.path.realpath(dupes_dir).lower())
+        if keepers_dir and os.path.isdir(keepers_dir):
+            allowed.append(os.path.realpath(keepers_dir).lower())
 
         # Must be inside an allowed dir but NOT the allowed dir itself
         inside = any(real.startswith(a + os.sep) or real.startswith(a + "/")
@@ -1589,7 +1609,11 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"success": False, "error": str(e)})
 
     def _handle_staging_restore(self):
-        """Copy cleaned files from staging back to OneDrive source directory."""
+        """Copy files from system folders back to OneDrive source directory.
+
+        When full_restore is true, restores from all system folders
+        (staging, dupes, keepers) and cleans them up afterward.
+        """
         try:
             body = self.read_json_body()
         except Exception:
@@ -1598,44 +1622,75 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         staging_dir = body.get("staging_dir", "")
         source_dir = body.get("source_dir", "")
+        full_restore = body.get("full_restore", False)
+        include_keepers = body.get("include_keepers", False)
 
-        if not staging_dir or not os.path.isdir(staging_dir):
-            self.send_error_json("Staging directory not found", 404)
-            return
         if not source_dir:
             self.send_error_json("Source directory not specified")
             return
 
         os.makedirs(source_dir, exist_ok=True)
 
-        import shutil
+        import shutil as _shutil
         import stat
         copied = 0
         skipped = 0
         errors = 0
 
-        for root, dirs, files in os.walk(staging_dir):
-            rel_root = os.path.relpath(root, staging_dir)
-            for f in files:
-                src = os.path.join(root, f)
-                if rel_root == ".":
-                    dst = os.path.join(source_dir, f)
-                else:
-                    dst_dir = os.path.join(source_dir, rel_root)
-                    os.makedirs(dst_dir, exist_ok=True)
-                    dst = os.path.join(dst_dir, f)
-                try:
-                    if os.path.exists(dst):
-                        skipped += 1
-                        continue
-                    shutil.copy2(src, dst)
-                    copied += 1
-                except Exception:
-                    errors += 1
+        def _restore_folder(folder_dir, preserve_structure):
+            """Copy files from a folder back to source_dir."""
+            nonlocal copied, skipped, errors
+            if not folder_dir or not os.path.isdir(folder_dir):
+                return
+            for root, dirs, files in os.walk(folder_dir):
+                rel_root = os.path.relpath(root, folder_dir)
+                for f in files:
+                    src = os.path.join(root, f)
+                    if preserve_structure and rel_root != ".":
+                        dst_dir = os.path.join(source_dir, rel_root)
+                        os.makedirs(dst_dir, exist_ok=True)
+                        dst = os.path.join(dst_dir, f)
+                    else:
+                        dst = os.path.join(source_dir, f)
+                    try:
+                        if os.path.exists(dst):
+                            skipped += 1
+                            continue
+                        _shutil.copy2(src, dst)
+                        copied += 1
+                    except Exception:
+                        errors += 1
+
+        # Restore workspace (preserves subfolder structure)
+        if staging_dir and os.path.isdir(staging_dir):
+            _restore_folder(staging_dir, True)
+
+        if full_restore or include_keepers:
+            settings = load_settings()
+            keepers_dir = settings.get(
+                "keepers_dir", DEFAULTS.get("keepers_dir", ""))
+            if keepers_dir:
+                _restore_folder(keepers_dir, False)
+
+        if full_restore:
+            # Restore dupes folder (flat files, no structure to preserve)
+            settings = load_settings()
+            dupes_dir = settings.get(
+                "move_destination", DEFAULTS["move_destination"])
+            _restore_folder(dupes_dir, False)
+
+            # Clean up all system folders silently
+            if staging_dir and os.path.isdir(staging_dir):
+                cleanup_staging(staging_dir)
+            if dupes_dir and os.path.isdir(dupes_dir):
+                cleanup_staging(dupes_dir)
+            if keepers_dir and os.path.isdir(keepers_dir):
+                cleanup_staging(keepers_dir)
 
         _log_activity("staging_restore", {
             "staging_dir": staging_dir,
             "source_dir": source_dir,
+            "full_restore": full_restore,
             "copied": copied,
             "skipped": skipped,
             "errors": errors,
@@ -1784,7 +1839,88 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             "errors": errors,
         })
 
+    def _handle_dupes_promote(self):
+        """Move all files from dupes folder to keepers folder."""
+        settings = load_settings()
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+
+        if not os.path.isdir(dupes_dir):
+            self.send_error_json("Duplicates folder not found", 404)
+            return
+
+        os.makedirs(keepers_dir, exist_ok=True)
+
+        import shutil as _shutil
+        moved = 0
+        errors = 0
+
+        for root, dirs, files in os.walk(dupes_dir):
+            for f in files:
+                src = os.path.join(root, f)
+                dst = os.path.join(keepers_dir, f)
+                # Collision avoidance
+                if os.path.exists(dst):
+                    stem, ext = os.path.splitext(f)
+                    counter = 1
+                    while os.path.exists(dst):
+                        dst = os.path.join(
+                            keepers_dir, stem + "_" + str(counter) + ext)
+                        counter += 1
+                try:
+                    _shutil.copy2(src, dst)
+                    os.remove(src)
+                    moved += 1
+                except Exception:
+                    errors += 1
+
+        _log_activity("dupes_promote", {
+            "dupes_dir": dupes_dir,
+            "keepers_dir": keepers_dir,
+            "moved": moved,
+            "errors": errors,
+        })
+
+        self.send_json({
+            "success": True,
+            "moved": moved,
+            "errors": errors,
+        })
+
     # ---- Staging handlers ----
+
+    def _handle_browse_folders(self, dirpath):
+        """List subfolders for the folder picker. No file listing."""
+        if not dirpath:
+            # Default to user home
+            dirpath = os.path.expanduser("~")
+
+        dirpath = os.path.normpath(dirpath)
+        if not os.path.isdir(dirpath):
+            self.send_error_json("Directory not found", 404)
+            return
+
+        folders = []
+        try:
+            for entry in sorted(os.listdir(dirpath)):
+                full = os.path.join(dirpath, entry)
+                if os.path.isdir(full) and not entry.startswith("."):
+                    folders.append(entry)
+        except PermissionError:
+            pass
+        except Exception:
+            pass
+
+        # Get parent directory (for "up" navigation)
+        parent = os.path.dirname(dirpath)
+        if parent == dirpath:
+            parent = ""  # at root
+
+        self.send_json({
+            "path": dirpath,
+            "parent": parent,
+            "folders": folders,
+        })
 
     def _handle_browse(self, dirpath, page, page_size, sort_by):
         if not dirpath or not os.path.isdir(dirpath):
@@ -1797,10 +1933,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         allowed = []
         staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
         if os.path.isdir(staging_base):
             allowed.append(os.path.realpath(staging_base).lower())
         if os.path.isdir(dupes_dir):
             allowed.append(os.path.realpath(dupes_dir).lower())
+        if keepers_dir and os.path.isdir(keepers_dir):
+            allowed.append(os.path.realpath(keepers_dir).lower())
         if not any(real.startswith(a) for a in allowed):
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
@@ -1979,7 +2118,43 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             pass
 
     def _handle_staging_status(self):
-        self.send_json(dict(staging_progress))
+        result = dict(staging_progress)
+
+        # If no in-memory session, try to reconstruct from disk
+        if not result.get("staging_dir"):
+            settings = load_settings()
+            staging_base = settings.get(
+                "staging_dir", DEFAULTS["staging_dir"])
+            if os.path.isdir(staging_base):
+                subs = [d for d in os.listdir(staging_base)
+                        if os.path.isdir(os.path.join(staging_base, d))]
+                if subs:
+                    staging_path = os.path.join(staging_base, subs[0])
+                    result["staging_dir"] = staging_path
+                    result["status"] = "complete"
+
+                    # Try to find source_dir from settings or manifest
+                    source = settings.get("default_pictures_path", "")
+                    if not source:
+                        source = default_pictures_path()
+                    # Check manifests in scans folder for this staging dir
+                    scans_dir = Path(__file__).parent.parent / "scans"
+                    if scans_dir.is_dir():
+                        for mf in scans_dir.glob("staging_manifest_*.json"):
+                            try:
+                                with open(str(mf), "r",
+                                          encoding="utf-8") as f:
+                                    manifest = json.load(f)
+                                if manifest.get(
+                                        "staging_dir") == staging_path:
+                                    source = manifest.get(
+                                        "source_dir", source)
+                                    break
+                            except Exception:
+                                pass
+                    result["source_dir"] = source
+
+        self.send_json(result)
 
     def _handle_syncback_start(self):
         global syncback_thread, syncback_cancel

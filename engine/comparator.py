@@ -11,7 +11,8 @@ from engine.hasher import md5_hash, perceptual_hash
 
 
 def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
-                          precomputed_hashes=None, checkpoint_cb=None):
+                          precomputed_hashes=None, checkpoint_cb=None,
+                          batch_size=500):
     """Group images by identical MD5 hash.
 
     Args:
@@ -58,7 +59,7 @@ def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
         if progress_cb:
             progress_cb(i + 1, total, "md5")
 
-        if checkpoint_cb and (i + 1) % 500 == 0:
+        if checkpoint_cb and (i + 1) % batch_size == 0:
             checkpoint_cb(computed_hashes, file_info)
 
     groups = [v for v in hash_map.values() if len(v) > 1]
@@ -73,7 +74,8 @@ def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
 
 def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
                                progress_cb=None, cancel_event=None,
-                               precomputed_hashes=None, checkpoint_cb=None):
+                               precomputed_hashes=None, checkpoint_cb=None,
+                               batch_size=500):
     """Group images by perceptual similarity within a hamming distance threshold.
 
     Two phases: hashing (I/O bound) then comparison (CPU bound).
@@ -140,7 +142,7 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
         if progress_cb:
             progress_cb(i + 1, total, "phash_hash")
 
-        if checkpoint_cb and (i + 1) % 500 == 0:
+        if checkpoint_cb and (i + 1) % batch_size == 0:
             checkpoint_cb(computed_hashes, file_info)
 
     # Phase 2: cluster by similarity (O(n^2))
