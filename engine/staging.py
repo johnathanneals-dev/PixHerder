@@ -413,3 +413,103 @@ def cleanup_staging(staging_dir):
         return {"status": "cleaned"}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+def _recycle_file_powershell(filepath):
+    """Send a single file to the Windows Recycle Bin via PowerShell."""
+    import subprocess
+
+    ps_path = str(filepath).replace("'", "''")
+    cmd = (
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "'
+        "Add-Type -AssemblyName Microsoft.VisualBasic; "
+        "[Microsoft.VisualBasic.FileIO.FileSystem]"
+        "::DeleteFile("
+        "'" + ps_path + "', "
+        "'OnlyErrorDialogs', 'SendToRecycleBin')"
+        '"'
+    )
+    result = subprocess.run(
+        cmd, shell=True, capture_output=True, timeout=30
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.decode(errors="replace").strip()
+        raise RuntimeError(stderr or "PowerShell returned exit code " + str(result.returncode))
+
+
+def recycle_staging(staging_dir, progress_cb=None):
+    """Send all files in staging directory to the Windows Recycle Bin.
+
+    Uses PowerShell with -ExecutionPolicy Bypass to avoid policy
+    restrictions. Falls back to permanent delete if PowerShell fails
+    on the first file (e.g. PowerShell not available).
+    """
+    import stat
+
+    staging = Path(staging_dir)
+    if not staging.is_dir():
+        return {"status": "error", "error": "Staging directory not found"}
+
+    # Collect all files
+    files = [f for f in staging.rglob("*") if f.is_file()]
+    total = len(files)
+    if total == 0:
+        # Empty folder -- just remove the directory tree
+        cleanup_staging(staging_dir)
+        return {"status": "recycled", "files_recycled": 0, "errors": 0}
+
+    recycled = 0
+    errors = 0
+    error_details = []
+    use_fallback = False
+
+    for i, filepath in enumerate(files):
+        try:
+            # Clear read-only flag if set
+            os.chmod(str(filepath), stat.S_IWRITE | stat.S_IREAD)
+
+            if use_fallback:
+                # PowerShell failed earlier -- permanently delete instead
+                os.remove(str(filepath))
+                recycled += 1
+            else:
+                try:
+                    _recycle_file_powershell(filepath)
+                    recycled += 1
+                except Exception as ps_err:
+                    if i == 0:
+                        # First file failed -- PowerShell may be blocked.
+                        # Fall back to permanent delete for all files.
+                        use_fallback = True
+                        error_details.append(
+                            "PowerShell unavailable, falling back to "
+                            "permanent delete: " + str(ps_err)
+                        )
+                        os.remove(str(filepath))
+                        recycled += 1
+                    else:
+                        errors += 1
+                        error_details.append(
+                            str(filepath) + ": " + str(ps_err)
+                        )
+        except Exception as e:
+            errors += 1
+            error_details.append(str(filepath) + ": " + str(e))
+
+        if progress_cb and (i % 50 == 0 or i == total - 1):
+            progress_cb(i + 1, total)
+
+    # Clean up empty directory tree
+    try:
+        shutil.rmtree(staging_dir, ignore_errors=True)
+    except Exception:
+        pass
+
+    return {
+        "status": "recycled",
+        "files_recycled": recycled,
+        "errors": errors,
+        "error_details": error_details[:20],
+        "total": total,
+        "used_fallback": use_fallback,
+    }

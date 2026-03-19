@@ -365,6 +365,7 @@
     top: 0;
     z-index: 100;
     background: rgba(10, 10, 12, 0.88);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
     padding: 0 32px;
@@ -648,6 +649,7 @@
   .action-bar {
     position: fixed; bottom: 32px; left: 0; right: 0;
     background: rgba(10, 10, 12, 0.95);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px); border-top: 2px solid var(--accent-dim);
     padding: 12px 32px; display: flex; align-items: center;
     justify-content: space-between; flex-wrap: wrap; gap: 12px;
@@ -745,6 +747,7 @@
       <button class="nav-link" data-view="scan-config" onclick="navigate('scan-config')">Scan</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')">Activity</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
+      <button class="nav-link" data-view="finish" id="navFinishBtn" onclick="navigate('finish')" style="display:none;color:var(--accent);">Finish</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -821,15 +824,35 @@
           <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
       </div>
-      <div id="dashDupeActions" style="display:none;">
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-          <div>
-            <button class="btn btn-primary" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Some duplicates might be worth keeping. This cycles them back through scanning so you can separate the keepers from the junk, one pass at a time.</div>
+      <div id="dashFinishAction" style="display:none;margin-bottom:24px;">
+        <button class="btn btn-primary btn-lg" onclick="navigate('finish')">Finished with Scanning</button>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Done reviewing? Send your cleaned files home and remove duplicates in one step.</div>
+      </div>
+      <div id="dashAdvancedOptions" style="display:none;">
+        <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
+        <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">Advanced Options</h3>
+        <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <button class="btn btn-secondary" id="dashSendHomeBtn" onclick="sendFilesHome()">Send Files Home</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Return all files in Cleaned Files back to their original OneDrive location.</div>
+            </div>
+            <div>
+              <button class="btn btn-danger" onclick="cleanupStaging()">Clean Up Workspace</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send files home or to the Recycle Bin, then remove the local workspace folder.</div>
+            </div>
           </div>
-          <div>
-            <button class="btn btn-danger" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in the Removed Duplicates folder. Only do this when you're confident nothing important remains.</div>
+        </div>
+        <div id="dashDupeActions" style="display:none;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <button class="btn btn-primary" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Some duplicates might be worth keeping. This cycles them back through scanning so you can separate the keepers from the junk, one pass at a time.</div>
+            </div>
+            <div>
+              <button class="btn btn-danger" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in the Removed Duplicates folder. Only do this when you're confident nothing important remains.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1157,6 +1180,63 @@
     </div>
   </div>
 
+  <!-- Finish View -->
+  <div class="view" id="view-finish">
+    <div class="progress-center">
+      <h2 id="finishTitle">Finishing Up</h2>
+      <p class="subtitle" id="finishSubtitle">Review what will happen, then confirm.</p>
+
+      <!-- Summary state -->
+      <div id="finishSummary" style="margin-top:24px;">
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:16px;">Here's what will happen:</h3>
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="color:var(--accent);font-weight:bold;font-size:18px;" id="finishStagingCount">0</span>
+              <span>files in Cleaned Files will be sent back to OneDrive</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:var(--danger);font-weight:bold;font-size:18px;" id="finishDupesCount">0</span>
+              <span>files in Removed Duplicates will be sent to the Recycle Bin</span>
+            </div>
+          </div>
+          <div style="padding:12px;background:var(--surface-alt);border-radius:8px;margin:16px 0;">
+            <strong>Important:</strong> After files are returned, OneDrive may ask
+            &ldquo;Keep&rdquo; or &ldquo;Delete&rdquo;. Always choose <strong>Delete</strong>
+            or your cleanup will be undone.
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn btn-ghost" onclick="navigate('dashboard')">Go Back</button>
+            <button class="btn btn-primary btn-lg" id="finishNowBtn" onclick="_finishConfirm()">Finish Now</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress state -->
+      <div id="finishProgress" style="display:none;">
+        <div class="progress-stage" id="finishStage">Preparing...</div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" id="finishProgressFill" style="width:0%"></div></div>
+          <div class="progress-text">
+            <span id="finishProgressLeft">0 / 0</span>
+            <span id="finishProgressRight"></span>
+          </div>
+        </div>
+        <div class="progress-big-text" id="finishProgressPct">0%</div>
+        <div style="margin-top:16px;color:var(--text-dim);font-size:13px;" id="finishPhaseLabel">Step 1 of 2: Sending files home...</div>
+      </div>
+
+      <!-- Complete state -->
+      <div id="finishComplete" style="display:none;margin-top:24px;">
+        <div class="card" style="text-align:left;">
+          <h3 style="color:var(--accent);margin-bottom:16px;">All Done!</h3>
+          <div id="finishCompleteSummary" style="color:var(--text-dim);margin-bottom:16px;"></div>
+          <button class="btn btn-primary" onclick="_stagingSession=null; navigate('dashboard')">Return to Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scan Progress View -->
   <div class="view" id="view-scan-progress">
     <div class="progress-center">
@@ -1405,6 +1485,17 @@
 </div>
 
 <script>
+// Browser compatibility check
+(function() {
+  var isOK = window.fetch && window.CSS && CSS.supports && CSS.supports("gap", "1px");
+  if (!isOK) {
+    var w = document.createElement("div");
+    w.style.cssText = "background:#b33;color:#fff;padding:12px 20px;text-align:center;font-family:sans-serif;font-size:14px;";
+    w.innerHTML = "Your browser may not fully support DupeFinder. For the best experience, please use a recent version of Chrome, Firefox, Edge, or Safari.";
+    document.body.insertBefore(w, document.body.firstChild);
+  }
+})();
+
 /* ==================================================================
    DupeFinder SPA - State, Router, API, Views
    ================================================================== */
@@ -2270,9 +2361,7 @@ function scanFromBrowser() {
   }, 100);
 }
 
-function escAttr(str) {
-  return str.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-}
+// escAttr is defined near end of script -- handles HTML entity escaping
 
 // ---- Staging ----
 var _stagingSSE = null;
@@ -2405,21 +2494,221 @@ function startSyncback() {
 
 function cleanupStaging() {
   if (!_stagingSession) return;
-  showDialog("Clean Up Staging", "Delete the local staging folder? This cannot be undone.",
-    "Delete", "btn-danger", function() {
-      // Second confirmation - make them really mean it
-      showDialog("FINAL WARNING",
-        "THIS WILL DELETE THESE FILES. PROCEED?",
-        "Delete Forever", "btn-danger", function() {
-          api("POST", "/api/staging/cleanup", {
-            staging_dir: _stagingSession.staging_dir
-          }).then(function() {
-            toast("Staging folder cleaned up");
-            _stagingSession = null;
-            navigate("dashboard");
-          });
-        });
+  // Check if staging has files -- if empty, just remove the folder
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var count = (data.staging && data.staging.file_count) || 0;
+    if (count === 0) {
+      api("POST", "/api/staging/cleanup", {
+        staging_dir: _stagingSession.staging_dir
+      }).then(function() {
+        toast("Staging folder cleaned up");
+        _stagingSession = null;
+        navigate("dashboard");
+      });
+      return;
+    }
+    // Has files -- show decision dialog
+    document.getElementById("dialogTitle").textContent = "Clean Up Workspace";
+    document.getElementById("dialogMessage").innerHTML =
+      '<div style="margin-bottom:16px;">You have <strong>' + count.toLocaleString() +
+      '</strong> files in Cleaned Files. What would you like to do with them?</div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+      '<button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>' +
+      '<button class="btn btn-danger" onclick="_recycleStagingConfirm(' + count + ')">Send to Recycle Bin</button>' +
+      '<button class="btn btn-primary" onclick="closeDialog(); sendFilesHome()">Send Files Home</button>' +
+      '</div>';
+    document.getElementById("dialogConfirmBtn").style.display = "none";
+    document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+    document.getElementById("dialogOverlay").classList.add("active");
+  });
+}
+
+function _recycleStagingConfirm(count) {
+  closeDialog();
+  showDialog(
+    "Confirm Recycle",
+    "This will send " + count.toLocaleString() + " files to the Windows Recycle Bin. " +
+    "You can recover them from there if needed.",
+    "Send to Recycle Bin", "btn-danger",
+    function() {
+      _executeRecycleStaging();
+    }
+  );
+}
+
+function _executeRecycleStaging() {
+  if (!_stagingSession) return;
+  toast("Sending files to Recycle Bin...");
+  api("POST", "/api/staging/recycle-bin", {
+    staging_dir: _stagingSession.staging_dir
+  }).then(function(r) {
+    if (r.status === "recycled") {
+      _stagingSession = null;
+      var msg = r.files_recycled.toLocaleString() + " files successfully sent to the Recycle Bin.";
+      if (r.errors > 0) msg += " " + r.errors + " files could not be recycled.";
+      showDialog("Recycle Complete", msg, "OK", "btn-primary", function() {
+        navigate("dashboard");
+      });
+    } else {
+      toast("Recycle failed: " + (r.error || "Unknown error"), "error");
+    }
+  }).catch(function(err) {
+    toast("Recycle failed: " + err.message, "error");
+  });
+}
+
+// ---- Finish Flow ----
+var _finishSSE = null;
+var _finishCounts = { staging: 0, dupes: 0 };
+
+function initFinish() {
+  document.getElementById("finishSummary").style.display = "block";
+  document.getElementById("finishProgress").style.display = "none";
+  document.getElementById("finishComplete").style.display = "none";
+  document.getElementById("finishTitle").textContent = "Finishing Up";
+  document.getElementById("finishSubtitle").textContent = "Review what will happen, then confirm.";
+
+  // Ensure staging session is loaded
+  var p = _stagingSession
+    ? Promise.resolve()
+    : fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+        if (d.staging_dir && d.source_dir) {
+          _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
+        }
+      });
+
+  p.then(function() {
+    return fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+      _finishCounts.staging = (data.staging && data.staging.file_count) || 0;
+      _finishCounts.dupes = (data.dupes && data.dupes.file_count) || 0;
+      document.getElementById("finishStagingCount").textContent = _finishCounts.staging.toLocaleString();
+      document.getElementById("finishDupesCount").textContent = _finishCounts.dupes.toLocaleString();
+
+      // Disable finish if no staging session
+      var btn = document.getElementById("finishNowBtn");
+      if (!_stagingSession) {
+        btn.disabled = true;
+        btn.textContent = "No staging session found";
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Finish Now";
+      }
     });
+  });
+}
+
+function _finishConfirm() {
+  var msg = "";
+  if (_finishCounts.staging > 0) {
+    msg += _finishCounts.staging.toLocaleString() + " files will be sent home to OneDrive. ";
+  }
+  if (_finishCounts.dupes > 0) {
+    msg += _finishCounts.dupes.toLocaleString() + " duplicates will be sent to the Recycle Bin. ";
+  }
+  msg += "Continue?";
+  showDialog("Confirm Finish", msg, "Yes, Finish", "btn-primary", function() {
+    _executeFinish();
+  });
+}
+
+function _executeFinish() {
+  document.getElementById("finishSummary").style.display = "none";
+  document.getElementById("finishProgress").style.display = "block";
+  document.getElementById("finishTitle").textContent = "Finishing Up...";
+  document.getElementById("finishSubtitle").textContent = "";
+
+  // Phase 1: Send files home (sync-back)
+  if (_finishCounts.staging > 0 && _stagingSession) {
+    document.getElementById("finishPhaseLabel").textContent = "Step 1 of 2: Sending files home...";
+    document.getElementById("finishStage").textContent = "Syncing back to OneDrive";
+
+    api("POST", "/api/staging/syncback", {
+      staging_dir: _stagingSession.staging_dir,
+      source_dir: _stagingSession.source_dir
+    }).then(function() {
+      if (_finishSSE) _finishSSE.close();
+      _finishSSE = new EventSource("/api/staging/syncback/progress");
+      _finishSSE.onmessage = function(e) {
+        var d = JSON.parse(e.data);
+        var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+        document.getElementById("finishProgressFill").style.width = pct + "%";
+        document.getElementById("finishProgressPct").textContent = pct + "%";
+        document.getElementById("finishProgressLeft").textContent = d.current + " / " + d.total;
+        document.getElementById("finishStage").textContent = d.message || "Syncing";
+
+        if (d.status === "complete") {
+          _finishSSE.close();
+          _finishPhase2(d);
+        } else if (d.status === "error") {
+          _finishSSE.close();
+          _finishError("Sync-back failed: " + (d.message || "Unknown error"));
+        }
+      };
+    });
+  } else {
+    // No staging files, skip to phase 2
+    _finishPhase2({});
+  }
+}
+
+function _finishPhase2(syncResult) {
+  // Phase 2: Recycle dupes
+  if (_finishCounts.dupes > 0) {
+    document.getElementById("finishPhaseLabel").textContent = "Step 2 of 2: Recycling duplicates...";
+    document.getElementById("finishStage").textContent = "Sending duplicates to Recycle Bin";
+    document.getElementById("finishProgressFill").style.width = "0%";
+    document.getElementById("finishProgressPct").textContent = "0%";
+    document.getElementById("finishProgressLeft").textContent = "";
+
+    api("POST", "/api/staging/recycle-bin", { folder: "dupes" }).then(function(r) {
+      if (r.status === "recycled") {
+        _finishPhase3(syncResult, r);
+      } else {
+        _finishError("Recycle failed: " + (r.error || "Unknown error"));
+      }
+    }).catch(function(err) {
+      _finishError("Recycle failed: " + err.message);
+    });
+  } else {
+    _finishPhase3(syncResult, {});
+  }
+}
+
+function _finishPhase3(syncResult, recycleResult) {
+  // Phase 3: Clean up staging folder
+  if (_stagingSession) {
+    api("POST", "/api/staging/cleanup", {
+      staging_dir: _stagingSession.staging_dir
+    }).catch(function() {}); // Best effort
+  }
+
+  // Show completion
+  _stagingSession = null;
+  document.getElementById("finishProgress").style.display = "none";
+  document.getElementById("finishComplete").style.display = "block";
+  document.getElementById("finishTitle").textContent = "All Done!";
+  document.getElementById("finishSubtitle").textContent = "";
+
+  var summary = "";
+  if (_finishCounts.staging > 0) {
+    summary += _finishCounts.staging.toLocaleString() + " files sent home to OneDrive<br>";
+  }
+  if (recycleResult && recycleResult.files_recycled > 0) {
+    summary += recycleResult.files_recycled.toLocaleString() + " duplicates sent to Recycle Bin<br>";
+  }
+  summary += "Workspace cleaned up";
+  document.getElementById("finishCompleteSummary").innerHTML = summary;
+}
+
+function _finishError(msg) {
+  document.getElementById("finishProgress").style.display = "none";
+  document.getElementById("finishComplete").style.display = "block";
+  document.getElementById("finishTitle").textContent = "Finish Incomplete";
+  document.getElementById("finishSubtitle").textContent = "";
+  var card = document.querySelector("#finishComplete .card h3");
+  card.style.color = "var(--danger)";
+  card.textContent = "Something went wrong";
+  document.getElementById("finishCompleteSummary").textContent = msg;
 }
 
 // ---- Heartbeat ----
@@ -2512,6 +2801,7 @@ function route() {
   else if (view === "browser") initBrowser();
   else if (view === "staging-progress") initStagingProgress();
   else if (view === "syncback") initSyncback();
+  else if (view === "finish") initFinish();
   else if (view === "activity") loadActivity();
   else if (view === "settings") initSettings();
 }
@@ -2569,10 +2859,23 @@ function _dashUpdateFolders() {
 
     box.style.display = hasAny ? "block" : "none";
 
-    // Show rescue/purge actions when dupes folder has files
-    var dupeActions = document.getElementById("dashDupeActions");
+    var hasStaging = data.staging && data.staging.exists && data.staging.file_count > 0;
     var hasDupes = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
-    dupeActions.style.display = hasDupes ? "block" : "none";
+
+    // Show "Finished with Scanning" button when staging has files
+    document.getElementById("dashFinishAction").style.display = hasStaging ? "block" : "none";
+
+    // Show/hide Finish nav link
+    document.getElementById("navFinishBtn").style.display = hasStaging ? "" : "none";
+
+    // Show advanced options section when any folder has files
+    document.getElementById("dashAdvancedOptions").style.display = (hasStaging || hasDupes) ? "block" : "none";
+
+    // Show send-home/cleanup actions when staging folder has files
+    document.getElementById("dashStagingActions").style.display = hasStaging ? "block" : "none";
+
+    // Show rescue/purge actions when dupes folder has files
+    document.getElementById("dashDupeActions").style.display = hasDupes ? "block" : "none";
   }).catch(function() {});
 }
 
@@ -2733,6 +3036,51 @@ function _rnrSyncAndRecycle() {
   }); // end staging status fetch
 }
 
+function sendFilesHome() {
+  // Ensure staging session is loaded
+  var p = _stagingSession
+    ? Promise.resolve()
+    : fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+        if (d.staging_dir && d.source_dir) {
+          _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
+        }
+      });
+  p.then(function() {
+    if (!_stagingSession) {
+      toast("No staging session found. Files may have been staged outside the wizard.", "error");
+      return;
+    }
+    return fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+      var count = (data.staging && data.staging.file_count) || 0;
+      if (count === 0) {
+        toast("No files to send home");
+        return;
+      }
+      document.getElementById("dialogTitle").textContent = "Send Files Home";
+      document.getElementById("dialogMessage").innerHTML =
+        '<div style="margin-bottom:16px;">This will return <strong>' +
+        count.toLocaleString() + '</strong> files from Cleaned Files back to their original OneDrive location.</div>' +
+        '<div style="padding:12px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;">' +
+        '<strong>Important:</strong> After files are returned, OneDrive may ask to ' +
+        '&ldquo;Keep&rdquo; or &ldquo;Delete&rdquo; files. Always choose <strong>Delete</strong> ' +
+        'or your cleanup will be undone.</div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+        '<button class="btn btn-secondary" onclick="closeDialog()">Cancel</button>' +
+        '<button class="btn btn-primary" onclick="_confirmSendHome()">Send Home</button>' +
+        '</div>';
+      document.getElementById("dialogConfirmBtn").style.display = "none";
+      document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+      document.getElementById("dialogOverlay").classList.add("active");
+    });
+  });
+}
+
+function _confirmSendHome() {
+  closeDialog();
+  navigate("syncback");
+  setTimeout(function() { startSyncback(); }, 200);
+}
+
 function purgeAllDupes() {
   // First get the count for the confirmation
   fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
@@ -2814,12 +3162,9 @@ function initDashboard() {
 
     // Stats from most recent scan
     var latest = scans[0];
-    var totalGroups = 0, totalDupes = 0, totalSpace = 0;
-    for (var i = 0; i < scans.length; i++) {
-      totalGroups += scans[i].total_groups || 0;
-      totalDupes += scans[i].total_dupes || 0;
-      totalSpace += scans[i].reclaimable_bytes || 0;
-    }
+    var totalGroups = latest.total_groups || 0;
+    var totalDupes = latest.total_dupes || 0;
+    var totalSpace = latest.reclaimable_bytes || 0;
     document.getElementById("dStatGroups").textContent = totalGroups.toLocaleString();
     document.getElementById("dStatDupes").textContent = totalDupes.toLocaleString();
     document.getElementById("dStatSpace").textContent = formatBytes(totalSpace);
@@ -3817,8 +4162,8 @@ function escHtml(str) {
 
 function escAttr(str) {
   if (!str) return "";
-  return str.replace(/&/g, "&amp;").replace(/'/g, "&#39;").replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return str.replace(/\\/g, "\\\\").replace(/&/g, "&amp;").replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /* ==================================================================

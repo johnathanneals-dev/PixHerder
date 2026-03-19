@@ -37,6 +37,7 @@ from engine.checkpoint import (
 from engine.staging import (
     is_onedrive_path, get_staging_dir, count_files_for_staging,
     start_staging, load_manifest, sync_back_deletions, cleanup_staging,
+    recycle_staging,
 )
 
 
@@ -869,6 +870,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_syncback_start()
         elif path == "/api/staging/cleanup":
             self._handle_staging_cleanup()
+        elif path == "/api/staging/recycle-bin":
+            self._handle_staging_recycle_bin()
         elif path == "/api/browser/delete":
             self._handle_browser_delete()
         elif path == "/api/browser/delete-folder":
@@ -2045,6 +2048,41 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         _log_activity("staging_cleanup", {
             "staging_dir": staging_dir,
             "result": result.get("status"),
+        })
+        self.send_json(result)
+
+    def _handle_staging_recycle_bin(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        # Support both explicit staging_dir and folder name ("staging"/"dupes")
+        folder = body.get("folder", "")
+        staging_dir = body.get("staging_dir", "")
+
+        if folder == "dupes":
+            settings = load_settings()
+            target_dir = settings.get(
+                "move_destination", DEFAULTS["move_destination"]
+            )
+        elif folder == "staging" or staging_dir:
+            target_dir = staging_dir or ""
+        else:
+            self.send_error_json("Missing folder or staging_dir")
+            return
+
+        if not target_dir:
+            self.send_error_json("Could not resolve target directory")
+            return
+
+        result = recycle_staging(target_dir)
+        _log_activity("staging_recycle_bin", {
+            "folder": folder or "staging",
+            "target_dir": target_dir,
+            "files_recycled": result.get("files_recycled", 0),
+            "errors": result.get("errors", 0),
         })
         self.send_json(result)
 

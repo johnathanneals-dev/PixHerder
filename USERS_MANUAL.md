@@ -121,7 +121,9 @@ Browse your files and decide next steps:
 - **Removed Duplicates** -- browse the dupes folder to verify nothing was wrongly removed.
 - **Rescan** -- return to Step 2 for another pass (Step 1 stays complete)
 - **Sync Back to OneDrive** -- apply your cleanup to the original OneDrive folder (deletes originals that were removed from staging)
-- **Clean Up Staging** -- delete the local staging copy when you're done
+- **Clean Up Staging** -- see "Finishing Up" below for safe cleanup options
+
+When you're done with the wizard, return to the dashboard for the one-click finish option.
 
 ---
 
@@ -141,6 +143,31 @@ The browser is restricted to the staging and dupes folders for security.
 
 ---
 
+## Finishing Up
+
+When you're done scanning and reviewing, the dashboard offers a one-click finish:
+
+1. Click **Finished with Scanning** on the dashboard (or the **Finish** link in the top nav)
+2. A summary page shows exactly what will happen:
+   - How many files in Cleaned Files will be sent back to OneDrive
+   - How many files in Removed Duplicates will be sent to the Recycle Bin
+3. Review the OneDrive warning (see Important Notes below)
+4. Click **Finish Now** and confirm
+5. DupeFinder sends your files home, recycles duplicates, and cleans up the workspace
+
+After finishing, duplicates are in your Windows Recycle Bin -- you can recover them from there if you change your mind.
+
+### Advanced Options
+
+Below the "Finished with Scanning" button, the dashboard also shows:
+
+- **Send Files Home** -- return cleaned files to OneDrive without recycling dupes
+- **Clean Up Workspace** -- offers a choice: send files home or send to Recycle Bin
+- **Rescue & Review** -- cycle dupes back for another scan pass (see below)
+- **Delete All Remaining** -- permanently delete everything in the dupes folder
+
+---
+
 ## Rescue & Review
 
 After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back through the scan and review process:
@@ -152,7 +179,7 @@ After running scans and moving duplicates, the Removed Duplicates folder may con
 3. Scan the workspace to find duplicates among the recycled files
 4. Review groups -- keep what matters, delete the rest
 5. Repeat until you're confident nothing important remains
-6. Click **Delete All Remaining** to permanently purge whatever's left
+6. Use **Finished with Scanning** when satisfied
 
 This is designed to be an iterative loop. Each pass reduces the file count as you separate keepers from junk.
 
@@ -207,6 +234,17 @@ Click the **Settings** tab to customize defaults:
 
 ---
 
+## System Requirements
+
+- **Windows 10** version 1803 (April 2018 Update) or later
+- A modern browser: Chrome 80+, Firefox 80+, Safari 14+, or Edge 80+
+- Internet Explorer and Edge Legacy are not supported
+- ~50 MB disk space for the app, plus temp space for staging (roughly equal to your pictures folder size)
+
+If your browser is too old, a red warning banner will appear at the top of the page.
+
+---
+
 ## Important Notes
 
 ### OneDrive
@@ -221,7 +259,8 @@ The Guided Cleanup wizard handles OneDrive automatically by staging files locall
 - Each file operation is independent -- one failure won't stop the rest
 - Failed files are logged and shown in the UI
 - Move operations are reversible: files go to your dupes folder
-- **Delete operations are permanent** -- files are not sent to the recycle bin
+- The **Finish** flow and **Clean Up Workspace** send files to the Windows Recycle Bin -- you can recover them if needed
+- The **Delete All Remaining** button permanently deletes files (not sent to Recycle Bin)
 
 ### Controlled Folder Access
 Windows Defender's Controlled Folder Access is enabled. If the app can't create files, whitelist Python:
@@ -262,3 +301,6 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | Migration/staging is slow | Copying thousands of images takes time, especially from OneDrive. The first migration is the slowest; subsequent ones can reuse the existing staging folder |
 | OneDrive asks to "Keep" or "Delete" after sync-back | Choose **Delete**. If you choose "Keep", OneDrive will restore the files you just removed |
 | "File not found" errors during move | Files may be OneDrive cloud-only (not downloaded locally). Use the Guided Cleanup wizard to stage files locally first |
+| **Finishing** | |
+| Recycle Bin operation failed | DupeFinder falls back to permanent delete if PowerShell is unavailable. Check that PowerShell is installed and not blocked by group policy |
+| Where did my recycled files go? | They are in the Windows Recycle Bin (on your desktop). Right-click it to restore files if needed |
