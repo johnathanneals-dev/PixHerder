@@ -995,6 +995,7 @@
         </div>
         <div id="wizScanActions">
           <button class="btn btn-primary" onclick="wizardStartScan()">Start Scan</button>
+          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
         </div>
         <div id="wizScanProgress" style="display:none;margin-top:16px;">
           <div class="progress-stage" id="wizScanStage" style="text-align:center;margin-bottom:8px;">Initializing</div>
@@ -3117,19 +3118,39 @@ function _rnrMerge() {
   var btn = document.getElementById("dashRescueBtn");
   btn.disabled = true;
   btn.textContent = "Merging duplicates...";
+
+  // Show a working dialog
+  document.getElementById("dialogTitle").textContent = "Merging Files";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="text-align:center;padding:20px 0;">' +
+    '<div style="font-size:18px;color:var(--accent);margin-bottom:12px;">Moving files to Cleaned Files...</div>' +
+    '<div style="color:var(--text-dim);">This may take a moment.</div>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+
   api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
     if (r.success) {
-      toast("Merged " + r.files_moved + " files into workspace");
       wizardState.stagingDir = r.staging_path;
       wizardState.completedSteps = { 1: true };
-      wizardState.currentStep = 2;
-      navigate("wizard");
+      // Show completion dialog with file count
+      document.getElementById("dialogTitle").textContent = "Merge Complete";
+      document.getElementById("dialogMessage").innerHTML =
+        '<div style="margin-bottom:16px;"><strong>' + r.files_moved.toLocaleString() +
+        '</strong> files moved to Cleaned Files.</div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+        '<button class="btn btn-secondary" onclick="closeDialog(); navigate(\'dashboard\')">Back to Dashboard</button>' +
+        '<button class="btn btn-primary" onclick="closeDialog(); wizardState.currentStep=2; navigate(\'wizard\')">Scan Now</button>' +
+        '</div>';
     } else {
+      closeDialog();
       toast("Failed: " + (r.error || "Unknown error"), "error");
     }
     btn.disabled = false;
     btn.innerHTML = "Rescue &amp; Review";
   }).catch(function(err) {
+    closeDialog();
     toast("Merge failed: " + err.message, "error");
     btn.disabled = false;
     btn.innerHTML = "Rescue &amp; Review";
