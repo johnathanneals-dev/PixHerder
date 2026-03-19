@@ -4362,10 +4362,18 @@ function initActions() {
     }
   }
 
-  // Count files
-  var moveFileCount = 0, deleteFileCount = 0;
-  for (var i = 0; i < moveGroups.length; i++) moveFileCount += (moveGroups[i].duplicates || []).length;
-  for (var i = 0; i < deleteGroups.length; i++) deleteFileCount += (deleteGroups[i].duplicates || []).length;
+  // Count unique files (dedup across groups that may share files)
+  var moveFileSet = {}, deleteFileSet = {};
+  for (var i = 0; i < moveGroups.length; i++) {
+    var dupes = moveGroups[i].duplicates || [];
+    for (var j = 0; j < dupes.length; j++) moveFileSet[dupes[j]] = true;
+  }
+  for (var i = 0; i < deleteGroups.length; i++) {
+    var dupes = deleteGroups[i].duplicates || [];
+    for (var j = 0; j < dupes.length; j++) deleteFileSet[dupes[j]] = true;
+  }
+  var moveFileCount = Object.keys(moveFileSet).length;
+  var deleteFileCount = Object.keys(deleteFileSet).length;
 
   document.getElementById("actMoveCount").textContent = moveFileCount;
   document.getElementById("actDeleteCount").textContent = deleteFileCount;

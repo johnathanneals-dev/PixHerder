@@ -59,15 +59,22 @@ def move_files(groups, move_dir, keep_strategy="largest",
     error_list = []
     cancelled = False
 
-    # Count total files to process
-    total = 0
+    # Count total unique files to process (dedup across groups)
+    all_dupe_paths = set()
     for group in groups:
         if isinstance(group, dict):
-            total += len(group.get("duplicates", []))
+            for p in group.get("duplicates", []):
+                all_dupe_paths.add(os.path.normpath(p))
         else:
-            total += max(0, len(group) - 1)
+            orig = pick_original(group, strategy=keep_strategy)
+            if orig is not None:
+                for p in group:
+                    if str(p) != str(orig):
+                        all_dupe_paths.add(os.path.normpath(str(p)))
+    total = len(all_dupe_paths)
 
     current = 0
+    processed_paths = set()
 
     for group in groups:
         if cancel_event and cancel_event.is_set():
@@ -81,14 +88,15 @@ def move_files(groups, move_dir, keep_strategy="largest",
         else:
             original = pick_original(group, strategy=keep_strategy)
             if original is None:
-                current += max(0, len(group) - 1)
-                if progress_cb:
-                    progress_cb(current, total, "move")
                 continue
             keep = str(original)
             dupes = [str(p) for p in group if str(p) != keep]
 
         for dupe_path_str in dupes:
+            norm_path = os.path.normpath(dupe_path_str)
+            if norm_path in processed_paths:
+                continue
+            processed_paths.add(norm_path)
             if cancel_event and cancel_event.is_set():
                 cancelled = True
                 break
@@ -164,14 +172,22 @@ def delete_files(groups, keep_strategy="largest",
     error_list = []
     cancelled = False
 
-    total = 0
+    # Count total unique files to process (dedup across groups)
+    all_dupe_paths = set()
     for group in groups:
         if isinstance(group, dict):
-            total += len(group.get("duplicates", []))
+            for p in group.get("duplicates", []):
+                all_dupe_paths.add(os.path.normpath(p))
         else:
-            total += max(0, len(group) - 1)
+            orig = pick_original(group, strategy=keep_strategy)
+            if orig is not None:
+                for p in group:
+                    if str(p) != str(orig):
+                        all_dupe_paths.add(os.path.normpath(str(p)))
+    total = len(all_dupe_paths)
 
     current = 0
+    processed_paths = set()
 
     for group in groups:
         if cancel_event and cancel_event.is_set():
@@ -184,14 +200,15 @@ def delete_files(groups, keep_strategy="largest",
         else:
             original = pick_original(group, strategy=keep_strategy)
             if original is None:
-                current += max(0, len(group) - 1)
-                if progress_cb:
-                    progress_cb(current, total, "delete")
                 continue
             keep = str(original)
             dupes = [str(p) for p in group if str(p) != keep]
 
         for dupe_path_str in dupes:
+            norm_path = os.path.normpath(dupe_path_str)
+            if norm_path in processed_paths:
+                continue
+            processed_paths.add(norm_path)
             if cancel_event and cancel_event.is_set():
                 cancelled = True
                 break
