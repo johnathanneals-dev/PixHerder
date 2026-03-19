@@ -921,9 +921,9 @@
       <div class="card">
         <h2>Step 1: Migrate Files</h2>
         <div class="wizard-explanation">
-          First, DupeFinder makes a local copy of your pictures so it can
-          work without OneDrive getting in the way. Your originals stay
-          exactly where they are -- nothing is changed or deleted.
+          First, DupeFinder makes a working copy of your pictures so it can
+          scan without interruption. Your originals stay exactly where
+          they are -- nothing is changed or deleted.
         </div>
         <div class="form-group">
           <label class="form-label">Source folder</label>
@@ -1143,7 +1143,7 @@
   <div class="view" id="view-staging-progress">
     <div class="progress-center">
       <h2>Staging Files...</h2>
-      <p class="subtitle">Copying your files from OneDrive to Cleaned Files for reliable scanning.</p>
+      <p class="subtitle">Copying your files to Cleaned Files for reliable scanning.</p>
       <div class="progress-stage" id="stagingStage">Counting files</div>
 
       <div class="progress-container">
@@ -1180,19 +1180,19 @@
   <!-- Sync Back View -->
   <div class="view" id="view-syncback">
     <div class="progress-center">
-      <h2>Apply Cleanup to OneDrive</h2>
-      <p class="subtitle">Deleting originals from OneDrive for files you removed during scanning.</p>
+      <h2>Apply Cleanup to Originals</h2>
+      <p class="subtitle">Deleting originals for files you removed during scanning.</p>
 
       <div id="syncbackStart" style="margin-top:24px;">
         <div class="card" style="text-align:left;">
           <h3 style="margin-bottom:12px;">Ready to apply cleanup</h3>
           <p style="color:var(--text-dim);margin-bottom:16px;">
-            Files you removed from Cleaned Files will be deleted from OneDrive.
+            Files you removed from Cleaned Files will be deleted from their original location.
             Files still in Cleaned Files will be left untouched.
           </p>
           <div style="padding:10px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;font-size:13px;">
-            <strong>Warning:</strong> This deletes OneDrive originals. If you just want to
-            copy files back to OneDrive, use <strong>Send Files Home</strong> on the dashboard instead.
+            <strong>Warning:</strong> This deletes your originals permanently. If you just want to
+            put files back where they came from, use <strong>Send Files Home</strong> on the dashboard instead.
           </div>
           <button class="btn btn-danger" onclick="startSyncback()">Apply Cleanup Now</button>
           <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Skip</button>
@@ -1247,7 +1247,7 @@
             </div>
           </div>
           <div style="padding:12px;background:var(--surface-alt);border-radius:8px;margin:16px 0;">
-            <strong>Important:</strong> After files are returned, OneDrive may ask
+            <strong>Important:</strong> After files are returned, your system may ask
             &ldquo;Keep&rdquo; or &ldquo;Delete&rdquo;. Always choose <strong>Delete</strong>
             or your cleanup will be undone.
           </div>
@@ -2738,10 +2738,10 @@ function initFinish() {
 function _finishConfirm() {
   var msg = "";
   if (_finishCounts.staging > 0) {
-    msg += "Originals of " + _finishCounts.staging.toLocaleString() + " kept files will stay in OneDrive. ";
+    msg += _finishCounts.staging.toLocaleString() + " kept files will stay safe in their original folder. ";
   }
   if (_finishCounts.dupes > 0) {
-    msg += _finishCounts.dupes.toLocaleString() + " duplicate originals will be deleted from OneDrive and local copies sent to the Recycle Bin. ";
+    msg += _finishCounts.dupes.toLocaleString() + " duplicates will be removed and sent to the Recycle Bin. ";
   }
   msg += "Continue?";
   showDialog("Confirm Finish", msg, "Yes, Finish", "btn-primary", function() {
@@ -2773,8 +2773,8 @@ function _executeFinish() {
   // Phase 1: Sync-back (keep workspace originals, delete removed originals)
   if (_finishCounts.staging > 0 && _stagingSession) {
     curPhase++;
-    document.getElementById("finishPhaseLabel").textContent = "Step " + curPhase + " of " + totalPhases + ": Applying cleanup to OneDrive...";
-    document.getElementById("finishStage").textContent = "Syncing back to OneDrive";
+    document.getElementById("finishPhaseLabel").textContent = "Step " + curPhase + " of " + totalPhases + ": Applying cleanup...";
+    document.getElementById("finishStage").textContent = "Applying cleanup to originals";
 
     api("POST", "/api/staging/syncback", {
       staging_dir: _stagingSession.staging_dir,
@@ -2846,7 +2846,7 @@ function _finishPhase3(syncResult, recycleResult) {
 
   var summary = "";
   if (_finishCounts.staging > 0) {
-    summary += _finishCounts.staging.toLocaleString() + " files sent home to OneDrive<br>";
+    summary += _finishCounts.staging.toLocaleString() + " files kept safe<br>";
   }
   if (recycleResult && recycleResult.files_recycled > 0) {
     summary += recycleResult.files_recycled.toLocaleString() + " duplicates sent to Recycle Bin<br>";
@@ -3164,7 +3164,7 @@ function _rnrSyncAndRecycle() {
   // Show progress on the rescue button
   var btn = document.getElementById("dashRescueBtn");
   btn.disabled = true;
-  btn.textContent = "Syncing back to OneDrive...";
+  btn.textContent = "Sending Cleaned Files home...";
 
   // Get staging info to find source and staging dirs
   fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
@@ -3179,7 +3179,7 @@ function _rnrSyncAndRecycle() {
     }
 
   // Step 1: Restore cleaned files back to OneDrive (copy, not destructive sync)
-  btn.textContent = "Restoring files to OneDrive...";
+  btn.textContent = "Restoring files to original folder...";
   api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
     if (!r.success) {
       toast("Restore failed: " + (r.error || "Unknown error"), "error");
@@ -3187,7 +3187,7 @@ function _rnrSyncAndRecycle() {
       btn.innerHTML = "Rescue &amp; Review";
       return;
     }
-    var restoreMsg = "Restored " + r.copied + " files to OneDrive";
+    var restoreMsg = "Restored " + r.copied + " files to original folder";
     if (r.skipped) restoreMsg += " (" + r.skipped + " already there)";
     toast(restoreMsg);
 
@@ -3573,9 +3573,9 @@ function startScan() {
 }
 
 function showStagingDialog(dir, stagingDir, info, existingSession, mode, threshold, recursive) {
-  document.getElementById("dialogTitle").textContent = "OneDrive Detected";
-  var html = '<div style="margin-bottom:12px;">This folder is managed by OneDrive. '
-    + 'Make a local copy for reliable scanning?</div>'
+  document.getElementById("dialogTitle").textContent = "Synced Folder Detected";
+  var html = '<div style="margin-bottom:12px;">This folder appears to be synced (OneDrive). '
+    + 'Make a working copy for reliable scanning?</div>'
     + '<div style="font-size:12px;color:var(--text-dim);font-family:monospace;margin-bottom:16px;">'
     + escHtml(info) + '</div>'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">'
@@ -3585,8 +3585,8 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
   }
   html += '<button class="btn btn-primary" id="stagingGoBtn">Copy Locally First</button></div>'
     + '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">'
-    + '<span style="color:#fff;font-weight:600;">Copy Locally First</span> is recommended. It avoids OneDrive sync issues during scanning.<br><br>'
-    + '<span style="color:#fff;font-weight:600;">Scan Directly</span> scans the OneDrive folder as-is. May have issues with cloud-only files or sync locks.'
+    + '<span style="color:#fff;font-weight:600;">Copy Locally First</span> is recommended. It avoids sync issues during scanning.<br><br>'
+    + '<span style="color:#fff;font-weight:600;">Scan Directly</span> scans the folder as-is. May have issues with cloud-only files or sync locks.'
     + '</div>'
     + '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
 
