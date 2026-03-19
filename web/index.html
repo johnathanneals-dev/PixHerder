@@ -3136,13 +3136,22 @@ function _rnrMerge() {
       wizardState.completedSteps = { 1: true };
       // Show completion dialog with file count
       document.getElementById("dialogTitle").textContent = "Merge Complete";
-      document.getElementById("dialogMessage").innerHTML =
-        '<div style="margin-bottom:16px;"><strong>' + r.files_moved.toLocaleString() +
-        '</strong> files moved to Cleaned Files.</div>' +
-        '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
-        '<button class="btn btn-secondary" onclick="closeDialog(); navigate(\'dashboard\')">Back to Dashboard</button>' +
-        '<button class="btn btn-primary" onclick="closeDialog(); wizardState.currentStep=2; navigate(\'wizard\')">Scan Now</button>' +
-        '</div>';
+      // Fetch updated counts to show the result clearly
+      fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
+        var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
+        var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
+        document.getElementById("dialogMessage").innerHTML =
+          '<div style="margin-bottom:16px;"><strong>' + r.files_moved.toLocaleString() +
+          '</strong> files moved from Removed Duplicates to Cleaned Files.</div>' +
+          '<div style="margin-bottom:16px;color:var(--text-dim);">' +
+          'Cleaned Files now has <strong style="color:var(--accent);">' + cleanedCount.toLocaleString() + '</strong> files. ' +
+          (dupesCount > 0 ? 'Removed Duplicates has <strong>' + dupesCount.toLocaleString() + '</strong> remaining.' : 'Removed Duplicates is empty.') +
+          '</div>' +
+          '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+          '<button class="btn btn-secondary" onclick="closeDialog(); navigate(\'dashboard\')">Back to Dashboard</button>' +
+          '<button class="btn btn-primary" onclick="closeDialog(); wizardState.currentStep=2; navigate(\'wizard\')">Scan Now</button>' +
+          '</div>';
+      });
     } else {
       closeDialog();
       toast("Failed: " + (r.error || "Unknown error"), "error");
