@@ -1384,6 +1384,8 @@
         <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">Keep All Remaining</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-primary btn-sm" onclick="goToActions()">Apply Decisions</button>
+        <span style="width:1px;height:24px;background:var(--border);"></span>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">Exit</button>
       </div>
     </div>
   </div>
@@ -3992,17 +3994,19 @@ function renderReviewGroup() {
   }
   html += '</div></div>';
 
-  // Image grid
+  // Image grid — show all files, use _userKeeps for badge
   html += '<div class="image-grid">';
-  html += makeImageCardHtml(group.keep, "keep", null, realIdx);
-
-  var dupes = group.duplicates || [];
-  for (var i = 0; i < dupes.length; i++) {
-    var dupeDist = null;
-    if (group.distances && group.distances[dupes[i]] !== undefined) {
-      dupeDist = group.distances[dupes[i]];
+  var allFiles = [group.keep].concat(group.duplicates || []);
+  var seen = {};
+  for (var i = 0; i < allFiles.length; i++) {
+    if (seen[allFiles[i]]) continue;
+    seen[allFiles[i]] = true;
+    var isKeep = group._userKeeps ? !!group._userKeeps[allFiles[i]] : (allFiles[i] === group.keep);
+    var fileDist = null;
+    if (group.distances && group.distances[allFiles[i]] !== undefined) {
+      fileDist = group.distances[allFiles[i]];
     }
-    html += makeImageCardHtml(dupes[i], "dupe", dupeDist, realIdx);
+    html += makeImageCardHtml(allFiles[i], isKeep ? "keep" : "dupe", fileDist, realIdx);
   }
   html += '</div>';
 
@@ -4016,10 +4020,11 @@ function makeImageCardHtml(filepath, type, distance, groupIdx) {
   var badgeText = type === "keep" ? "KEEP" : "DUPE";
   var cardClass = type;
 
-  var html = '<div class="image-card ' + cardClass + '">';
-  html += '<div class="image-wrapper" onclick="openLightbox(\'' + escAttr(encoded) + '\')">';
+  var html = '<div class="image-card ' + cardClass + '" style="cursor:pointer;" onclick="toggleKeepDupe(' + groupIdx + ',\'' + escAttr(filepath) + '\')">';
+  html += '<div class="image-wrapper">';
   html += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
   html += '<img src="/api/image?path=' + escAttr(encoded) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<span style=color:var(--text-dim);font-size:12px>Could not load</span>\'">';
+  html += '<button class="btn btn-ghost" style="position:absolute;bottom:4px;right:4px;font-size:10px;padding:2px 8px;background:rgba(0,0,0,0.7);color:#fff;border-radius:4px;" onclick="event.stopPropagation(); openLightbox(\'' + escAttr(encoded) + '\')">Zoom</button>';
   html += '</div>';
   html += '<div class="card-info">';
   html += '<div class="card-filename">' + escHtml(getFilename(filepath)) + '</div>';
@@ -4028,24 +4033,59 @@ function makeImageCardHtml(filepath, type, distance, groupIdx) {
     html += ' | dist: ' + distance;
   }
   html += '</div>';
-  if (type === "dupe" && groupIdx !== undefined) {
-    html += '<button class="btn btn-ghost" style="font-size:10px;padding:2px 8px;margin-top:4px;" onclick="event.stopPropagation(); swapKeeper(' + groupIdx + ',\'' + escAttr(filepath) + '\')">Keep This Instead</button>';
-  }
   html += '</div></div>';
   return html;
 }
 
-function swapKeeper(groupIdx, newKeeperPath) {
+function toggleKeepDupe(groupIdx, filepath) {
   var group = state.groups[groupIdx];
-  if (!group || group.keep === newKeeperPath) return;
-  var oldKeep = group.keep;
-  // Move old keeper to duplicates
-  group.duplicates.push(oldKeep);
-  // Remove new keeper from duplicates
-  var idx = group.duplicates.indexOf(newKeeperPath);
-  if (idx >= 0) group.duplicates.splice(idx, 1);
-  // Set new keeper
-  group.keep = newKeeperPath;
+  if (!group) return;
+
+  // Initialize user selections if not yet set
+  if (!group._userKeeps) {
+    group._userKeeps = {};
+    group._userKeeps[group.keep] = true;
+  }
+
+  if (group._userKeeps[filepath]) {
+    // Currently KEEP — toggle to DUPE
+    // Must keep at least one file
+    var keepCount = 0;
+    for (var k in group._userKeeps) { if (group._userKeeps[k]) keepCount++; }
+    if (keepCount <= 1) {
+      toast("At least one file must be kept");
+      return;
+    }
+    delete group._userKeeps[filepath];
+  } else {
+    // Currently DUPE — toggle to KEEP
+    group._userKeeps[filepath] = true;
+  }
+
+  // Rebuild keep/duplicates from user selections
+  var allFiles = [group.keep].concat(group.duplicates || []);
+  // Deduplicate
+  var seen = {};
+  var unique = [];
+  for (var i = 0; i < allFiles.length; i++) {
+    if (!seen[allFiles[i]]) { seen[allFiles[i]] = true; unique.push(allFiles[i]); }
+  }
+
+  var newKeep = null;
+  var newDupes = [];
+  for (var j = 0; j < unique.length; j++) {
+    if (group._userKeeps[unique[j]]) {
+      if (!newKeep) newKeep = unique[j];
+      else newDupes.push(unique[j]); // additional keeps still need to not be in dupes
+    } else {
+      newDupes.push(unique[j]);
+    }
+  }
+
+  // The "keep" field is the primary keeper; additional keeps are NOT in duplicates
+  group.keep = newKeep || unique[0];
+  group.duplicates = newDupes;
+
   renderReviewGroup();
 }
 
