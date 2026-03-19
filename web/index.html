@@ -442,6 +442,8 @@
   .btn-ghost:hover { color: var(--text); }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
   .btn-lg { padding: 14px 28px; font-size: 16px; }
+  .btn-fixed { min-width: 160px; text-align: center; }
+  .btn-browse { min-width: 180px; text-align: center; }
 
   /* ---- Forms ---- */
   .form-group { margin-bottom: 20px; }
@@ -830,15 +832,15 @@
       <h2>Browse Files</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <div style="text-align:center;">
-          <button class="btn btn-secondary" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>Cleaned Files</button>
+          <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>Cleaned Files</button>
           <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
         <div style="text-align:center;">
-          <button class="btn btn-secondary" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
+          <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
           <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
         <div style="text-align:center;">
-          <button class="btn btn-secondary" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled>Verified Keepers</button>
+          <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled>Verified Keepers</button>
           <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
       </div>
@@ -852,15 +854,15 @@
         <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
-              <button class="btn btn-primary" id="dashSendHomeBtn" onclick="sendFilesHome()">Send Files Home</button>
+              <button class="btn btn-primary btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()">Send Files Home</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
             </div>
             <div>
-              <button class="btn btn-danger" onclick="cleanupStaging()">Remove Workspace</button>
+              <button class="btn btn-danger btn-fixed" onclick="cleanupStaging()">Remove Workspace</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
             </div>
             <div>
-              <button class="btn btn-warning" onclick="_restartAllFiles()">Start Over</button>
+              <button class="btn btn-warning btn-fixed" onclick="_restartAllFiles()">Start Over</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Cleaned Files so you can rescan everything from scratch.</div>
             </div>
           </div>
@@ -868,15 +870,15 @@
         <div id="dashDupeActions" style="display:none;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
-              <button class="btn btn-warning" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
+              <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to Cleaned Files for another round of scanning. If Cleaned Files already has files, you can choose to merge them together or send the cleaned files home first.</div>
             </div>
             <div>
-              <button class="btn btn-primary" onclick="promoteToKeepers()">Move to Keepers</button>
+              <button class="btn btn-primary btn-fixed" onclick="promoteToKeepers()">Move to Keepers</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Save these files as confirmed keepers. They'll go home with your other files when you finish.</div>
             </div>
             <div>
-              <button class="btn btn-danger" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
+              <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in Removed Duplicates. Make sure you've rescued anything you want to keep first.</div>
             </div>
           </div>
