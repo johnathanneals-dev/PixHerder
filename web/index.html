@@ -1775,7 +1775,8 @@ function showResumeDialog(title, detail, onResume, onFresh) {
     '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
     '<span style="color:#fff;font-weight:600;">Resume</span> picks up where the last scan left off, saving time.<br><br>' +
     '<span style="color:#fff;font-weight:600;">Start Fresh</span> starts a brand new scan from scratch.' +
-    '</div>';
+    '</div>' +
+    '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
   document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
@@ -2642,14 +2643,14 @@ function cleanupStaging() {
       '<div style="margin-bottom:16px;">You have <strong>' + count.toLocaleString() +
       '</strong> files in Cleaned Files. What would you like to do with them?</div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
-      '<button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>' +
       '<button class="btn btn-danger" onclick="_recycleStagingConfirm(' + count + ')">Send to Recycle Bin</button>' +
       '<button class="btn btn-primary" onclick="closeDialog(); sendFilesHome()">Send Files Home</button>' +
       '</div>' +
       '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
       '<span style="color:#fff;font-weight:600;">Send Files Home</span> puts everything back where it came from. Nothing gets deleted.<br><br>' +
       '<span style="color:#fff;font-weight:600;">Send to Recycle Bin</span> removes the files but you can recover them from the Recycle Bin if needed.' +
-      '</div>';
+      '</div>' +
+      '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
     document.getElementById("dialogConfirmBtn").style.display = "none";
     document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
     document.getElementById("dialogOverlay").classList.add("active");
@@ -3066,14 +3067,14 @@ function rescueAndReview() {
         '<div style="margin-bottom:16px;">Cleaned Files still has <strong>' +
         data.staging.file_count.toLocaleString() + '</strong> files. How would you like to proceed?</div>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
-        '<button class="btn btn-secondary" onclick="closeDialog()">Cancel</button>' +
         '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes</button>' +
         '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Return / Reload</button>' +
         '</div>' +
         '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
         '<span style="color:#fff;font-weight:600;">Merge Dupes</span> adds the duplicates alongside your existing files so you can rescan everything together.<br><br>' +
         '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your cleaned files home first, then brings the duplicates back for another review.' +
-        '</div>';
+        '</div>' +
+        '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
       document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
       document.getElementById("dialogOverlay").classList.add("active");
@@ -3565,7 +3566,8 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
     + '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">'
     + '<span style="color:#fff;font-weight:600;">Copy Locally First</span> is recommended. It avoids OneDrive sync issues during scanning.<br><br>'
     + '<span style="color:#fff;font-weight:600;">Scan Directly</span> scans the OneDrive folder as-is. May have issues with cloud-only files or sync locks.'
-    + '</div>';
+    + '</div>'
+    + '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
 
   document.getElementById("dialogMessage").innerHTML = html;
   document.getElementById("dialogConfirmBtn").style.display = "none";
