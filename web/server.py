@@ -1689,6 +1689,20 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             if keepers_dir and os.path.isdir(keepers_dir):
                 cleanup_staging(keepers_dir)
 
+        if full_restore:
+            # Clear in-memory staging session so wizard starts fresh
+            staging_progress.update({
+                "status": "idle",
+                "staging_dir": "",
+                "source_dir": "",
+                "current": 0,
+                "total": 0,
+                "bytes_copied": 0,
+                "bytes_total": 0,
+                "stage": "",
+                "message": "",
+            })
+
         _log_activity("staging_restore", {
             "staging_dir": staging_dir,
             "source_dir": source_dir,
