@@ -1495,10 +1495,14 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         try:
+            from engine.staging import _recycle_file_powershell
             import stat
             if not os.access(filepath, os.W_OK):
                 os.chmod(filepath, stat.S_IWRITE | stat.S_IREAD)
-            os.remove(filepath)
+            try:
+                _recycle_file_powershell(filepath)
+            except Exception:
+                os.remove(filepath)  # fallback if PowerShell unavailable
             _log_activity("browser_delete", {"path": filepath})
             self.send_json({"success": True})
         except Exception as e:
@@ -1597,15 +1601,11 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         try:
-            import shutil
-            import stat
-
-            def _force_remove_readonly(func, path, exc_info):
-                os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
-                func(path)
-
-            shutil.rmtree(dirpath, onerror=_force_remove_readonly)
-            _log_activity("browser_delete_folder", {"path": dirpath})
+            result = recycle_staging(dirpath)
+            _log_activity("browser_delete_folder", {
+                "path": dirpath,
+                "recycled": result.get("files_recycled", 0),
+            })
             self.send_json({"success": True})
         except Exception as e:
             self.send_json({"success": False, "error": str(e)})
@@ -1811,7 +1811,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         })
 
     def _handle_dupes_purge(self):
-        """Delete all files in the dupes folder."""
+        """Send all files in the dupes folder to the Recycle Bin."""
         settings = load_settings()
         dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
 
@@ -1819,37 +1819,18 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_error_json("Duplicates folder not found", 404)
             return
 
-        import stat
-        deleted = 0
-        errors = 0
-        for root, dirs, files in os.walk(dupes_dir, topdown=False):
-            for f in files:
-                fp = os.path.join(root, f)
-                try:
-                    if not os.access(fp, os.W_OK):
-                        os.chmod(fp, stat.S_IWRITE | stat.S_IREAD)
-                    os.remove(fp)
-                    deleted += 1
-                except Exception:
-                    errors += 1
-            # Remove empty subdirectories
-            for d in dirs:
-                dp = os.path.join(root, d)
-                try:
-                    os.rmdir(dp)
-                except Exception:
-                    pass
-
+        result = recycle_staging(dupes_dir)
         _log_activity("dupes_purge", {
             "path": dupes_dir,
-            "deleted": deleted,
-            "errors": errors,
+            "recycled": result.get("files_recycled", 0),
+            "errors": result.get("errors", 0),
+            "used_fallback": result.get("used_fallback", False),
         })
 
         self.send_json({
             "success": True,
-            "deleted": deleted,
-            "errors": errors,
+            "deleted": result.get("files_recycled", 0),
+            "errors": result.get("errors", 0),
         })
 
     def _handle_dupes_promote(self):

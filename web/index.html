@@ -879,7 +879,7 @@
             </div>
             <div>
               <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in Removed Duplicates. Make sure you've rescued anything you want to keep first.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Removed Duplicates to the Recycle Bin. You can recover them from there if needed.</div>
             </div>
           </div>
         </div>
@@ -1191,8 +1191,9 @@
             Files still in Cleaned Files will be left untouched.
           </p>
           <div style="padding:10px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;font-size:13px;">
-            <strong>Warning:</strong> This deletes your originals permanently. If you just want to
-            put files back where they came from, use <strong>Send Files Home</strong> on the dashboard instead.
+            <strong>Warning:</strong> This is the only action in DupeFinder that permanently deletes files
+            (from the original folder, not the Recycle Bin). If you just want to put files back
+            where they came from, use <strong>Send Files Home</strong> on the dashboard instead.
           </div>
           <button class="btn btn-danger" onclick="startSyncback()">Apply Cleanup Now</button>
           <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Skip</button>
@@ -1650,7 +1651,7 @@ function deleteLightboxFile() {
   var filename = _lightboxFilePath.split("\\").pop();
   showDialog(
     "Delete File",
-    "Permanently delete " + filename + "? This cannot be undone.",
+    "Send " + filename + " to the Recycle Bin?",
     "Delete",
     "btn-danger",
     function() {
@@ -2440,7 +2441,7 @@ function deleteFolderItem(path) {
   var folderName = path.split("\\").pop();
   showDialog(
     "Delete Folder",
-    "Delete the folder \"" + folderName + "\" and all its contents? This cannot be undone.",
+    "Send the folder \"" + folderName + "\" and all its contents to the Recycle Bin?",
     "Delete",
     "btn-danger",
     function() {
@@ -3384,9 +3385,9 @@ function purgeAllDupes() {
     }
     showDialog(
       "Delete All Duplicates",
-      "This will permanently delete " + count.toLocaleString() + " files from the Removed Duplicates folder. " +
-      "This cannot be undone. Are you absolutely sure?",
-      "Delete All",
+      "This will send " + count.toLocaleString() + " files from Removed Duplicates to the Recycle Bin. " +
+      "You can recover them from there if needed.",
+      "Send to Recycle Bin",
       "btn-danger",
       function() {
         document.getElementById("dashPurgeBtn").disabled = true;
@@ -3498,7 +3499,7 @@ function initDashboard() {
 }
 
 function deleteScan(filename) {
-  showDialog("Delete Scan", "Delete scan result " + filename + "? This cannot be undone.", "Delete", "btn-danger", function() {
+  showDialog("Delete Scan", "Remove scan result " + filename + " from the list?", "Remove", "btn-danger", function() {
     api("POST", "/api/scans/delete", { filename: filename }).then(function() {
       toast("Scan deleted");
       initDashboard();
@@ -4267,8 +4268,8 @@ function executeActions() {
 
   var msg = "";
   if (moveGroups.length > 0) msg += "Move " + moveGroups.length + " groups to " + moveDir + ". ";
-  if (deleteGroups.length > 0) msg += "Permanently delete " + deleteGroups.length + " groups. ";
-  msg += "This cannot be undone.";
+  if (deleteGroups.length > 0) msg += "Send " + deleteGroups.length + " groups to the Recycle Bin. ";
+  msg += "Continue?";
 
   showDialog("Confirm Execution", msg, "Execute", "btn-danger", function() {
     _doExecute(moveGroups, deleteGroups, moveDir);

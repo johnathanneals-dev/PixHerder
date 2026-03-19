@@ -159,7 +159,7 @@ Below the "Finished with Scanning" button, the dashboard also shows:
 - **Start Over** -- put all files back into Cleaned Files so you can rescan everything from scratch
 - **Rescue & Review** -- move Removed Duplicates back to Cleaned Files for another scan pass (see below)
 - **Move to Keepers** -- save Removed Duplicates files as confirmed keepers (see below)
-- **Delete All Remaining** -- permanently delete everything in Removed Duplicates
+- **Delete All Remaining** -- send everything in Removed Duplicates to the Recycle Bin
 
 ---
 
@@ -255,12 +255,17 @@ The Guided Cleanup wizard handles synced folders automatically by making a worki
 - If your system asks to "Keep" or "Delete" files, choose **Delete** (or they'll be restored)
 
 ### File Safety
+
+DupeFinder is designed with file security as the top priority. **No user file is ever permanently deleted by DupeFinder.** All delete operations send files to the Windows Recycle Bin, where you can recover them if needed.
+
 - DupeFinder uses **copy + delete** (not move) to avoid file locking issues
 - Each file operation is independent -- one failure won't stop the rest
 - Failed files are logged and shown in the UI
-- Move operations are reversible: files go to your dupes folder
-- The **Finish** flow and **Clean Up Workspace** send files to the Windows Recycle Bin -- you can recover them if needed
-- The **Delete All Remaining** button permanently deletes files (not sent to Recycle Bin)
+- Move operations are reversible: files go to Removed Duplicates
+- All delete operations (individual files, folders, Delete All Remaining, review deletions) go to the **Recycle Bin**
+- The **Finish** flow sends Removed Duplicates to the Recycle Bin
+- **Send Files Home** puts everything back where it came from -- nothing is deleted
+- The only exception is **Apply Cleanup to Originals** (advanced option), which permanently deletes originals from the source folder. This is clearly warned and hidden in the advanced section.
 
 ### Controlled Folder Access
 Windows Defender's Controlled Folder Access is enabled. If the app can't create files, whitelist Python:

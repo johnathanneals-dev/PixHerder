@@ -208,7 +208,12 @@ def delete_files(groups, keep_strategy="largest",
                 # Clear read-only flag if set (common with OneDrive staged files)
                 if not os.access(dupe_path_str, os.W_OK):
                     os.chmod(dupe_path_str, stat.S_IWRITE | stat.S_IREAD)
-                os.remove(dupe_path_str)
+                # Send to Recycle Bin, fall back to permanent delete
+                try:
+                    from engine.staging import _recycle_file_powershell
+                    _recycle_file_powershell(dupe_path_str)
+                except Exception:
+                    os.remove(dupe_path_str)
                 deleted += 1
                 log_action("delete", {
                     "path": dupe_path_str,
