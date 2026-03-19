@@ -893,6 +893,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_dupes_purge()
         elif path == "/api/dupes/promote":
             self._handle_dupes_promote()
+        elif path == "/api/consolidate":
+            self._handle_consolidate()
         else:
             self.send_error(404)
 
@@ -1877,6 +1879,67 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         _log_activity("dupes_promote", {
             "dupes_dir": dupes_dir,
             "keepers_dir": keepers_dir,
+            "moved": moved,
+            "errors": errors,
+        })
+
+        self.send_json({
+            "success": True,
+            "moved": moved,
+            "errors": errors,
+        })
+
+    def _handle_consolidate(self):
+        """Move all files from dupes and keepers back into staging folder."""
+        settings = load_settings()
+        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
+
+        # Find staging subfolder
+        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+        staging_dir = ""
+        if os.path.isdir(staging_base):
+            subs = [d for d in os.listdir(staging_base)
+                    if os.path.isdir(os.path.join(staging_base, d))]
+            if subs:
+                staging_dir = os.path.join(staging_base, subs[0])
+
+        if not staging_dir:
+            self.send_error_json("No workspace folder found", 404)
+            return
+
+        import shutil as _shutil
+        moved = 0
+        errors = 0
+
+        def _move_into_staging(source_dir):
+            nonlocal moved, errors
+            if not source_dir or not os.path.isdir(source_dir):
+                return
+            for root, dirs, files in os.walk(source_dir):
+                for f in files:
+                    src = os.path.join(root, f)
+                    dst = os.path.join(staging_dir, f)
+                    if os.path.exists(dst):
+                        stem, ext = os.path.splitext(f)
+                        counter = 1
+                        while os.path.exists(dst):
+                            dst = os.path.join(
+                                staging_dir,
+                                stem + "_" + str(counter) + ext)
+                            counter += 1
+                    try:
+                        _shutil.copy2(src, dst)
+                        os.remove(src)
+                        moved += 1
+                    except Exception:
+                        errors += 1
+
+        _move_into_staging(dupes_dir)
+        _move_into_staging(keepers_dir)
+
+        _log_activity("consolidate", {
+            "staging_dir": staging_dir,
             "moved": moved,
             "errors": errors,
         })

@@ -844,20 +844,24 @@
       </div>
       <div id="dashFinishAction" style="display:none;margin-bottom:24px;">
         <button class="btn btn-primary btn-lg" onclick="navigate('finish')">Finished with Scanning</button>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Done reviewing? Send your cleaned files home and remove duplicates in one step.</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">All done? This sends your cleaned files back where they came from and removes the duplicates.</div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
-        <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">Advanced Options</h3>
+        <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">More Options</h3>
         <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
               <button class="btn btn-secondary" id="dashSendHomeBtn" onclick="sendFilesHome()">Send Files Home</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Return all files in Cleaned Files back to their original OneDrive location.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
             </div>
             <div>
-              <button class="btn btn-danger" onclick="cleanupStaging()">Clean Up Workspace</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send files home or to the Recycle Bin, then remove the local workspace folder.</div>
+              <button class="btn btn-danger" onclick="cleanupStaging()">Remove Workspace</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
+            </div>
+            <div>
+              <button class="btn btn-warning" onclick="_restartAllFiles()">Start Over</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Cleaned Files so you can rescan everything from scratch.</div>
             </div>
           </div>
         </div>
@@ -865,15 +869,15 @@
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
               <button class="btn btn-primary" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Some duplicates might be worth keeping. This cycles them back through scanning so you can separate the keepers from the junk, one pass at a time.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This puts them back with your cleaned files so you can scan and review them again.</div>
             </div>
             <div>
               <button class="btn btn-secondary" onclick="promoteToKeepers()">Move to Keepers</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Move remaining files from Removed Duplicates to Verified Keepers. Use after rescanning dupes and deleting the real duplicates.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Save these files as confirmed keepers. They'll go home with your other files when you finish.</div>
             </div>
             <div>
               <button class="btn btn-danger" id="dashPurgeBtn" onclick="purgeAllDupes()">Delete All Remaining</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in the Removed Duplicates folder. Only do this when you're confident nothing important remains.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Permanently delete everything in Removed Duplicates. Make sure you've rescued anything you want to keep first.</div>
             </div>
           </div>
         </div>
@@ -915,9 +919,9 @@
       <div class="card">
         <h2>Step 1: Migrate Files</h2>
         <div class="wizard-explanation">
-          OneDrive sync interferes with scanning and file operations.
-          This step copies your images to a local workspace folder where
-          DupeFinder can work without interruption. Your originals remain untouched.
+          First, DupeFinder makes a local copy of your pictures so it can
+          work without OneDrive getting in the way. Your originals stay
+          exactly where they are -- nothing is changed or deleted.
         </div>
         <div class="form-group">
           <label class="form-label">Source folder</label>
@@ -963,10 +967,10 @@
       <div class="card">
         <h2>Step 2: Configure &amp; Scan</h2>
         <div class="wizard-explanation">
-          Choose how to scan for duplicates. Exact mode finds byte-for-byte
-          identical files (fast, no false positives). Perceptual mode finds
-          visually similar images even if resized or recompressed.
-          Run exact first, then perceptual for best results.
+          Now choose how to look for duplicates. <strong>Exact</strong> finds
+          identical copies (fast and accurate). <strong>Perceptual</strong> finds
+          images that look similar even if they've been resized or edited.
+          Start with Exact, then try Perceptual to catch more.
         </div>
         <div class="form-group">
           <label class="form-label">Scan mode</label>
@@ -1015,9 +1019,10 @@
       <div class="card">
         <h2>Step 3: Review &amp; Sort</h2>
         <div class="wizard-explanation">
-          Review each group of duplicates side by side. For each group, decide
-          which file to keep and which to move or delete. Use keyboard shortcuts
-          (S=keep all, M=mark as duplicate, D=delete, arrows=navigate) for faster reviewing.
+          Look through each group of duplicates side by side. For each group,
+          you can keep everything, mark the duplicates for removal, or delete them.
+          Click any image to zoom in. Use keyboard shortcuts for speed:
+          S=keep, M=mark as duplicate, D=delete, arrows=next/previous.
         </div>
         <div id="wizReviewInfo" style="margin-bottom:16px;">
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizReviewInfoText"></div>
@@ -1034,8 +1039,8 @@
       <div class="card">
         <h2>Step 4: Explore &amp; Finalize</h2>
         <div class="wizard-explanation">
-          Browse your cleaned-up files and the removed duplicates.
-          When you're satisfied, finish up to send your files home.
+          Take a look at your cleaned-up files and the duplicates that were removed.
+          When you're happy with the results, click Finished to wrap everything up.
         </div>
         <h3 style="margin-top:20px;">Browse Files</h3>
         <div style="display:flex;gap:12px;margin:12px 0 24px;">
@@ -1227,15 +1232,15 @@
           <div style="margin-bottom:12px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
               <span style="color:var(--accent);font-weight:bold;font-size:18px;" id="finishStagingCount">0</span>
-              <span>files in Cleaned Files -- originals will be kept in OneDrive</span>
+              <span>cleaned files will be kept safe</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;" id="finishKeepersRow" style="display:none;">
               <span style="color:var(--accent);font-weight:bold;font-size:18px;" id="finishKeepersCount">0</span>
-              <span>verified keepers -- originals will be kept in OneDrive</span>
+              <span>verified keepers will be kept safe</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="color:var(--danger);font-weight:bold;font-size:18px;" id="finishDupesCount">0</span>
-              <span>duplicates removed during scanning -- originals will be deleted from OneDrive and local copies sent to the Recycle Bin</span>
+              <span>duplicates will be removed and sent to the Recycle Bin (recoverable if needed)</span>
             </div>
           </div>
           <div style="padding:12px;background:var(--surface-alt);border-radius:8px;margin:16px 0;">
@@ -3254,6 +3259,40 @@ function _confirmSendHome() {
     }
   }).catch(function(err) {
     toast("Restore failed: " + err.message, "error");
+  });
+}
+
+function _restartAllFiles() {
+  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    var dupesCount = (data.dupes && data.dupes.file_count) || 0;
+    var keepersCount = (data.keepers && data.keepers.file_count) || 0;
+    var total = dupesCount + keepersCount;
+    if (total === 0) {
+      toast("No files to move back");
+      return;
+    }
+    showDialog(
+      "Start Over",
+      "Put all " + total.toLocaleString() + " files from Removed Duplicates" +
+      (keepersCount > 0 ? " and Verified Keepers" : "") +
+      " back into Cleaned Files so you can rescan everything?",
+      "Start Over", "btn-warning",
+      function() {
+        toast("Moving files back...");
+        api("POST", "/api/consolidate").then(function(r) {
+          if (r.success) {
+            showDialog("Ready to Rescan",
+              r.moved.toLocaleString() + " files moved back to Cleaned Files.",
+              "OK", "btn-primary", function() { navigate("dashboard"); }
+            );
+          } else {
+            toast("Failed: " + (r.error || "Unknown error"), "error");
+          }
+        }).catch(function(err) {
+          toast("Failed: " + err.message, "error");
+        });
+      }
+    );
   });
 }
 
