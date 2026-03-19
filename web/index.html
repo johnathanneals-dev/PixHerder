@@ -1612,7 +1612,7 @@ function showDialog(title, message, confirmText, confirmClass, onConfirm) {
   btn.textContent = confirmText || "Confirm";
   btn.className = "btn " + (confirmClass || "btn-danger");
   btn.style.display = "";
-  document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
   _dialogCallback = onConfirm;
   document.getElementById("dialogOverlay").classList.add("active");
 }
@@ -1778,19 +1778,19 @@ function showResumeDialog(title, detail, onResume, onFresh) {
     '</div>' +
     '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
 
   document.getElementById("resumeResumeBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
     onResume();
   };
   document.getElementById("resumeFreshBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
     onFresh();
   };
 }
@@ -2652,7 +2652,7 @@ function cleanupStaging() {
       '</div>' +
       '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
     document.getElementById("dialogConfirmBtn").style.display = "none";
-    document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
     document.getElementById("dialogOverlay").classList.add("active");
   });
 }
@@ -3076,7 +3076,7 @@ function rescueAndReview() {
         '</div>' +
         '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
-      document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+      document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
       document.getElementById("dialogOverlay").classList.add("active");
       return;
     }
@@ -3571,26 +3571,26 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
 
   document.getElementById("dialogMessage").innerHTML = html;
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  document.querySelector("#dialogOverlay .btn-secondary").style.display = "none";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
 
   document.getElementById("stagingGoBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
     startStaging(dir, stagingDir, mode, threshold, recursive);
   };
   document.getElementById("stagingSkipBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
     _checkResumeAndStart(dir, mode, threshold, recursive);
   };
   if (existingSession) {
     document.getElementById("stagingReuseBtn").onclick = function() {
       closeDialog();
       document.getElementById("dialogConfirmBtn").style.display = "";
-      document.querySelector("#dialogOverlay .btn-secondary").style.display = "";
+      document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
       _stagingSession = { source_dir: dir, staging_dir: existingSession.staging_dir,
                           mode: mode, threshold: threshold, recursive: recursive };
       _checkResumeAndStart(existingSession.staging_dir, mode, threshold, recursive);
