@@ -41,10 +41,10 @@ The recommended way to use DupeFinder. Click **Start Guided Cleanup** on the das
 
 ### Step 1: Migrate
 
-OneDrive sync interferes with scanning (cloud-only files, file locks, sync prompts). This step copies your images to a local staging folder where DupeFinder can work without interruption. Your originals remain untouched.
+DupeFinder makes a working copy of your pictures so it can scan without interruption. Your originals stay exactly where they are -- nothing is changed or deleted.
 
 - Use the quick-fill buttons (**OneDrive Pictures**, **Pictures**, **Desktop**) or click **Browse** to select your source folder
-- Click **Begin Migration**
+- Click **Begin Migration** (or **Cancel** to return to the dashboard)
 - Watch the progress bar as files are copied locally
 - When complete, the step shows a checkmark and Step 2 opens
 
@@ -76,54 +76,48 @@ Use the **Rescan** button in Step 4 to return here after each pass.
 
 Click **Open Review** to enter the full review interface.
 
-Each duplicate group shows:
-- The **KEEP** image (green badge) -- the one DupeFinder recommends keeping
-- One or more **DUPE** images (red badge) -- candidates for removal
-- File details: name, folder, size, distance score
+Each duplicate group shows all the matching files side by side. DupeFinder picks one to keep (green KEEP badge) and marks the rest as duplicates (red DUPE badge).
+
+**Choosing which files to keep:**
+Click any image to toggle it between KEEP (green) and DUPE (red). You can mark multiple files as KEEP in the same group -- at least one must always be kept. Click the **Zoom** button on any image to see it full-size.
 
 **Actions per group:**
-- **Skip** -- keep all files, do nothing
-- **Move** -- mark dupes for moving to the dupes folder
-- **Delete** -- mark dupes for permanent deletion
+- **Keep All** -- keep every file in this group, don't remove anything
+- **Mark as Duplicate** -- mark the DUPE files for removal to Removed Duplicates
+- **Delete** -- mark the DUPE files for permanent deletion
 
 **Keyboard shortcuts:**
 | Key | Action |
 |-----|--------|
 | Left/Right arrows | Previous/next group |
-| S | Skip this group |
-| M | Mark dupes for move |
-| D | Mark dupes for delete |
+| S | Keep All (keep every file) |
+| M | Mark as Duplicate |
+| D | Delete |
 | Escape | Close image zoom |
 
 **Toolbar features:**
 - Sort by: default, file size, reclaimable space, distance
-- Filter: all, unreviewed, move, delete, skip
+- Filter: all, unreviewed, marked as duplicate, marked for delete, keeping
 - Search by filename or folder
-- Bulk actions: Mark All for Move, Skip All
-- Click any image to zoom in -- use **Delete This File** to remove it, or **Back** to return to the group
+- **Mark All Remaining** -- marks all unreviewed groups as duplicates (preserves your previous decisions)
+- **Keep All Remaining** -- keeps all unreviewed groups
 
 **Action bar (bottom of screen):**
-The action bar stays fixed at the bottom of your screen so you always have access to:
-- Arrow buttons to navigate between groups
-- Skip, Move, Delete for the current group
-- All: Move and All: Skip for bulk decisions
-- Execute to carry out your decisions
+The action bar stays fixed at the bottom so you always have access to navigation, actions, and **Exit** to return to the dashboard.
 
-If no duplicate groups are found, you'll see buttons to go back to the dashboard or rescan with different settings.
+If no duplicate groups are found, you'll see buttons to rescan with different settings or return to the dashboard.
 
-When done reviewing, click **Execute** to carry out your decisions. After actions complete, click **Return to Wizard** to proceed to Step 4. If all files in a scan are successfully processed, the scan report is automatically removed from the Previous Scans list.
+When done reviewing, click **Apply Decisions** to carry out your choices. After actions complete, click **Return to Wizard** to proceed to Step 4.
 
 ### Step 4: Explore & Finalize
 
 Browse your files and decide next steps:
 
-- **Cleaned Files** -- opens a file browser showing your staging folder (originals minus removed dupes). Navigate folders with breadcrumbs, view thumbnails, click to zoom.
-- **Removed Duplicates** -- browse the dupes folder to verify nothing was wrongly removed.
-- **Rescan** -- return to Step 2 for another pass (Step 1 stays complete)
-- **Sync Back to OneDrive** -- apply your cleanup to the original OneDrive folder (deletes originals that were removed from staging)
-- **Clean Up Staging** -- see "Finishing Up" below for safe cleanup options
-
-When you're done with the wizard, return to the dashboard for the one-click finish option.
+- **Cleaned Files** -- browse the files you're keeping
+- **Removed Duplicates** -- check that nothing was wrongly removed
+- **Rescan** -- return to Step 2 for another pass with different settings
+- **Finished with Scanning** -- wraps everything up (see "Finishing Up" below)
+- **Back to Dashboard** -- return to the dashboard for more options
 
 ---
 
@@ -139,7 +133,7 @@ The built-in file browser shows image thumbnails in a grid. Features:
 - **Scan for Duplicates** -- kicks off a scan on the folder you're browsing
 - **Back** button stays visible as you scroll and returns to where you came from (dashboard or wizard)
 
-The browser is restricted to the staging and dupes folders for security.
+The browser is restricted to the Cleaned Files, Removed Duplicates, and Verified Keepers folders for security.
 
 ---
 
@@ -149,35 +143,36 @@ When you're done scanning and reviewing, the dashboard offers a one-click finish
 
 1. Click **Finished with Scanning** on the dashboard (or the **Finish** link in the top nav)
 2. A summary page shows exactly what will happen:
-   - How many files in Cleaned Files will be sent back to OneDrive
+   - How many files in Cleaned Files will be kept safe
    - How many files in Removed Duplicates will be sent to the Recycle Bin
-3. Review the OneDrive warning (see Important Notes below)
-4. Click **Finish Now** and confirm
-5. DupeFinder sends your files home, recycles duplicates, and cleans up the workspace
+3. Click **Finish Now** and confirm
+4. DupeFinder keeps your files safe, recycles duplicates, and cleans up
 
 After finishing, duplicates are in your Windows Recycle Bin -- you can recover them from there if you change your mind.
 
-### Advanced Options
+### More Options
 
 Below the "Finished with Scanning" button, the dashboard also shows:
 
-- **Send Files Home** -- return cleaned files to OneDrive without recycling dupes
-- **Clean Up Workspace** -- offers a choice: send files home or send to Recycle Bin
-- **Rescue & Review** -- cycle dupes back for another scan pass (see below)
-- **Delete All Remaining** -- permanently delete everything in the dupes folder
+- **Send Files Home** -- put all your files back where they came from. Nothing gets deleted.
+- **Remove Workspace** -- choose to send files home or to the Recycle Bin, then remove the local copy
+- **Start Over** -- put all files back into Cleaned Files so you can rescan everything from scratch
+- **Rescue & Review** -- move Removed Duplicates back to Cleaned Files for another scan pass (see below)
+- **Move to Keepers** -- save Removed Duplicates files as confirmed keepers (see below)
+- **Delete All Remaining** -- permanently delete everything in Removed Duplicates
 
 ---
 
 ## Rescue & Review
 
-After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back through the scan and review process:
+After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back for another look:
 
 1. Click **Rescue & Review**
-2. If your workspace (Cleaned Files) already has files, you'll be asked:
-   - **Merge Dupes Into Workspace** -- adds the duplicates alongside your existing files so you can rescan everything together
-   - **Sync Back to OneDrive First** -- sends your cleaned files back to OneDrive, then loads the duplicates
-3. Scan the workspace to find duplicates among the recycled files
-4. Review groups -- keep what matters, delete the rest
+2. If Cleaned Files already has files, you'll be asked:
+   - **Merge Dupes** -- files from Removed Duplicates will be merged with the files in Cleaned Files
+   - **Return / Reload** -- sends your Cleaned Files home first, then brings the Removed Duplicates back for review
+3. Scan again to find the real duplicates
+4. Review groups -- click images to toggle keep/dupe, then apply your decisions
 5. Repeat until you're confident nothing important remains
 6. Use **Finished with Scanning** when satisfied
 
@@ -185,15 +180,15 @@ This is designed to be an iterative loop. Each pass reduces the file count as yo
 
 ### Verified Keepers
 
-After rescanning duplicates and deleting the real dupes, click **Move to Keepers** to promote the remaining files to the Verified Keepers folder. These files are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
+After rescanning and deleting the real duplicates, click **Move to Keepers** to save the remaining Removed Duplicates files as confirmed keepers. Files in Verified Keepers are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
 
 ---
 
 ## Advanced Scan
 
-For users who don't need the wizard, click **Advanced Scan** on the dashboard. This gives you direct access to the scan configuration without the staging step. Useful for scanning local folders that aren't managed by OneDrive.
+For users who don't need the wizard, click **Advanced Scan** on the dashboard. This gives you direct access to the scan configuration without the migration step. Useful for scanning folders that don't need a working copy made first.
 
-If you scan a OneDrive folder directly, DupeFinder will detect it and offer to stage files first.
+If you scan a synced folder (like OneDrive), DupeFinder will detect it and offer to make a local copy first.
 
 ---
 
@@ -252,12 +247,12 @@ If your browser is too old, a red warning banner will appear at the top of the p
 
 ## Important Notes
 
-### OneDrive
-The Guided Cleanup wizard handles OneDrive automatically by staging files locally. If you use Advanced Scan on a OneDrive folder directly:
-- **Pause OneDrive sync** first (right-click tray icon > Pause syncing)
+### Synced Folders (OneDrive, etc.)
+The Guided Cleanup wizard handles synced folders automatically by making a working copy. If you use Advanced Scan on a synced folder directly:
+- **Pause sync** first (right-click tray icon > Pause syncing)
 - Run your operations
 - Resume sync afterward
-- If OneDrive asks to "Keep" or "Delete" files, choose **Delete** (or they'll be restored)
+- If your system asks to "Keep" or "Delete" files, choose **Delete** (or they'll be restored)
 
 ### File Safety
 - DupeFinder uses **copy + delete** (not move) to avoid file locking issues
@@ -302,10 +297,10 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | Server shuts down unexpectedly | DupeFinder auto-shuts down 10 seconds after you close the browser tab. Relaunch from the desktop shortcut |
 | Server seems unresponsive | Click **Restart** in the status bar at the bottom of the page. If the page is completely unresponsive, close the tab and relaunch from the shortcut |
 | Changed a setting but nothing happened | Most settings apply immediately. The server port requires a restart -- you will be prompted to restart when saving a port change |
-| **OneDrive** | |
-| Migration/staging is slow | Copying thousands of images takes time, especially from OneDrive. The first migration is the slowest; subsequent ones can reuse the existing staging folder |
-| OneDrive asks to "Keep" or "Delete" after sync-back | Choose **Delete**. If you choose "Keep", OneDrive will restore the files you just removed |
-| "File not found" errors during move | Files may be OneDrive cloud-only (not downloaded locally). Use the Guided Cleanup wizard to stage files locally first |
+| **Synced Folders** | |
+| Migration is slow | Copying thousands of images takes time. The first migration is the slowest; subsequent ones can reuse the existing copy |
+| System asks to "Keep" or "Delete" after finishing | Choose **Delete**. If you choose "Keep", the sync service will restore the files you just removed |
+| "File not found" errors during move | Some files may be cloud-only (not downloaded locally). Use the Guided Cleanup wizard to make a local copy first |
 | **Finishing** | |
 | Recycle Bin operation failed | DupeFinder falls back to permanent delete if PowerShell is unavailable. Check that PowerShell is installed and not blocked by group policy |
 | Where did my recycled files go? | They are in the Windows Recycle Bin (on your desktop). Right-click it to restore files if needed |
