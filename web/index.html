@@ -749,7 +749,7 @@
       <button class="nav-link" data-view="scan-config" onclick="navigate('scan-config')">Scan</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')">Activity</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
-      <button class="nav-link" data-view="finish" id="navFinishBtn" onclick="navigate('finish')" style="display:none;color:var(--accent);">Finish</button>
+      <button class="nav-link" data-view="finish" id="navFinishBtn" onclick="_dashContinue()" style="display:none;color:var(--accent);">Continue</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -844,9 +844,12 @@
           <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
       </div>
-      <div id="dashFinishAction" style="display:none;margin-bottom:24px;">
-        <button class="btn btn-primary btn-lg" onclick="navigate('finish')">Finished with Scanning</button>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">All done? This sends your Cleaned Files back where they came from and removes the Removed Duplicates.</div>
+      <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-lg" id="dashContinueBtn" onclick="_dashContinue()">Continue</button>
+          <button class="btn btn-ghost" onclick="_dashStagePicker()">Choose a different step</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
@@ -997,6 +1000,21 @@
           <button class="btn btn-primary" onclick="wizardStartScan()">Start Scan</button>
           <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
         </div>
+        <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
+          <div style="margin-bottom:12px;">
+            <strong style="color:var(--text);">Scan Modes</strong><br>
+            <strong style="color:#fff;">Exact</strong> finds identical copies of the same file. Fast and accurate -- start here.<br>
+            <strong style="color:#fff;">Perceptual</strong> finds images that look similar even if they've been resized, cropped, or edited. Slower but catches more.<br>
+            <strong style="color:#fff;">Both</strong> runs exact first, then perceptual.
+          </div>
+          <div>
+            <strong style="color:var(--text);">Threshold Guide</strong> (perceptual only)<br>
+            <strong style="color:#fff;">0-2</strong> Very strict -- only near-identical images<br>
+            <strong style="color:#fff;">3-5</strong> Recommended -- catches resized copies and minor edits<br>
+            <strong style="color:#fff;">6-10</strong> Loose -- may flag images that just look similar<br>
+            <strong style="color:#fff;">11+</strong> Very loose -- expect some false matches, review carefully
+          </div>
+        </div>
         <div id="wizScanProgress" style="display:none;margin-top:16px;">
           <div class="progress-stage" id="wizScanStage" style="text-align:center;margin-bottom:8px;">Initializing</div>
           <div class="progress-container">
@@ -1135,6 +1153,18 @@
 
       <button class="btn btn-primary btn-lg" onclick="startScan()" style="margin-top:12px;">
         Start Scan
+      </button>
+    </div>
+
+    <div class="card" style="max-width:640px;margin-top:24px;" id="scanKeepersSection" style="display:none;">
+      <h3 style="margin-bottom:12px;">Rescan Removed Duplicates</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
+        Scan your Removed Duplicates folder to find files that aren't actually duplicates.
+        After reviewing, use <strong>Move to Keepers</strong> on the dashboard to save
+        the ones you want to keep.
+      </p>
+      <button class="btn btn-primary" onclick="fillScanDir('dupes'); startScan();">
+        Scan Removed Duplicates
       </button>
     </div>
   </div>
@@ -2984,6 +3014,85 @@ function selectRadio(el, name) {
    ================================================================== */
 var _dashFolderPaths = { staging: "", dupes: "", keepers: "" };
 
+var _dashContinueTarget = "finish"; // default
+
+function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
+  var btn = document.getElementById("dashContinueBtn");
+  var hint = document.getElementById("dashContinueHint");
+
+  // Determine the most logical next step
+  if (hasStaging && hasDupes) {
+    // Has both — user has been scanning, likely wants to finalize or rescan
+    btn.textContent = "Continue to Finalize";
+    hint.textContent = "Browse your files and finish up, or rescan for more duplicates.";
+    _dashContinueTarget = "wizard-step4";
+  } else if (hasStaging && !hasDupes) {
+    // Has files but no dupes yet — needs to scan
+    btn.textContent = "Continue to Scan";
+    hint.textContent = "Scan Cleaned Files to find duplicates.";
+    _dashContinueTarget = "wizard-step2";
+  } else if (hasDupes && !hasStaging) {
+    // Only dupes — maybe wants to review or rescue
+    btn.textContent = "Continue to Review";
+    hint.textContent = "Removed Duplicates has files. Rescue & Review or finish up.";
+    _dashContinueTarget = "finish";
+  } else if (hasKeepers) {
+    btn.textContent = "Finish Up";
+    hint.textContent = "Verified Keepers are ready to go home.";
+    _dashContinueTarget = "finish";
+  } else {
+    btn.textContent = "Continue";
+    hint.textContent = "";
+    _dashContinueTarget = "finish";
+  }
+
+  // Update nav link to match
+  document.getElementById("navFinishBtn").textContent = btn.textContent;
+}
+
+function _dashContinue() {
+  if (_dashContinueTarget === "wizard-step2") {
+    wizardState.completedSteps = { 1: true };
+    wizardState.currentStep = 2;
+    navigate("wizard");
+  } else if (_dashContinueTarget === "wizard-step4") {
+    wizardState.completedSteps = { 1: true, 2: true, 3: true };
+    wizardState.currentStep = 4;
+    navigate("wizard");
+  } else {
+    navigate("finish");
+  }
+}
+
+function _dashStagePicker() {
+  document.getElementById("dialogTitle").textContent = "Choose a Step";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    '<button class="btn btn-secondary btn-fixed" onclick="closeDialog(); wizardState.completedSteps={}; wizardState.currentStep=1; navigate(\'wizard\');">Step 1: Import Files</button>' +
+    '<button class="btn btn-secondary btn-fixed" onclick="closeDialog(); wizardState.completedSteps={1:true}; wizardState.currentStep=2; navigate(\'wizard\');">Step 2: Scan for Duplicates</button>' +
+    '<button class="btn btn-secondary btn-fixed" id="stagePickReview" onclick="closeDialog(); _stagePickReview();">Step 3: Review Duplicates</button>' +
+    '<button class="btn btn-secondary btn-fixed" onclick="closeDialog(); wizardState.completedSteps={1:true,2:true,3:true}; wizardState.currentStep=4; navigate(\'wizard\');">Step 4: Finalize</button>' +
+    '<button class="btn btn-primary btn-fixed" onclick="closeDialog(); navigate(\'finish\');">Finish Up</button>' +
+    '</div>' +
+    '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
+function _stagePickReview() {
+  // Find the most recent scan with groups to review
+  api("GET", "/api/scans").then(function(scans) {
+    for (var i = 0; i < scans.length; i++) {
+      if (scans[i].total_groups > 0) {
+        navigate("review", { report: scans[i].filename });
+        return;
+      }
+    }
+    toast("No scan results with duplicates to review");
+  });
+}
+
 function _dashUpdateFolders() {
   fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
     var box = document.getElementById("dashFolders");
@@ -3042,11 +3151,15 @@ function _dashUpdateFolders() {
     var hasDupes = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
     var hasKeepers = data.keepers && data.keepers.exists && data.keepers.file_count > 0;
 
-    // Show "Finished with Scanning" button when staging or keepers have files
-    document.getElementById("dashFinishAction").style.display = (hasStaging || hasKeepers) ? "block" : "none";
+    // Dynamic continue button
+    var hasAnySystemFiles = hasStaging || hasDupes || hasKeepers;
+    document.getElementById("dashContinueAction").style.display = hasAnySystemFiles ? "block" : "none";
+    if (hasAnySystemFiles) {
+      _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
+    }
 
-    // Show/hide Finish nav link
-    document.getElementById("navFinishBtn").style.display = (hasStaging || hasKeepers) ? "" : "none";
+    // Show/hide nav link
+    document.getElementById("navFinishBtn").style.display = hasAnySystemFiles ? "" : "none";
 
     // Show advanced options section when any folder has files
     document.getElementById("dashAdvancedOptions").style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
@@ -3289,7 +3402,17 @@ function _confirmSendHome() {
     toast("No staging session found", "error");
     return;
   }
-  toast("Sending files home...");
+  // Show working dialog
+  document.getElementById("dialogTitle").textContent = "Sending Files Home";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="text-align:center;padding:20px 0;">' +
+    '<div style="font-size:18px;color:var(--accent);margin-bottom:12px;">Returning your files...</div>' +
+    '<div style="color:var(--text-dim);">This may take a moment for large collections.</div>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+
   api("POST", "/api/staging/restore", {
     staging_dir: _stagingSession.staging_dir,
     source_dir: _stagingSession.source_dir,
@@ -3297,16 +3420,19 @@ function _confirmSendHome() {
   }).then(function(r) {
     if (r.success) {
       _stagingSession = null;
-      showDialog("All Files Sent Home",
-        r.copied.toLocaleString() + " files returned to their original folder.",
-        "OK", "btn-primary", function() {
-          navigate("dashboard");
-        }
-      );
+      document.getElementById("dialogTitle").textContent = "All Files Sent Home";
+      document.getElementById("dialogMessage").innerHTML =
+        '<div style="margin-bottom:16px;">' + r.copied.toLocaleString() + ' files returned to their original folder.</div>';
+      document.getElementById("dialogConfirmBtn").textContent = "OK";
+      document.getElementById("dialogConfirmBtn").className = "btn btn-primary";
+      document.getElementById("dialogConfirmBtn").style.display = "";
+      _dialogCallback = function() { navigate("dashboard"); };
     } else {
+      closeDialog();
       toast("Restore failed: " + (r.error || "Unknown error"), "error");
     }
   }).catch(function(err) {
+    closeDialog();
     toast("Restore failed: " + err.message, "error");
   });
 }
@@ -3553,9 +3679,11 @@ function initScanConfig() {
     if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
       dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
       dBtn.disabled = false;
+      document.getElementById("scanKeepersSection").style.display = "block";
     } else {
       dBtn.textContent = "Removed Duplicates (empty)";
       dBtn.disabled = true;
+      document.getElementById("scanKeepersSection").style.display = "none";
     }
   }).catch(function() {});
 }
