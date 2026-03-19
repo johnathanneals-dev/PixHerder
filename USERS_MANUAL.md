@@ -161,6 +161,8 @@ Below the "Finished with Scanning" button, the dashboard also shows:
 - **Move to Keepers** -- save Removed Duplicates files as confirmed keepers (see below)
 - **Delete All Remaining** -- send everything in Removed Duplicates to the Recycle Bin
 
+When you use any of these options, DupeFinder takes you to a progress screen while it works. You can't accidentally click other buttons during the operation. When it's done, you'll see a summary and a **Continue** button to return to the dashboard.
+
 ---
 
 ## Rescue & Review

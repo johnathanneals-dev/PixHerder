@@ -736,6 +736,7 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -1309,6 +1310,25 @@
           <h3 style="color:var(--accent);margin-bottom:16px;">All Done!</h3>
           <div id="finishCompleteSummary" style="color:var(--text-dim);margin-bottom:16px;"></div>
           <button class="btn btn-primary" onclick="_stagingSession=null; navigate('dashboard')">Return to Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Working View (blocking progress for file operations) -->
+  <div class="view" id="view-working">
+    <div class="progress-center">
+      <h2 id="workingTitle">Working...</h2>
+      <p class="subtitle" id="workingMessage">Please wait.</p>
+      <div id="workingSpinner" style="text-align:center;padding:40px 0;">
+        <div style="display:inline-block;width:48px;height:48px;border:4px solid var(--surface-3);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="margin-top:16px;color:var(--text-dim);font-size:14px;" id="workingStatus">Processing...</div>
+      </div>
+      <div id="workingComplete" style="display:none;margin-top:24px;">
+        <div class="card" style="text-align:left;">
+          <h3 style="color:var(--accent);margin-bottom:12px;" id="workingCompleteTitle">Done</h3>
+          <p style="color:var(--text-dim);margin-bottom:16px;" id="workingCompleteMsg"></p>
+          <button class="btn btn-primary" id="workingContinueBtn" onclick="_workingContinue()">Continue</button>
         </div>
       </div>
     </div>
@@ -2706,23 +2726,61 @@ function _recycleStagingConfirm(count) {
 
 function _executeRecycleStaging() {
   if (!_stagingSession) return;
-  toast("Sending files to Recycle Bin...");
-  api("POST", "/api/staging/recycle-bin", {
-    staging_dir: _stagingSession.staging_dir
-  }).then(function(r) {
-    if (r.status === "recycled") {
-      _stagingSession = null;
-      var msg = r.files_recycled.toLocaleString() + " files successfully sent to the Recycle Bin.";
-      if (r.errors > 0) msg += " " + r.errors + " files could not be recycled.";
-      showDialog("Recycle Complete", msg, "OK", "btn-primary", function() {
-        navigate("dashboard");
+  closeDialog();
+  startWorkingView(
+    "Recycling Workspace",
+    "Sending Cleaned Files to the Recycle Bin.",
+    function(done) {
+      api("POST", "/api/staging/recycle-bin", {
+        staging_dir: _stagingSession.staging_dir
+      }).then(function(r) {
+        if (r.status === "recycled") {
+          _stagingSession = null;
+          var msg = r.files_recycled.toLocaleString() + " files sent to the Recycle Bin.";
+          if (r.errors > 0) msg += " " + r.errors + " files could not be removed.";
+          done("Recycle Complete", msg);
+        } else {
+          done("Recycle Failed", r.error || "Unknown error");
+        }
+      }).catch(function(err) {
+        done("Recycle Failed", err.message);
       });
-    } else {
-      toast("Recycle failed: " + (r.error || "Unknown error"), "error");
-    }
-  }).catch(function(err) {
-    toast("Recycle failed: " + err.message, "error");
-  });
+    },
+    "dashboard"
+  );
+}
+
+// ---- Working View (blocking progress) ----
+var _workingConfig = { title: "", message: "", callback: null, destination: "dashboard" };
+
+function startWorkingView(title, message, callback, destination) {
+  _workingConfig.title = title;
+  _workingConfig.message = message;
+  _workingConfig.callback = callback;
+  _workingConfig.destination = destination || "dashboard";
+  navigate("working");
+}
+
+function initWorking() {
+  document.getElementById("workingTitle").textContent = _workingConfig.title || "Working...";
+  document.getElementById("workingMessage").textContent = _workingConfig.message || "Please wait.";
+  document.getElementById("workingSpinner").style.display = "block";
+  document.getElementById("workingComplete").style.display = "none";
+  document.getElementById("workingStatus").textContent = "Processing...";
+
+  if (_workingConfig.callback) {
+    _workingConfig.callback(function(resultTitle, resultMsg) {
+      // Called by the operation when done
+      document.getElementById("workingSpinner").style.display = "none";
+      document.getElementById("workingComplete").style.display = "block";
+      document.getElementById("workingCompleteTitle").textContent = resultTitle || "Done";
+      document.getElementById("workingCompleteMsg").textContent = resultMsg || "";
+    });
+  }
+}
+
+function _workingContinue() {
+  navigate(_workingConfig.destination);
 }
 
 // ---- Finish Flow ----
@@ -2995,6 +3053,7 @@ function route() {
   else if (view === "staging-progress") initStagingProgress();
   else if (view === "syncback") initSyncback();
   else if (view === "finish") initFinish();
+  else if (view === "working") initWorking();
   else if (view === "activity") loadActivity();
   else if (view === "settings") initSettings();
 }
@@ -3210,152 +3269,96 @@ function rescueAndReview() {
       "Start",
       "btn-primary",
       function() {
-        document.getElementById("dashRescueBtn").disabled = true;
-        document.getElementById("dashRescueBtn").textContent = "Moving files...";
-        api("POST", "/api/staging/recycle").then(function(r) {
-          if (r.success) {
-            toast("Moved " + r.files_moved + " files to Cleaned Files");
-            wizardState.stagingDir = r.staging_path;
-            wizardState.completedSteps = { 1: true };
-            wizardState.currentStep = 2;
-            navigate("wizard");
-          } else {
-            toast("Failed: " + (r.error || "Unknown error"), "error");
-          }
-          document.getElementById("dashRescueBtn").disabled = false;
-          document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
-        }).catch(function(err) {
-          toast(err.message || "Failed to recycle", "error");
-          document.getElementById("dashRescueBtn").disabled = false;
-          document.getElementById("dashRescueBtn").innerHTML = "Rescue &amp; Review";
-        });
+        startWorkingView(
+          "Loading Files for Review",
+          "Moving files from Removed Duplicates to Cleaned Files.",
+          function(done) {
+            api("POST", "/api/staging/recycle").then(function(r) {
+              if (r.success) {
+                wizardState.stagingDir = r.staging_path;
+                wizardState.completedSteps = { 1: true };
+                wizardState.currentStep = 2;
+                done("Files Loaded", r.files_moved.toLocaleString() + " files ready for scanning in Cleaned Files.");
+                _workingConfig.destination = "wizard";
+              } else {
+                done("Failed", r.error || "Unknown error");
+              }
+            }).catch(function(err) {
+              done("Failed", err.message || "Failed to load files");
+            });
+          },
+          "wizard"
+        );
       }
     );
   });
 }
 
 function _rnrMerge() {
-  document.getElementById("dialogOverlay").classList.remove("active");
-  var btn = document.getElementById("dashRescueBtn");
-  btn.disabled = true;
-  btn.textContent = "Merging duplicates...";
-
-  // Show a working dialog
-  document.getElementById("dialogTitle").textContent = "Merging Files";
-  document.getElementById("dialogMessage").innerHTML =
-    '<div style="text-align:center;padding:20px 0;">' +
-    '<div style="font-size:18px;color:var(--accent);margin-bottom:12px;">Moving files to Cleaned Files...</div>' +
-    '<div style="color:var(--text-dim);">This may take a moment.</div>' +
-    '</div>';
-  document.getElementById("dialogConfirmBtn").style.display = "none";
-  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
-  document.getElementById("dialogOverlay").classList.add("active");
-
-  api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
-    if (r.success) {
-      wizardState.stagingDir = r.staging_path;
-      wizardState.completedSteps = { 1: true };
-      // Show completion dialog with file count
-      document.getElementById("dialogTitle").textContent = "Merge Complete";
-      // Fetch updated counts to show the result clearly
-      fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
-        var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
-        var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
-        document.getElementById("dialogMessage").innerHTML =
-          '<div style="margin-bottom:16px;"><strong>' + r.files_moved.toLocaleString() +
-          '</strong> files moved from Removed Duplicates to Cleaned Files.</div>' +
-          '<div style="margin-bottom:16px;color:var(--text-dim);">' +
-          'Cleaned Files now has <strong style="color:var(--accent);">' + cleanedCount.toLocaleString() + '</strong> files. ' +
-          (dupesCount > 0 ? 'Removed Duplicates has <strong>' + dupesCount.toLocaleString() + '</strong> remaining.' : 'Removed Duplicates is empty.') +
-          '</div>' +
-          '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
-          '<button class="btn btn-secondary" onclick="closeDialog(); navigate(\'dashboard\')">Back to Dashboard</button>' +
-          '<button class="btn btn-primary" onclick="closeDialog(); wizardState.currentStep=2; navigate(\'wizard\')">Scan Now</button>' +
-          '</div>';
+  closeDialog();
+  startWorkingView(
+    "Merging Files",
+    "Moving files from Removed Duplicates to Cleaned Files.",
+    function(done) {
+      api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
+        if (r.success) {
+          wizardState.stagingDir = r.staging_path;
+          wizardState.completedSteps = { 1: true };
+          fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
+            var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
+            var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
+            var msg = r.files_moved.toLocaleString() + " files moved to Cleaned Files.\n" +
+              "Cleaned Files now has " + cleanedCount.toLocaleString() + " files.";
+            if (dupesCount > 0) msg += " Removed Duplicates has " + dupesCount.toLocaleString() + " remaining.";
+            done("Merge Complete", msg);
+          });
+        } else {
+          done("Merge Failed", r.error || "Unknown error");
+        }
+      }).catch(function(err) {
+        done("Merge Failed", err.message);
       });
-    } else {
-      closeDialog();
-      toast("Failed: " + (r.error || "Unknown error"), "error");
-    }
-    btn.disabled = false;
-    btn.innerHTML = "Rescue &amp; Review";
-  }).catch(function(err) {
-    closeDialog();
-    toast("Merge failed: " + err.message, "error");
-    btn.disabled = false;
-    btn.innerHTML = "Rescue &amp; Review";
-  });
+    },
+    "dashboard"
+  );
 }
 
 function _rnrSyncAndRecycle() {
-  // Close the dialog
-  document.getElementById("dialogOverlay").classList.remove("active");
-
-  // Show progress on the rescue button
-  var btn = document.getElementById("dashRescueBtn");
-  btn.disabled = true;
-  btn.textContent = "Sending Cleaned Files home...";
-
-  // Get staging info to find source and staging dirs
-  fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
-    var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
-    var sourceDir = status.source_dir || (state.settings && state.settings.default_pictures_path) || "";
-
-    if (!stagingDir || !sourceDir) {
-      toast("Could not determine staging or source directories", "error");
-      btn.disabled = false;
-      btn.innerHTML = "Rescue &amp; Review";
-      return;
-    }
-
-  // Step 1: Restore cleaned files back to OneDrive (copy, not destructive sync)
-  btn.textContent = "Restoring files to original folder...";
-  api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
-    if (!r.success) {
-      toast("Restore failed: " + (r.error || "Unknown error"), "error");
-      btn.disabled = false;
-      btn.innerHTML = "Rescue &amp; Review";
-      return;
-    }
-    var restoreMsg = "Restored " + r.copied + " files to original folder";
-    if (r.skipped) restoreMsg += " (" + r.skipped + " already there)";
-    toast(restoreMsg);
-
-    // Step 2: Clean up staging
-    btn.textContent = "Sending Cleaned Files home...";
-    api("POST", "/api/staging/cleanup", { staging_dir: stagingDir }).then(function() {
-
-      // Step 3: Move dupes into staging
-      btn.textContent = "Moving Removed Duplicates to Cleaned Files...";
-      api("POST", "/api/staging/recycle").then(function(r2) {
-        if (r2.success) {
-          toast("Moved " + r2.files_moved + " files to Cleaned Files");
-          wizardState.stagingDir = r2.staging_path;
-          wizardState.completedSteps = { 1: true };
-          wizardState.currentStep = 2;
-          navigate("wizard");
-        } else {
-          toast("Failed: " + (r2.error || "Unknown error"), "error");
+  closeDialog();
+  startWorkingView(
+    "Return / Reload",
+    "Sending Cleaned Files home, then loading Removed Duplicates for review.",
+    function(done) {
+      fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
+        var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
+        var sourceDir = status.source_dir || (state.settings && state.settings.default_pictures_path) || "";
+        if (!stagingDir || !sourceDir) {
+          done("Failed", "Could not determine file locations.");
+          return;
         }
-        btn.disabled = false;
-        btn.innerHTML = "Rescue &amp; Review";
-      }).catch(function(err) {
-        toast("Recycle failed: " + err.message, "error");
-        btn.disabled = false;
-        btn.innerHTML = "Rescue &amp; Review";
+        document.getElementById("workingStatus").textContent = "Sending Cleaned Files home...";
+        api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
+          if (!r.success) { done("Failed", r.error || "Restore failed"); return; }
+          document.getElementById("workingStatus").textContent = "Cleaning up workspace...";
+          api("POST", "/api/staging/cleanup", { staging_dir: stagingDir }).then(function() {
+            document.getElementById("workingStatus").textContent = "Loading Removed Duplicates...";
+            api("POST", "/api/staging/recycle").then(function(r2) {
+              if (r2.success) {
+                wizardState.stagingDir = r2.staging_path;
+                wizardState.completedSteps = { 1: true };
+                wizardState.currentStep = 2;
+                done("Ready for Review", r2.files_moved.toLocaleString() + " files loaded into Cleaned Files.");
+                _workingConfig.destination = "wizard";
+              } else {
+                done("Failed", r2.error || "Unknown error");
+              }
+            }).catch(function(err) { done("Failed", err.message); });
+          }).catch(function(err) { done("Failed", err.message); });
+        }).catch(function(err) { done("Failed", err.message); });
       });
-    }).catch(function(err) {
-      toast("Cleanup failed: " + err.message, "error");
-      btn.disabled = false;
-      btn.innerHTML = "Rescue &amp; Review";
-    });
-  }).catch(function(err) {
-    toast("Restore failed: " + err.message, "error");
-    btn.disabled = false;
-    btn.innerHTML = "Rescue &amp; Review";
-  });
-
-  }); // end staging status fetch
+    },
+    "wizard"
+  );
 }
 
 function sendFilesHome() {
@@ -3402,39 +3405,28 @@ function _confirmSendHome() {
     toast("No staging session found", "error");
     return;
   }
-  // Show working dialog
-  document.getElementById("dialogTitle").textContent = "Sending Files Home";
-  document.getElementById("dialogMessage").innerHTML =
-    '<div style="text-align:center;padding:20px 0;">' +
-    '<div style="font-size:18px;color:var(--accent);margin-bottom:12px;">Returning your files...</div>' +
-    '<div style="color:var(--text-dim);">This may take a moment for large collections.</div>' +
-    '</div>';
-  document.getElementById("dialogConfirmBtn").style.display = "none";
-  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
-  document.getElementById("dialogOverlay").classList.add("active");
-
-  api("POST", "/api/staging/restore", {
-    staging_dir: _stagingSession.staging_dir,
-    source_dir: _stagingSession.source_dir,
-    full_restore: true
-  }).then(function(r) {
-    if (r.success) {
-      _stagingSession = null;
-      document.getElementById("dialogTitle").textContent = "All Files Sent Home";
-      document.getElementById("dialogMessage").innerHTML =
-        '<div style="margin-bottom:16px;">' + r.copied.toLocaleString() + ' files returned to their original folder.</div>';
-      document.getElementById("dialogConfirmBtn").textContent = "OK";
-      document.getElementById("dialogConfirmBtn").className = "btn btn-primary";
-      document.getElementById("dialogConfirmBtn").style.display = "";
-      _dialogCallback = function() { navigate("dashboard"); };
-    } else {
-      closeDialog();
-      toast("Restore failed: " + (r.error || "Unknown error"), "error");
-    }
-  }).catch(function(err) {
-    closeDialog();
-    toast("Restore failed: " + err.message, "error");
-  });
+  closeDialog();
+  startWorkingView(
+    "Sending Files Home",
+    "Returning your files to their original folder.",
+    function(done) {
+      api("POST", "/api/staging/restore", {
+        staging_dir: _stagingSession.staging_dir,
+        source_dir: _stagingSession.source_dir,
+        full_restore: true
+      }).then(function(r) {
+        if (r.success) {
+          _stagingSession = null;
+          done("All Files Sent Home", r.copied.toLocaleString() + " files returned to their original folder.");
+        } else {
+          done("Restore Failed", r.error || "Unknown error");
+        }
+      }).catch(function(err) {
+        done("Restore Failed", err.message);
+      });
+    },
+    "dashboard"
+  );
 }
 
 function _restartAllFiles() {
@@ -3453,19 +3445,22 @@ function _restartAllFiles() {
       " back into Cleaned Files so you can rescan everything?",
       "Start Over", "btn-warning",
       function() {
-        toast("Moving files back...");
-        api("POST", "/api/consolidate").then(function(r) {
-          if (r.success) {
-            showDialog("Ready to Rescan",
-              r.moved.toLocaleString() + " files moved back to Cleaned Files.",
-              "OK", "btn-primary", function() { navigate("dashboard"); }
-            );
-          } else {
-            toast("Failed: " + (r.error || "Unknown error"), "error");
-          }
-        }).catch(function(err) {
-          toast("Failed: " + err.message, "error");
-        });
+        startWorkingView(
+          "Starting Over",
+          "Moving all files back to Cleaned Files.",
+          function(done) {
+            api("POST", "/api/consolidate").then(function(r) {
+              if (r.success) {
+                done("Ready to Rescan", r.moved.toLocaleString() + " files moved back to Cleaned Files.");
+              } else {
+                done("Failed", r.error || "Unknown error");
+              }
+            }).catch(function(err) {
+              done("Failed", err.message);
+            });
+          },
+          "dashboard"
+        );
       }
     );
   });
@@ -3483,19 +3478,22 @@ function promoteToKeepers() {
       "Move " + count.toLocaleString() + " files from Removed Duplicates to Verified Keepers?",
       "Move", "btn-primary",
       function() {
-        toast("Moving files to Keepers...");
-        api("POST", "/api/dupes/promote").then(function(r) {
-          if (r.success) {
-            showDialog("Promoted to Keepers",
-              r.moved.toLocaleString() + " files moved to Verified Keepers.",
-              "OK", "btn-primary", function() { navigate("dashboard"); }
-            );
-          } else {
-            toast("Failed: " + (r.error || "Unknown error"), "error");
-          }
-        }).catch(function(err) {
-          toast("Failed: " + err.message, "error");
-        });
+        startWorkingView(
+          "Moving to Keepers",
+          "Saving files from Removed Duplicates as Verified Keepers.",
+          function(done) {
+            api("POST", "/api/dupes/promote").then(function(r) {
+              if (r.success) {
+                done("Moved to Keepers", r.moved.toLocaleString() + " files saved as Verified Keepers.");
+              } else {
+                done("Failed", r.error || "Unknown error");
+              }
+            }).catch(function(err) {
+              done("Failed", err.message);
+            });
+          },
+          "dashboard"
+        );
       }
     );
   });
@@ -3516,22 +3514,24 @@ function purgeAllDupes() {
       "Send to Recycle Bin",
       "btn-danger",
       function() {
-        document.getElementById("dashPurgeBtn").disabled = true;
-        document.getElementById("dashPurgeBtn").textContent = "Deleting...";
-        api("POST", "/api/dupes/purge").then(function(r) {
-          if (r.success) {
-            toast("Deleted " + r.deleted + " files" + (r.errors ? " (" + r.errors + " errors)" : ""));
-            _dashUpdateFolders();
-          } else {
-            toast("Failed: " + (r.error || "Unknown error"), "error");
-          }
-          document.getElementById("dashPurgeBtn").disabled = false;
-          document.getElementById("dashPurgeBtn").textContent = "Delete All Remaining";
-        }).catch(function(err) {
-          toast(err.message || "Purge failed", "error");
-          document.getElementById("dashPurgeBtn").disabled = false;
-          document.getElementById("dashPurgeBtn").textContent = "Delete All Remaining";
-        });
+        startWorkingView(
+          "Recycling Files",
+          "Sending files from Removed Duplicates to the Recycle Bin.",
+          function(done) {
+            api("POST", "/api/dupes/purge").then(function(r) {
+              if (r.success) {
+                var msg = r.deleted.toLocaleString() + " files sent to the Recycle Bin.";
+                if (r.errors) msg += " " + r.errors + " files could not be removed.";
+                done("Files Recycled", msg);
+              } else {
+                done("Failed", r.error || "Unknown error");
+              }
+            }).catch(function(err) {
+              done("Failed", err.message || "Purge failed");
+            });
+          },
+          "dashboard"
+        );
       }
     );
   });

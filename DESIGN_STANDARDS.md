@@ -207,6 +207,59 @@ Layout: `[Prev] [counter] [Next] | [Keep All] [Mark as Duplicate] [Delete] | [Ma
 
 ---
 
+## Blocking Progress View (#working)
+
+All long-running file operations use the `#working` view instead of running in the background while the dashboard stays interactive. This prevents accidental clicks during processing.
+
+### Layout
+
+```
++----------------------------------+
+|          Title                   |
+|    Description text              |
+|                                  |
+|      [spinning indicator]        |
+|     Processing status...         |
+|                                  |
++----------------------------------+
+```
+
+When complete, the spinner is replaced with a result card:
+
+```
++----------------------------------+
+|          Title                   |
+|    Description text              |
+|                                  |
+|  +----------------------------+  |
+|  | Done                       |  |
+|  | Result message             |  |
+|  | [Continue]                 |  |
+|  +----------------------------+  |
++----------------------------------+
+```
+
+### Operations That Use It
+
+| Operation | Title | Destination |
+|-----------|-------|-------------|
+| Send Files Home | Sending Files Home | Dashboard |
+| Start Over | Starting Over | Dashboard |
+| RnR Merge | Merging Files | Dashboard |
+| RnR Return/Reload | Return / Reload | Wizard |
+| Move to Keepers | Moving to Keepers | Dashboard |
+| Delete All | Recycling Files | Dashboard |
+| Remove Workspace (recycle) | Recycling Workspace | Dashboard |
+
+### Rules
+
+- No interactive buttons during processing (user cannot navigate away)
+- Status text updates during multi-step operations
+- Continue button appears only after completion
+- Error results use same layout (title changes to "Failed")
+
+---
+
 ## Navigation
 
 - `navigate()` forces `route()` refresh when hash is unchanged (prevents stale views)
