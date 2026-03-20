@@ -827,6 +827,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         if path == "/" or path == "":
             self._serve_index()
+        elif path.startswith("/web/") and path.endswith((".css", ".js")):
+            self._serve_static(path)
         elif path == "/api/scans":
             self._handle_get_scans()
         elif path == "/api/scan/progress":
@@ -953,6 +955,48 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
         except Exception as e:
             self.send_error_json("Could not load index.html: " + str(e), 500)
+
+    def _serve_static(self, url_path):
+        """Serve static CSS/JS files from the web/ directory."""
+        # url_path is like /web/style.css -> resolve to web/style.css
+        rel = url_path.lstrip("/")
+        file_path = Path(__file__).parent.parent / rel
+        # Security: must be within the web/ directory
+        try:
+            file_path = file_path.resolve()
+            web_dir = (Path(__file__).parent).resolve()
+            if not str(file_path).startswith(str(web_dir)):
+                self.send_error(403)
+                return
+        except Exception:
+            self.send_error(403)
+            return
+
+        if not file_path.is_file():
+            self.send_error(404)
+            return
+
+        content_types = {
+            ".css": "text/css; charset=utf-8",
+            ".js": "application/javascript; charset=utf-8",
+        }
+        ext = file_path.suffix.lower()
+        ctype = content_types.get(ext, "application/octet-stream")
+
+        try:
+            with open(str(file_path), "r", encoding="utf-8") as f:
+                content = f.read()
+            body = content.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control",
+                             "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.end_headers()
+            self.wfile.write(body)
+        except Exception as e:
+            self.send_error_json("Could not serve file: " + str(e), 500)
 
     def _handle_heartbeat(self):
         _touch_heartbeat()
