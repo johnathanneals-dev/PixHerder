@@ -610,6 +610,37 @@ def _run_oddball(report_data, dupes_folder):
         oddball_progress["result"] = {"error": str(e)}
 
 
+def _find_staging_subfolder():
+    """Find the active staging subfolder reliably.
+
+    Checks in-memory session first, then falls back to the subfolder
+    with the most files. Returns the path or empty string.
+    """
+    # 1. Check in-memory session
+    mem_dir = staging_progress.get("staging_dir", "")
+    if mem_dir and os.path.isdir(mem_dir):
+        return mem_dir
+
+    # 2. Fall back to disk: find subfolder with most files
+    settings = load_settings()
+    staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
+    if not os.path.isdir(staging_base):
+        return ""
+
+    best_path = ""
+    best_count = 0
+    for d in os.listdir(staging_base):
+        candidate = os.path.join(staging_base, d)
+        if not os.path.isdir(candidate):
+            continue
+        count = sum(1 for _, _, files in os.walk(candidate) for _ in files)
+        if count > best_count:
+            best_count = count
+            best_path = candidate
+
+    return best_path
+
+
 def _update_staging_progress(current, total, bytes_copied, bytes_total, stage):
     """Callback for staging engine to report progress."""
     staging_progress["current"] = current
@@ -937,14 +968,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                         count += 1
             return {"exists": True, "path": dirpath, "file_count": count}
 
-        # Find staging session subfolder (the hash subfolder)
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        staging_path = ""
-        if os.path.isdir(staging_base):
-            subs = [d for d in os.listdir(staging_base)
-                    if os.path.isdir(os.path.join(staging_base, d))]
-            if subs:
-                staging_path = os.path.join(staging_base, subs[0])
+        # Find staging session subfolder reliably
+        staging_path = _find_staging_subfolder()
 
         dupes_path = settings.get("move_destination", DEFAULTS["move_destination"])
         keepers_path = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
@@ -1736,12 +1761,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Find or create staging session subfolder
-        staging_path = ""
-        if os.path.isdir(staging_base):
-            subs = [d for d in os.listdir(staging_base)
-                    if os.path.isdir(os.path.join(staging_base, d))]
-            if subs:
-                staging_path = os.path.join(staging_base, subs[0])
+        staging_path = _find_staging_subfolder()
 
         if not staging_path:
             # Create a new staging subfolder
@@ -1902,13 +1922,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
 
         # Find staging subfolder
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        staging_dir = ""
-        if os.path.isdir(staging_base):
-            subs = [d for d in os.listdir(staging_base)
-                    if os.path.isdir(os.path.join(staging_base, d))]
-            if subs:
-                staging_dir = os.path.join(staging_base, subs[0])
+        staging_dir = _find_staging_subfolder()
 
         if not staging_dir:
             self.send_error_json("No workspace folder found", 404)
@@ -2199,15 +2213,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         # If no in-memory session, try to reconstruct from disk
         if not result.get("staging_dir"):
-            settings = load_settings()
-            staging_base = settings.get(
-                "staging_dir", DEFAULTS["staging_dir"])
-            if os.path.isdir(staging_base):
-                subs = [d for d in os.listdir(staging_base)
-                        if os.path.isdir(os.path.join(staging_base, d))]
-                if subs:
-                    staging_path = os.path.join(staging_base, subs[0])
-                    # Only report session if folder actually has files
+            staging_path = _find_staging_subfolder()
+            if staging_path:
                     has_files = any(
                         f for _, _, files in os.walk(staging_path)
                         for f in files
@@ -2217,6 +2224,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                         result["status"] = "complete"
 
                         # Try to find source_dir from settings or manifest
+                        settings = load_settings()
                         source = settings.get("default_pictures_path", "")
                         if not source:
                             source = default_pictures_path()

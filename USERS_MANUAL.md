@@ -274,6 +274,8 @@ The Guided Cleanup wizard handles synced folders automatically by making a worki
 
 DupeFinder is designed with file security as the top priority. **No user file is ever permanently deleted by DupeFinder.** All delete operations send files to the Windows Recycle Bin, where you can recover them if needed.
 
+- **Your originals are never touched during migration.** DupeFinder copies files to a local workspace -- it never moves or deletes your originals. If the process crashes or is interrupted, your originals are exactly where they were. The partial copy can be discarded and restarted.
+- **Only you can trigger actions that affect originals.** "Send Files Home" and "Finish" are the only operations that copy files back to your original folder. Nothing happens to your originals until you explicitly choose one of these options.
 - DupeFinder uses **copy + delete** (not move) to avoid file locking issues
 - Each file operation is independent -- one failure won't stop the rest
 - Failed files are logged and shown in the UI

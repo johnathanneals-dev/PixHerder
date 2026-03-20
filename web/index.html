@@ -387,6 +387,7 @@
   }
   .nav-link:hover { color: var(--text); background: var(--surface-2); }
   .nav-link.active { color: var(--accent); background: var(--accent-bg); }
+  .nav-link.disabled { color: var(--text-muted); pointer-events: none; opacity: 0.5; }
 
   /* ---- Main container ---- */
   .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
@@ -737,6 +738,7 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes toast-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 </style>
 </head>
 <body>
@@ -747,10 +749,12 @@
     <div class="logo" onclick="navigate('dashboard')">DupeFinder</div>
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</button>
-      <button class="nav-link" data-view="scan-config" onclick="navigate('scan-config')">Scan</button>
+      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)">Migrate</button>
+      <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)">Scan</button>
+      <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()">Review</button>
+      <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')">Finalize</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')">Activity</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
-      <button class="nav-link" data-view="finish" id="navFinishBtn" onclick="_dashContinue()" style="display:none;color:var(--accent);">Continue</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -826,7 +830,7 @@
 
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
       <button class="btn btn-primary btn-lg" onclick="navigate('wizard')">Start Guided Cleanup</button>
-      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')">Advanced Scan</button>
+      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')">Direct Scan</button>
     </div>
 
     <div id="dashFolders" style="display:none;margin-bottom:32px;">
@@ -848,9 +852,21 @@
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-primary btn-lg" id="dashContinueBtn" onclick="_dashContinue()">Continue</button>
-          <button class="btn btn-ghost" onclick="_dashStagePicker()">Choose a different step</button>
+          <button class="btn btn-secondary" onclick="_dashStagePicker()">Choose a different step</button>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
+      </div>
+      <div id="dashRescanBoxes" style="display:none;margin-bottom:16px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Rescan Removed Duplicates</button>
+            <div id="dashRescanDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          </div>
+          <div style="text-align:center;">
+            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Rescan Verified Keepers</button>
+            <div id="dashRescanKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          </div>
+        </div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
@@ -993,12 +1009,19 @@
                    oninput="document.getElementById('wizThresholdVal').textContent=this.value">
             <span class="slider-value" id="wizThresholdVal">5</span>
           </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
         </div>
         <div class="form-group">
           <label><input type="checkbox" id="wizRecursive" checked> Include subfolders</label>
         </div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
+          <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
+          <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>
+          <strong style="color:var(--text);">Both</strong> runs exact first, then perceptual on remaining files.
+        </div>
         <div id="wizScanActions">
           <button class="btn btn-primary" onclick="wizardStartScan()">Start Scan</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Return to Dashboard</button>
           <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
         </div>
         <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
@@ -1140,9 +1163,7 @@
                  oninput="document.getElementById('thresholdVal').textContent=this.value">
           <span class="slider-value" id="thresholdVal">5</span>
         </div>
-        <div class="slider-labels">
-          <span>0 identical</span><span>5 near-dupe</span><span>10 similar</span><span>15 loose</span><span>20</span>
-        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
       </div>
 
       <div class="form-group">
@@ -1152,9 +1173,16 @@
         </label>
       </div>
 
-      <button class="btn btn-primary btn-lg" onclick="startScan()" style="margin-top:12px;">
-        Start Scan
-      </button>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
+        <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
+        <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>
+        <strong style="color:var(--text);">Both</strong> runs exact first, then perceptual on remaining files.
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary btn-lg" onclick="startScan()">Start Scan</button>
+        <button class="btn btn-secondary" onclick="navigate('dashboard')">Return to Dashboard</button>
+      </div>
     </div>
 
     <div class="card" style="max-width:640px;margin-top:24px;" id="scanKeepersSection" style="display:none;">
@@ -1427,7 +1455,7 @@
         <button class="btn btn-secondary btn-sm" onclick="reviewNav(1)" style="min-width:60px;">Next &rarr;</button>
       </div>
       <div class="action-buttons">
-        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Keep All</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Keep This Group</button>
         <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Mark as Duplicate</button>
         <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()">Delete</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
@@ -1654,7 +1682,12 @@ function toast(message, type) {
   el.className = "toast toast-" + type;
   el.textContent = message;
   container.appendChild(el);
-  setTimeout(function() { el.remove(); }, 4000);
+  // Warning/error toasts blink and stay longer
+  var duration = (type === "warning" || type === "error") ? 6000 : 4000;
+  if (type === "warning" || type === "error") {
+    el.style.animation = "toast-blink 0.5s ease-in-out 3";
+  }
+  setTimeout(function() { el.remove(); }, duration);
 }
 
 // ---- Confirm Dialog ----
@@ -3008,6 +3041,58 @@ function parseHash() {
   return { view: view, params: params };
 }
 
+function _rescanFolder(type) {
+  var path = _dashFolderPaths[type];
+  if (!path) { toast("No folder to scan", "warning"); return; }
+  // Pre-fill the scan config with this folder path
+  document.getElementById("scanDir").value = path;
+  navigate("scan-config");
+}
+
+function _navToWizardStep(step) {
+  wizardState.currentStep = step;
+  if (step === 1) wizardState.completedSteps = {};
+  navigate("wizard");
+}
+
+function _navToReview() {
+  // Find the most recent scan report
+  if (state.lastReport) {
+    navigate("review", { report: state.lastReport });
+  } else {
+    fetch("/api/scans").then(function(r) { return r.json(); }).then(function(scans) {
+      if (scans.length > 0) {
+        navigate("review", { report: scans[0].filename });
+      } else {
+        toast("No scan results to review", "warning");
+      }
+    });
+  }
+}
+
+function _updateNavStates() {
+  // Grey out nav items based on current app state
+  var migrate = document.getElementById("navMigrate");
+  var scan = document.getElementById("navScan");
+  var review = document.getElementById("navReview");
+  var finalize = document.getElementById("navFinalize");
+
+  // Migrate: always available
+  migrate.classList.remove("disabled");
+
+  // Scan: available if staging session exists (files migrated)
+  var hasStagingSession = !!(wizardState.stagingDir || (_stagingSession && _stagingSession.staging_dir));
+  scan.classList.toggle("disabled", !hasStagingSession);
+
+  // Review: available if there are scan results
+  var hasScans = !!(state.lastReport || (state.scans && state.scans.length > 0));
+  review.classList.toggle("disabled", !hasScans);
+
+  // Finalize: available if staging has files
+  var hasFiles = hasStagingSession;
+  finalize.classList.toggle("disabled", !hasFiles);
+}
+
 function route() {
   var parsed = parseHash();
   var view = parsed.view;
@@ -3017,11 +3102,22 @@ function route() {
   var views = document.querySelectorAll(".view");
   for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
 
-  // Update nav
+  // Update nav — map wizard steps to nav items
+  var navView = view;
+  if (view === "wizard") {
+    var step = wizardState.currentStep || 1;
+    if (step === 1) navView = "wizard-migrate";
+    else if (step === 2) navView = "wizard-scan";
+    else if (step === 3) navView = "review";
+    else if (step === 4) navView = "finish";
+  } else if (view === "scan-config" || view === "scan-progress") {
+    navView = "wizard-scan";
+  }
   var links = document.querySelectorAll(".nav-link");
   for (var i = 0; i < links.length; i++) {
-    links[i].classList.toggle("active", links[i].getAttribute("data-view") === view);
+    links[i].classList.toggle("active", links[i].getAttribute("data-view") === navView);
   }
+  _updateNavStates();
 
   // Show kbd hints only in review
   document.getElementById("kbdHints").style.display = view === "review" ? "flex" : "none";
@@ -3105,8 +3201,7 @@ function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
     _dashContinueTarget = "finish";
   }
 
-  // Update nav link to match
-  document.getElementById("navFinishBtn").textContent = btn.textContent;
+  // Nav states updated by _dashUpdateFolders
 }
 
 function _dashContinue() {
@@ -3217,8 +3312,20 @@ function _dashUpdateFolders() {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
 
-    // Show/hide nav link
-    document.getElementById("navFinishBtn").style.display = hasAnySystemFiles ? "" : "none";
+    // Rescan boxes
+    var rescanBox = document.getElementById("dashRescanBoxes");
+    var rescanDupesBtn = document.getElementById("dashRescanDupesBtn");
+    var rescanKeepersBtn = document.getElementById("dashRescanKeepersBtn");
+    var rescanDupesHint = document.getElementById("dashRescanDupesHint");
+    var rescanKeepersHint = document.getElementById("dashRescanKeepersHint");
+    rescanBox.style.display = (hasDupes || hasKeepers) ? "block" : "none";
+    rescanDupesBtn.disabled = !hasDupes;
+    rescanDupesHint.textContent = hasDupes ? data.dupes.file_count.toLocaleString() + " files" : "No files";
+    rescanKeepersBtn.disabled = !hasKeepers;
+    rescanKeepersHint.textContent = hasKeepers ? data.keepers.file_count.toLocaleString() + " files" : "No files";
+
+    // Update nav states
+    _updateNavStates();
 
     // Show advanced options section when any folder has files
     document.getElementById("dashAdvancedOptions").style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
@@ -4482,24 +4589,19 @@ function showActionResult(d) {
     document.getElementById("actResultErrors").innerHTML = "";
   }
 
-  // Show return-to-wizard or sync-back button
+  // Show navigation options after actions complete
   if (state._reviewReturnTo === "wizard") {
     wizardState.completedSteps[3] = true;
-    document.getElementById("actResultErrors").innerHTML +=
-      '<div style="margin-top:24px;padding:20px;border:2px solid var(--accent-dim);border-radius:var(--radius);background:var(--accent-bg);text-align:center;">'
-      + '<p style="color:var(--accent);font-weight:600;margin-bottom:12px;">Actions complete. Returning to wizard...</p>'
-      + '<button class="btn btn-primary btn-lg" onclick="navigate(\'wizard\')">Return to Wizard Now</button>'
-      + '</div>';
-    // Auto-return after 3 seconds
-    setTimeout(function() { navigate("wizard"); }, 3000);
-  } else if (_stagingSession) {
-    document.getElementById("actResultErrors").innerHTML +=
-      '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">'
-      + '<p style="color:var(--text-dim);margin-bottom:8px;">Staging session active. '
-      + 'Return to the dashboard to send files home or apply cleanup.</p>'
-      + '<button class="btn btn-primary" onclick="navigate(\'dashboard\')">Return to Dashboard</button>'
-      + '</div>';
   }
+  document.getElementById("actResultErrors").innerHTML +=
+    '<div style="margin-top:24px;padding:20px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;">'
+    + '<p style="color:var(--text);font-weight:600;margin-bottom:12px;">What would you like to do next?</p>'
+    + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+    + '<button class="btn btn-secondary" onclick="navigate(\'dashboard\')">Dashboard</button>'
+    + '<button class="btn btn-secondary" onclick="_navToWizardStep(2)">Scan Again</button>'
+    + '<button class="btn btn-secondary" onclick="_navToReview()">Review</button>'
+    + '<button class="btn btn-secondary" onclick="navigate(\'finish\')">Finalize</button>'
+    + '</div></div>';
 
   // Clear decisions
   state.decisions = {};
