@@ -1,7 +1,7 @@
 # DupeFinder TODO
 
 Persistent task list tracked in the repo. Updated with every commit cycle.
-See also: `Auditor/Audit190326.txt` for the full independent audit report.
+See also: `Auditor/` for audit reports (Audit #1: Audit190326.txt, Audit #2: DupeFinder_Audit_Report*.txt)
 Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ---
@@ -15,6 +15,24 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] #25 Manifest validation on restore -- integrity check before Send Files Home
 - [x] #26 Clean up decision files (scans/decisions_*.json) on scan delete
 - [x] #29 Add /api/staging/reset endpoint -- replace "cleared" path hack in finish flow
+
+## Audit #2: Verified Fixes [COMPLETED 2026-03-20]
+
+- [x] Fix use_fallback NameError in recycle_staging() return dict (crash on every recycle)
+- [x] Fix indentation error in _handle_staging_status (staging recovery broken)
+- [x] Remove os.remove() fallback in _handle_browser_delete (last permanent delete path)
+- [x] Remove CORS wildcard header from scan progress SSE
+- [x] Disable heartbeat auto-shutdown in native pywebview mode
+
+## Audit #2: Before Release
+
+- [ ] Replace os._exit(0) with graceful shutdown (3 locations in server.py)
+- [ ] Restrict /api/browse-folders to allowed paths (filesystem enumeration)
+- [ ] Consolidate extension lists to single source in config.py (5+ duplicated locations)
+- [ ] Add copy verification (size check) before deleting source files in move operations
+- [ ] Track/limit progress polling threads in bridge.py (prevent accumulation)
+- [ ] Validate settings paths -- reject system directories (Windows, System32, Program Files)
+- [ ] Add session token for browser-mode API authentication
 
 ## Audit Phase 2: Performance & Quality [NEXT]
 
@@ -78,6 +96,9 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] Phase 1 safety fixes: removed all os.remove() fallbacks, fixed Image leak, directory traversal fix, streaming images, disk space check, manifest validation, decision cleanup, /api/staging/reset endpoint
 - [x] pywebview migration: native window, bridge.py (45 API methods + 5 progress subscriptions), SSE replaced with evaluate_js callbacks, legacy --browser mode preserved
+- [x] Audit #2 immediate fixes: use_fallback crash, indentation bug, browser_delete fallback, CORS removal, heartbeat disable in native mode
+- [x] Archive legacy scripts and test files to archive/ directory
+- [x] PROJECT_OVERVIEW.md for auditor context
 
 ## Completed (2026-03-19)
 
