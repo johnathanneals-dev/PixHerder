@@ -20,20 +20,25 @@ function runOddball() {
   document.getElementById("oddballProgress").style.display = "block";
 
   api("POST", "/api/oddball/run", { report: report, dupes_folder: dupesFolder }).then(function() {
-    var sse = new EventSource("/api/oddball/progress");
-    sse.onmessage = function(e) {
-      var d = JSON.parse(e.data);
+    function _onOddProg(d) {
       if (d.total > 0) {
         var pct = Math.round((d.current / d.total) * 100);
         document.getElementById("oddProgressFill").style.width = pct + "%";
         document.getElementById("oddProgressLeft").textContent = d.current + " / " + d.total;
       }
       if (d.status === "complete" || d.status === "error") {
-        sse.close();
+        window._onOddballProgress = null;
         showOddballResults(d);
       }
-    };
-    sse.onerror = function() { sse.close(); };
+    }
+    if (_useBridge()) {
+      window._onOddballProgress = _onOddProg;
+      window.pywebview.api.subscribe_oddball_progress();
+    } else {
+      var sse = new EventSource("/api/oddball/progress");
+      sse.onmessage = function(e) { _onOddProg(JSON.parse(e.data)); };
+      sse.onerror = function() { sse.close(); };
+    }
   }).catch(function(err) {
     toast("Error: " + err.message, "error");
     document.getElementById("oddballSetup").style.display = "block";

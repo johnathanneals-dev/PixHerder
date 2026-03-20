@@ -20,15 +20,25 @@ function initStagingProgress() {
   document.getElementById("stagingProgressFill").style.width = "0%";
   document.getElementById("stagingProgressPct").textContent = "0%";
 
-  if (_stagingSSE) _stagingSSE.close();
-  _stagingSSE = new EventSource("/api/staging/progress");
-  _stagingSSE.onmessage = function(e) {
-    var d = JSON.parse(e.data);
-    updateStagingUI(d);
-    if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
-      _stagingSSE.close();
-    }
-  };
+  if (_useBridge()) {
+    window._onStagingProgress = function(d) {
+      updateStagingUI(d);
+      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+        window._onStagingProgress = null;
+      }
+    };
+    window.pywebview.api.subscribe_staging_progress();
+  } else {
+    if (_stagingSSE) _stagingSSE.close();
+    _stagingSSE = new EventSource("/api/staging/progress");
+    _stagingSSE.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      updateStagingUI(d);
+      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+        _stagingSSE.close();
+      }
+    };
+  }
 }
 
 function updateStagingUI(d) {

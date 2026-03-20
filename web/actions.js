@@ -85,10 +85,8 @@ function _doExecute(moveGroups, deleteGroups, moveDir) {
   }
 
   Promise.all(pendingOps).then(function() {
-    // Poll for progress via SSE
-    var sse = new EventSource("/api/action/progress");
-    sse.onmessage = function(e) {
-      var d = JSON.parse(e.data);
+    // Poll for progress
+    function _onActProgress(d) {
       if (d.total > 0) {
         var pct = Math.round((d.current / d.total) * 100);
         document.getElementById("actProgressFill").style.width = pct + "%";
@@ -96,17 +94,19 @@ function _doExecute(moveGroups, deleteGroups, moveDir) {
           d.current + " / " + d.total;
       }
       if (d.status === "complete" || d.status === "error") {
-        sse.close();
+        if (_useBridge()) { window._onActionProgress = null; }
+        else if (_actSSE) { _actSSE.close(); _actSSE = null; }
         showActionResult(d);
       }
-    };
-    sse.onerror = function() {
-      sse.close();
-      // Try fetching final state
-      setTimeout(function() {
-        showActionResult({ status: "complete", result: {} });
-      }, 1000);
-    };
+    }
+    if (_useBridge()) {
+      window._onActionProgress = _onActProgress;
+      window.pywebview.api.subscribe_action_progress();
+    } else {
+      var _actSSE = new EventSource("/api/action/progress");
+      _actSSE.onmessage = function(e) { _onActProgress(JSON.parse(e.data)); };
+      _actSSE.onerror = function() { _actSSE.close(); setTimeout(function() { showActionResult({ status: "complete", result: {} }); }, 1000); };
+    }
   }).catch(function(err) {
     toast("Error starting action: " + err.message, "error");
   });

@@ -20,13 +20,13 @@ function initWizard() {
 
   // Load settings first — also detect existing staging session
   // so restart/refresh lands on the right step
-  fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+  api("GET", "/api/settings").then(function(s) {
     wizardState.dupesDir = s.move_destination || "";
     var defaultSource = s.default_pictures_path || "";
     document.getElementById("wizSourceDir").value = wizardState.sourceDir || defaultSource;
 
     // Check for existing staging session (in-memory first, then on-disk manifest)
-    return fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+    return api("GET", "/api/staging/status").then(function(d) {
       if (d.status === "complete" && d.staging_dir) {
         wizardState.stagingDir = d.staging_dir;
         wizardState.sourceDir = d.source_dir;
@@ -46,7 +46,7 @@ function initWizard() {
           return _wizardCheckScans();
         }
         // Last resort: check if staging folder has files (e.g. from Rescue & Review)
-        return fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
+        return api("GET", "/api/folders/status").then(function(fs) {
           if (fs.staging && fs.staging.exists && fs.staging.file_count > 0) {
             wizardState.stagingDir = fs.staging.path;
             wizardState.completedSteps[1] = true;
@@ -60,7 +60,7 @@ function initWizard() {
 }
 
 function _wizardCheckScans() {
-  return fetch("/api/scans").then(function(r) { return r.json(); }).then(function(scans) {
+  return api("GET", "/api/scans").then(function(scans) {
     for (var i = 0; i < scans.length; i++) {
       if (scans[i].directory === wizardState.stagingDir && scans[i].total_groups > 0) {
         wizardState.lastReport = scans[i].filename;
@@ -101,7 +101,7 @@ function wizardGoToStep(n) {
   }
   if (n === 2) {
     // Load settings for threshold
-    fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+    api("GET", "/api/settings").then(function(s) {
       document.getElementById("wizThreshold").value = s.threshold || 5;
       document.getElementById("wizThresholdVal").textContent = s.threshold || 5;
     }).catch(function() {});
@@ -112,7 +112,7 @@ function wizardGoToStep(n) {
   }
   if (n === 4) {
     // Fetch file counts for browse buttons
-    fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    api("GET", "/api/folders/status").then(function(data) {
       var sBtn = document.getElementById("wizStagingBtn");
       var dBtn = document.getElementById("wizDupesBtn");
       if (data.staging && data.staging.exists && data.staging.file_count > 0) {
@@ -185,11 +185,8 @@ function wizardStartMigration() {
 
   api("POST", "/api/staging/start", { source_dir: dir }).then(function(d) {
     wizardState.stagingDir = d.staging_dir;
-    // Connect SSE
-    if (_wizStagingSSE) _wizStagingSSE.close();
-    _wizStagingSSE = new EventSource("/api/staging/progress");
-    _wizStagingSSE.onmessage = function(e) {
-      var d = JSON.parse(e.data);
+    // Connect progress stream
+    function _onWizStaging(d) {
       var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
       document.getElementById("wizMigFill").style.width = pct + "%";
       document.getElementById("wizMigPct").textContent = pct + "%";
@@ -199,24 +196,33 @@ function wizardStartMigration() {
       document.getElementById("wizMigRight").textContent = mb + " / " + mbT + " MB";
 
       if (d.status === "complete") {
-        _wizStagingSSE.close();
+        if (_useBridge()) window._onStagingProgress = null;
+        else if (_wizStagingSSE) _wizStagingSSE.close();
         document.getElementById("wizMigrateProgress").style.display = "none";
         document.getElementById("wizMigrateComplete").style.display = "block";
         document.getElementById("wizMigrateCompleteMsg").textContent = d.message || "Migration complete";
         wizardState.stagingDir = d.staging_dir || wizardState.stagingDir;
-        // Also set up _stagingSession for compatibility
         _stagingSession = {
           source_dir: wizardState.sourceDir,
           staging_dir: wizardState.stagingDir
         };
         wizardMarkComplete(1);
       } else if (d.status === "error" || d.status === "cancelled") {
-        _wizStagingSSE.close();
+        if (_useBridge()) window._onStagingProgress = null;
+        else if (_wizStagingSSE) _wizStagingSSE.close();
         document.getElementById("wizMigrateProgress").style.display = "none";
         document.getElementById("wizMigrateBtn").disabled = false;
         toast(d.message || "Migration failed", "error");
       }
-    };
+    }
+    if (_useBridge()) {
+      window._onStagingProgress = _onWizStaging;
+      window.pywebview.api.subscribe_staging_progress();
+    } else {
+      if (_wizStagingSSE) _wizStagingSSE.close();
+      _wizStagingSSE = new EventSource("/api/staging/progress");
+      _wizStagingSSE.onmessage = function(e) { _onWizStaging(JSON.parse(e.data)); };
+    }
   }).catch(function(err) {
     document.getElementById("wizMigrateBtn").disabled = false;
     document.getElementById("wizMigrateProgress").style.display = "none";
@@ -237,8 +243,7 @@ function wizardStartScan() {
   document.getElementById("wizScanComplete").style.display = "none";
 
   // Check for resume first
-  fetch("/api/scan/check-resume?directory=" + encodeURIComponent(wizardState.stagingDir) + "&mode=" + mode)
-    .then(function(r) { return r.json(); })
+  api("GET", "/api/scan/check-resume?directory=" + encodeURIComponent(wizardState.stagingDir) + "&mode=" + mode)
     .then(function(data) {
       var resume = false;
       if (data.has_checkpoint) {
@@ -251,30 +256,36 @@ function wizardStartScan() {
       });
     })
     .then(function() {
-      if (_wizScanSSE) _wizScanSSE.close();
-      _wizScanSSE = new EventSource("/api/scan/progress");
-      _wizScanSSE.onmessage = function(e) {
-        var d = JSON.parse(e.data);
+      function _onWizScan(d) {
         var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
         document.getElementById("wizScanFill").style.width = pct + "%";
         document.getElementById("wizScanPct").textContent = pct + "%";
         document.getElementById("wizScanLeft").textContent = d.current + " / " + d.total;
         document.getElementById("wizScanStage").textContent = d.stage || "scanning";
-
         if (d.status === "complete") {
-          _wizScanSSE.close();
+          if (_useBridge()) window._onScanProgress = null;
+          else if (_wizScanSSE) _wizScanSSE.close();
           document.getElementById("wizScanProgress").style.display = "none";
           document.getElementById("wizScanComplete").style.display = "block";
           document.getElementById("wizScanCompleteMsg").textContent = d.message || "Scan complete";
           wizardState.lastReport = d.result_file;
           wizardMarkComplete(2);
         } else if (d.status === "error" || d.status === "cancelled") {
-          _wizScanSSE.close();
+          if (_useBridge()) window._onScanProgress = null;
+          else if (_wizScanSSE) _wizScanSSE.close();
           document.getElementById("wizScanProgress").style.display = "none";
           document.getElementById("wizScanActions").style.display = "block";
           toast(d.message || "Scan failed", "error");
         }
-      };
+      }
+      if (_useBridge()) {
+        window._onScanProgress = _onWizScan;
+        window.pywebview.api.subscribe_scan_progress();
+      } else {
+        if (_wizScanSSE) _wizScanSSE.close();
+        _wizScanSSE = new EventSource("/api/scan/progress");
+        _wizScanSSE.onmessage = function(e) { _onWizScan(JSON.parse(e.data)); };
+      }
     })
     .catch(function(err) {
       document.getElementById("wizScanProgress").style.display = "none";

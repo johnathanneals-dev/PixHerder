@@ -19,37 +19,43 @@ function startSyncback() {
     staging_dir: _stagingSession.staging_dir,
     source_dir: _stagingSession.source_dir
   }).then(function() {
-    if (_syncbackSSE) _syncbackSSE.close();
-    _syncbackSSE = new EventSource("/api/staging/syncback/progress");
-    _syncbackSSE.onmessage = function(e) {
-      var d = JSON.parse(e.data);
+    function _onSyncProg(d) {
       var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
       document.getElementById("syncbackProgressFill").style.width = pct + "%";
       document.getElementById("syncbackProgressPct").textContent = pct + "%";
       document.getElementById("syncbackProgressLeft").textContent = d.current + " / " + d.total;
       document.getElementById("syncbackStage").textContent = d.message || "Syncing";
-
       if (d.status === "complete") {
-        _syncbackSSE.close();
+        if (_useBridge()) window._onSyncbackProgress = null;
+        else if (_syncbackSSE) _syncbackSSE.close();
         document.getElementById("syncbackProgress").style.display = "none";
         document.getElementById("syncbackCompleteBox").style.display = "block";
         document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
       } else if (d.status === "error") {
-        _syncbackSSE.close();
+        if (_useBridge()) window._onSyncbackProgress = null;
+        else if (_syncbackSSE) _syncbackSSE.close();
         document.getElementById("syncbackProgress").style.display = "none";
         document.getElementById("syncbackCompleteBox").style.display = "block";
         document.getElementById("syncbackCompleteTitle").textContent = "Sync Failed";
         document.getElementById("syncbackCompleteTitle").style.color = "var(--danger)";
         document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
       }
-    };
+    }
+    if (_useBridge()) {
+      window._onSyncbackProgress = _onSyncProg;
+      window.pywebview.api.subscribe_syncback_progress();
+    } else {
+      if (_syncbackSSE) _syncbackSSE.close();
+      _syncbackSSE = new EventSource("/api/staging/syncback/progress");
+      _syncbackSSE.onmessage = function(e) { _onSyncProg(JSON.parse(e.data)); };
+    }
   });
 }
 
 function cleanupStaging() {
   if (!_stagingSession) return;
   // Check if staging has files -- if empty, just remove the folder
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var count = (data.staging && data.staging.file_count) || 0;
     if (count === 0) {
       api("POST", "/api/staging/cleanup", {

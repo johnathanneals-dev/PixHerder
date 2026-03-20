@@ -8,11 +8,11 @@ function fillScanDir(type) {
       document.getElementById("scanDir").value = _stagingSession.staging_dir;
       return;
     }
-    fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+    api("GET", "/api/staging/status").then(function(d) {
       if (d.staging_dir) {
         document.getElementById("scanDir").value = d.staging_dir;
       } else {
-        fetch("/api/settings").then(function(r) { return r.json(); }).then(function(s) {
+        api("GET", "/api/settings").then(function(s) {
           document.getElementById("scanDir").value = s.staging_dir || "";
         });
       }
@@ -31,7 +31,7 @@ function initScanConfig() {
     document.getElementById("scanRecursive").checked = settings.recursive !== false;
   });
   // Update quick-fill buttons with file counts
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var sBtn = document.getElementById("scanFillStagingBtn");
     var dBtn = document.getElementById("scanFillDupesBtn");
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
@@ -130,8 +130,7 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
 }
 
 function _checkResumeAndStart(dir, mode, threshold, recursive) {
-  fetch("/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
-    .then(function(r) { return r.json(); })
+  api("GET", "/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
     .then(function(data) {
       if (data.has_checkpoint) {
         var info = data.checkpoint_info;
@@ -179,23 +178,30 @@ function initScanProgress() {
   document.getElementById("scanProgressPct").textContent = "0%";
   _scanStartTime = Date.now();
 
-  // Connect SSE
-  if (_scanSSE) _scanSSE.close();
-  _scanSSE = new EventSource("/api/scan/progress");
-  _scanSSE.onmessage = function(e) {
-    var d = JSON.parse(e.data);
-    updateScanUI(d);
-
-    if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
-      _scanSSE.close();
-      _scanSSE = null;
-      showScanComplete(d);
-    }
-  };
-  _scanSSE.onerror = function() {
+  // Connect progress stream
+  if (_useBridge()) {
+    window._onScanProgress = function(d) {
+      updateScanUI(d);
+      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+        window._onScanProgress = null;
+        showScanComplete(d);
+      }
+    };
+    window.pywebview.api.subscribe_scan_progress();
+  } else {
     if (_scanSSE) _scanSSE.close();
-    _scanSSE = null;
-  };
+    _scanSSE = new EventSource("/api/scan/progress");
+    _scanSSE.onmessage = function(e) {
+      var d = JSON.parse(e.data);
+      updateScanUI(d);
+      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+        _scanSSE.close();
+        _scanSSE = null;
+        showScanComplete(d);
+      }
+    };
+    _scanSSE.onerror = function() { if (_scanSSE) _scanSSE.close(); _scanSSE = null; };
+  }
 }
 
 function updateScanUI(d) {

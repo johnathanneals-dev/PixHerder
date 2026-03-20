@@ -57,7 +57,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Keepers folder workflow -- rescan Removed Duplicates, promote to Verified Keepers
 - [ ] Batch/chunked scanning for large collections
-- [ ] **pywebview migration** -- replace browser with native window (plan approved, in progress)
+- [x] **pywebview migration** -- native window replaces browser (completed 2026-03-20)
 - [ ] Server modularization -- split server.py into route modules (partially addressed by pywebview migration)
 - [ ] Marketability -- branding, installer, landing page, packaging
 - [ ] Thumb drive portable mode -- running from USB with virtual environment
@@ -77,6 +77,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ## Completed (2026-03-20)
 
 - [x] Phase 1 safety fixes: removed all os.remove() fallbacks, fixed Image leak, directory traversal fix, streaming images, disk space check, manifest validation, decision cleanup, /api/staging/reset endpoint
+- [x] pywebview migration: native window, bridge.py (45 API methods + 5 progress subscriptions), SSE replaced with evaluate_js callbacks, legacy --browser mode preserved
 
 ## Completed (2026-03-19)
 

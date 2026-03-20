@@ -82,7 +82,7 @@ function _stagePickReview() {
 }
 
 function _dashUpdateFolders() {
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var box = document.getElementById("dashFolders");
     var stagingBtn = document.getElementById("dashStagingBtn");
     var dupesBtn = document.getElementById("dashDupesBtn");
@@ -174,7 +174,7 @@ function _dashUpdateFolders() {
 
 function rescueAndReview() {
   // Check folder status first to give actionable guidance
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var stagingHasFiles = data.staging && data.staging.exists && data.staging.file_count > 0;
     var dupesHasFiles = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
 
@@ -245,7 +245,7 @@ function _rnrMerge() {
         if (r.success) {
           wizardState.stagingDir = r.staging_path;
           wizardState.completedSteps = { 1: true };
-          fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
+          api("GET", "/api/folders/status").then(function(fs) {
             var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
             var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
             var msg = r.files_moved.toLocaleString() + " files moved to My Files.\n" +
@@ -270,7 +270,7 @@ function _rnrSyncAndRecycle() {
     "Return / Reload",
     "Sending My Files home, then loading Removed Duplicates for review.",
     function(done) {
-      fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
+      api("GET", "/api/staging/status").then(function(status) {
         var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
         var sourceDir = status.source_dir || (state.settings && state.settings.default_pictures_path) || "";
         if (!stagingDir || !sourceDir) {
@@ -306,7 +306,7 @@ function sendFilesHome() {
   // Ensure staging session is loaded
   var p = _stagingSession
     ? Promise.resolve()
-    : fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+    : api("GET", "/api/staging/status").then(function(d) {
         if (d.staging_dir && d.source_dir) {
           _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
         }
@@ -316,7 +316,7 @@ function sendFilesHome() {
       toast("No staging session found. Files may have been staged outside the wizard.", "error");
       return;
     }
-    return fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    return api("GET", "/api/folders/status").then(function(data) {
       var stagingCount = (data.staging && data.staging.file_count) || 0;
       var dupesCount = (data.dupes && data.dupes.file_count) || 0;
       var totalCount = stagingCount + dupesCount;
@@ -371,7 +371,7 @@ function _confirmSendHome() {
 }
 
 function _restartAllFiles() {
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var dupesCount = (data.dupes && data.dupes.file_count) || 0;
     var keepersCount = (data.keepers && data.keepers.file_count) || 0;
     var total = dupesCount + keepersCount;
@@ -408,7 +408,7 @@ function _restartAllFiles() {
 }
 
 function promoteToKeepers() {
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var count = (data.dupes && data.dupes.file_count) || 0;
     if (count === 0) {
       toast("No files in Removed Duplicates to promote");
@@ -442,7 +442,7 @@ function promoteToKeepers() {
 
 function purgeAllDupes() {
   // First get the count for the confirmation
-  fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/folders/status").then(function(data) {
     var count = (data.dupes && data.dupes.file_count) || 0;
     if (count === 0) {
       toast("No files to delete");

@@ -12,14 +12,14 @@ function initFinish() {
   // Ensure staging session is loaded
   var p = _stagingSession
     ? Promise.resolve()
-    : fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(d) {
+    : api("GET", "/api/staging/status").then(function(d) {
         if (d.staging_dir && d.source_dir) {
           _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
         }
       });
 
   p.then(function() {
-    return fetch("/api/folders/status").then(function(r) { return r.json(); }).then(function(data) {
+    return api("GET", "/api/folders/status").then(function(data) {
       _finishCounts.staging = (data.staging && data.staging.file_count) || 0;
       _finishCounts.dupes = (data.dupes && data.dupes.file_count) || 0;
       _finishCounts.keepers = (data.keepers && data.keepers.file_count) || 0;

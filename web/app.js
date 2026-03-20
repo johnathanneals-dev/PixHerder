@@ -186,7 +186,7 @@ function shutdownServer() {
     "Shut Down",
     "btn-danger",
     function() {
-      fetch("/api/shutdown", { method: "POST" }).catch(function() {});
+      api("POST", "/api/shutdown").catch(function() {});
       document.querySelector(".status-dot").style.background = "var(--danger)";
       document.querySelector(".status-dot").style.animation = "none";
       document.querySelector(".status-bar-left span:first-child").innerHTML =
@@ -204,7 +204,7 @@ function restartServer() {
     "Restart",
     "btn-secondary",
     function() {
-      fetch("/api/restart", { method: "POST" }).catch(function() {});
+      api("POST", "/api/restart").catch(function() {});
       document.querySelector(".status-dot").style.background = "var(--warning)";
       document.querySelector(".status-dot").style.animation = "none";
       document.querySelector(".status-bar-left span:first-child").innerHTML =
@@ -213,7 +213,7 @@ function restartServer() {
       var attempts = 0;
       var poll = setInterval(function() {
         attempts++;
-        fetch("/api/heartbeat").then(function() {
+        api("GET", "/api/heartbeat").then(function() {
           clearInterval(poll);
           location.reload();
         }).catch(function() {
@@ -264,7 +264,7 @@ function showResumeDialog(title, detail, onResume, onFresh) {
 
 // ---- Activity Log ----
 function loadActivity() {
-  fetch("/api/activity?limit=100").then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", "/api/activity?limit=100").then(function(data) {
     var el = document.getElementById("activityList");
     var entries = data.entries || [];
     if (entries.length === 0) {
@@ -312,7 +312,7 @@ function loadActivity() {
 
 function clearActivity() {
   showDialog("Clear Activity Log", "This will remove all activity history.", "Clear", "btn-danger", function() {
-    fetch("/api/activity/clear", { method: "POST" }).then(function() {
+    api("POST", "/api/activity/clear").then(function() {
       loadActivity();
       toast("Activity log cleared");
     });
@@ -356,8 +356,7 @@ function selectFolder() {
 }
 
 function _loadFolderPicker(path) {
-  fetch("/api/browse-folders?path=" + encodeURIComponent(path))
-    .then(function(r) { return r.json(); })
+  api("GET", "/api/browse-folders?path=" + encodeURIComponent(path))
     .then(function(data) {
       _folderPickerPath = data.path;
 
@@ -393,13 +392,82 @@ function _loadFolderPicker(path) {
     });
 }
 
-// ---- Heartbeat ----
-setInterval(function() {
-  fetch("/api/heartbeat").catch(function() {});
-}, 5000);
+// ---- Heartbeat (browser mode only) ----
+if (!(window.pywebview && window.pywebview.api)) {
+  setInterval(function() {
+    fetch("/api/heartbeat").catch(function() {});
+  }, 5000);
+}
 
 // ---- API Helper ----
+// Bridge method map: "METHOD /api/path" -> bridge method name
+var _bridgeMap = {
+  "GET /api/scans": "get_scans",
+  "GET /api/settings": "get_settings",
+  "GET /api/folders/status": "get_folders_status",
+  "GET /api/activity": "get_activity",
+  "GET /api/scan/check-resume": "check_resume",
+  "GET /api/groups": "get_groups",
+  "GET /api/decisions/load": "decisions_load",
+  "GET /api/staging/status": "staging_status",
+  "GET /api/browse": "browse",
+  "GET /api/browse-folders": "browse_folders",
+  "POST /api/scan/start": "scan_start",
+  "POST /api/scan/cancel": "scan_cancel_op",
+  "POST /api/action/move": "action_move",
+  "POST /api/action/delete": "action_delete",
+  "POST /api/action/rescue": "action_rescue",
+  "POST /api/settings": "save_settings",
+  "POST /api/oddball/run": "oddball_run",
+  "POST /api/decisions/save": "decisions_save",
+  "POST /api/scans/delete": "scans_delete",
+  "POST /api/activity/clear": "clear_activity",
+  "POST /api/staging/check": "staging_check",
+  "POST /api/staging/start": "staging_start",
+  "POST /api/staging/cancel": "staging_cancel_op",
+  "POST /api/staging/syncback": "staging_syncback",
+  "POST /api/staging/cleanup": "staging_cleanup",
+  "POST /api/staging/reset": "staging_reset",
+  "POST /api/staging/recycle-bin": "staging_recycle_bin",
+  "POST /api/staging/restore": "staging_restore",
+  "POST /api/staging/recycle": "staging_recycle",
+  "POST /api/dupes/purge": "dupes_purge",
+  "POST /api/dupes/promote": "dupes_promote",
+  "POST /api/consolidate": "consolidate",
+  "POST /api/browser/delete": "browser_delete",
+  "POST /api/browser/delete-folder": "browser_delete_folder",
+  "POST /api/browser/open-explorer": "open_explorer",
+  "POST /api/browser/open-recycle-bin": "open_recycle_bin",
+  "POST /api/shutdown": "app_shutdown",
+  "POST /api/restart": "app_shutdown",
+  "GET /api/heartbeat": null
+};
+
+function _useBridge() {
+  return !!(window.pywebview && window.pywebview.api);
+}
+
 function api(method, path, body) {
+  if (_useBridge()) {
+    var basePath = path.split("?")[0];
+    var key = method + " " + basePath;
+    var bridgeMethod = _bridgeMap[key];
+    if (bridgeMethod === null) return Promise.resolve({status: "ok"});
+    if (!bridgeMethod) return Promise.reject(new Error("Unknown API: " + key));
+    var args = body || {};
+    var qIdx = path.indexOf("?");
+    if (qIdx >= 0) {
+      path.substring(qIdx + 1).split("&").forEach(function(pair) {
+        var kv = pair.split("=");
+        if (kv.length === 2) args[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1]);
+      });
+    }
+    return window.pywebview.api[bridgeMethod](args).then(function(r) {
+      if (r && r.error) throw new Error(r.error);
+      return r;
+    });
+  }
+  // Fallback: HTTP fetch (browser mode)
   var opts = { method: method, headers: {} };
   if (body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
@@ -474,7 +542,7 @@ function _navToReview() {
   if (state.lastReport) {
     navigate("review", { report: state.lastReport });
   } else {
-    fetch("/api/scans").then(function(r) { return r.json(); }).then(function(scans) {
+    api("GET", "/api/scans").then(function(scans) {
       if (scans.length > 0) {
         navigate("review", { report: scans[0].filename });
       } else {

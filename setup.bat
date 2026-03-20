@@ -85,12 +85,13 @@ if errorlevel 1 (
 :: ----------------------------------------------------------------
 :: Step 4: Install dependencies
 :: ----------------------------------------------------------------
-echo  Installing dependencies (Pillow, imagehash)...
+echo  Installing dependencies (Pillow, imagehash, pywebview)...
 "%PYTHON_EXE%" -m pip install --no-warn-script-location -r "%BASE%requirements.txt" >nul 2>&1
 if errorlevel 1 (
     echo  [WARNING] pip install had issues. Trying individually...
     "%PYTHON_EXE%" -m pip install --no-warn-script-location Pillow
     "%PYTHON_EXE%" -m pip install --no-warn-script-location imagehash
+    "%PYTHON_EXE%" -m pip install --no-warn-script-location pywebview
 )
 echo  [OK] Dependencies installed.
 
@@ -105,8 +106,6 @@ echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
 echo baseDir = fso.GetParentFolderName^(WScript.ScriptFullName^)
 echo WshShell.CurrentDirectory = baseDir
 echo WshShell.Run """" ^& baseDir ^& "\python\python.exe"" """ ^& baseDir ^& "\dupefinder_app.py""", 0, False
-echo WScript.Sleep 2000
-echo WshShell.Run "http://127.0.0.1:8787", 1, False
 ) > "%BASE%launch.vbs"
 
 echo  [OK] launch.vbs created.
