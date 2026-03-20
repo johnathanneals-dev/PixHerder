@@ -1445,6 +1445,16 @@
                oninput="applyReviewFilters()" style="width:180px;">
       </label>
       <span style="font-size:12px;color:var(--text-dim);font-family:monospace;" id="reviewFilterInfo"></span>
+      <label style="font-size:12px;color:var(--text-dim);margin-left:12px;">Batch size:
+        <select id="reviewChunkSize" onchange="_setChunkSize(parseInt(this.value))" style="font-size:12px;">
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="250" selected>250</option>
+          <option value="500">500</option>
+          <option value="99999">All</option>
+        </select>
+      </label>
+      <span style="font-size:12px;color:var(--accent);margin-left:8px;font-family:monospace;" id="reviewChunkInfo"></span>
     </div>
 
     <div id="reviewContent">
@@ -3014,6 +3024,10 @@ function api(method, path, body) {
 // ---- Router ----
 var _appNavigated = false;
 function navigate(view, params) {
+  // Auto-save decisions when leaving review
+  if (state.currentReport && state.decisions && Object.keys(state.decisions).length > 0) {
+    _saveDecisionsNow();
+  }
   _appNavigated = true;
   var hash = "#" + view;
   if (params) {
@@ -4072,6 +4086,98 @@ function cancelScan() {
 /* ==================================================================
    REVIEW
    ================================================================== */
+// ---- Decision persistence and chunked review ----
+var _decisionSaveTimer = null;
+
+function _saveDecisions() {
+  if (!state.currentReport) return;
+  clearTimeout(_decisionSaveTimer);
+  _decisionSaveTimer = setTimeout(function() {
+    api("POST", "/api/decisions/save", {
+      report: state.currentReport,
+      decisions: state.decisions
+    }).catch(function() {}); // silent save
+  }, 3000); // debounce 3 seconds
+}
+
+function _saveDecisionsNow() {
+  if (!state.currentReport) return;
+  clearTimeout(_decisionSaveTimer);
+  api("POST", "/api/decisions/save", {
+    report: state.currentReport,
+    decisions: state.decisions
+  }).catch(function() {});
+}
+
+function _updateChunkDisplay() {
+  if (!state.groups || state.groups.length === 0) return;
+  var total = state.groups.length;
+  var chunkStart = state.chunkIndex * state.chunkSize;
+  var chunkEnd = Math.min(chunkStart + state.chunkSize, total);
+  var totalChunks = Math.ceil(total / state.chunkSize);
+
+  // Update chunk info in the toolbar
+  var info = document.getElementById("reviewChunkInfo");
+  if (info) {
+    if (state.chunkSize >= total) {
+      info.textContent = total.toLocaleString() + " groups";
+    } else {
+      info.textContent = "Batch " + (state.chunkIndex + 1) + " of " + totalChunks +
+        " (groups " + (chunkStart + 1) + "-" + chunkEnd + " of " + total.toLocaleString() + ")";
+    }
+  }
+}
+
+function _showChunkCheckpoint() {
+  var total = state.groups.length;
+  var reviewed = 0;
+  for (var i = 0; i < total; i++) { if (state.decisions[i]) reviewed++; }
+  var remaining = total - reviewed;
+
+  showDialog(
+    "Batch Complete",
+    "You've reviewed this batch. " + reviewed.toLocaleString() + " of " +
+    total.toLocaleString() + " groups decided (" + remaining.toLocaleString() + " remaining).",
+    "Next Batch", "btn-primary",
+    function() {
+      state.chunkIndex++;
+      var chunkStart = state.chunkIndex * state.chunkSize;
+      if (chunkStart >= state.groups.length) {
+        toast("All groups reviewed!");
+        state.chunkIndex = Math.max(0, state.chunkIndex - 1);
+      }
+      state.currentGroupIndex = 0;
+      _updateChunkDisplay();
+      applyReviewFilters();
+    }
+  );
+  // Add extra buttons to the dialog
+  var msg = document.getElementById("dialogMessage");
+  msg.innerHTML = msg.textContent +
+    '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;">' +
+    '<button class="btn btn-warning" onclick="closeDialog(); reviewBulkMove()">Mark All Remaining</button>' +
+    '<button class="btn btn-secondary" onclick="closeDialog(); reviewBulkSkip()">Keep All Remaining</button>' +
+    '<button class="btn btn-secondary" onclick="closeDialog(); _saveDecisionsNow(); navigate(\'dashboard\')">Take a Break</button>' +
+    '</div>';
+}
+
+function _checkChunkEnd() {
+  // If chunking is active and we've reached the end of the current chunk
+  if (state.chunkSize >= state.groups.length) return; // all groups shown
+  var chunkEnd = (state.chunkIndex + 1) * state.chunkSize;
+  if (state.currentGroupIndex >= state.filteredIndices.length - 1 && chunkEnd < state.groups.length) {
+    _showChunkCheckpoint();
+  }
+}
+
+function _setChunkSize(size) {
+  state.chunkSize = size;
+  state.chunkIndex = 0;
+  state.currentGroupIndex = 0;
+  _updateChunkDisplay();
+  applyReviewFilters();
+}
+
 function initReview(report, returnTo) {
   // Update back button destination
   var backBtn = document.getElementById("reviewBackBtn");
@@ -4101,6 +4207,8 @@ function initReview(report, returnTo) {
   state.currentReport = report;
   state.decisions = {};
   state.currentGroupIndex = 0;
+  state.chunkIndex = 0;
+  state.chunkSize = state.chunkSize || 250;
 
   document.getElementById("reviewContent").innerHTML =
     '<div class="empty-state"><p>Loading groups...</p></div>';
@@ -4111,6 +4219,23 @@ function initReview(report, returnTo) {
     state.filteredIndices = [];
     for (var i = 0; i < state.groups.length; i++) state.filteredIndices.push(i);
 
+    // Load saved decisions if they exist
+    return api("GET", "/api/decisions/load?report=" + encodeURIComponent(report)).then(function(saved) {
+      if (saved.decisions && typeof saved.decisions === "object") {
+        for (var k in saved.decisions) {
+          if (saved.decisions.hasOwnProperty(k)) state.decisions[k] = saved.decisions[k];
+        }
+        // Find first unreviewed group to resume from
+        var firstUnreviewed = 0;
+        for (var i = 0; i < state.groups.length; i++) {
+          if (!state.decisions[i]) { firstUnreviewed = i; break; }
+        }
+        state.currentGroupIndex = firstUnreviewed;
+        state.chunkIndex = Math.floor(firstUnreviewed / state.chunkSize);
+      }
+      return null;
+    }).catch(function() { /* ignore load errors */ });
+  }).then(function() {
     document.getElementById("reviewTotalLabel").textContent = state.groups.length;
     document.getElementById("reviewTitle").textContent =
       "Review: " + report + " (" + state.groups.length + " groups)";
@@ -4122,6 +4247,7 @@ function initReview(report, returnTo) {
     document.getElementById("reviewMoveSingleBtn").style.display = isDupesScan ? "none" : "";
     document.getElementById("reviewMoveBulkBtn").style.display = isDupesScan ? "none" : "";
 
+    _updateChunkDisplay();
     applyReviewFilters();
   }).catch(function(err) {
     document.getElementById("reviewContent").innerHTML =
@@ -4176,16 +4302,27 @@ function applyReviewFilters() {
     });
   }
 
-  state.filteredIndices = indices;
+  // Apply chunk pagination (only if not showing all)
+  if (state.chunkSize < state.groups.length) {
+    var chunkStart = state.chunkIndex * state.chunkSize;
+    var chunkEnd = chunkStart + state.chunkSize;
+    var chunked = [];
+    for (var ci = 0; ci < indices.length; ci++) {
+      if (indices[ci] >= chunkStart && indices[ci] < chunkEnd) chunked.push(indices[ci]);
+    }
+    state.filteredIndices = chunked;
+  } else {
+    state.filteredIndices = indices;
+  }
 
   // Clamp current index
-  if (state.currentGroupIndex >= indices.length) {
-    state.currentGroupIndex = Math.max(0, indices.length - 1);
+  if (state.currentGroupIndex >= state.filteredIndices.length) {
+    state.currentGroupIndex = Math.max(0, state.filteredIndices.length - 1);
   }
 
   document.getElementById("reviewFilterInfo").textContent =
-    "Showing " + indices.length + " of " + state.groups.length + " groups";
-  document.getElementById("reviewTotalLabel").textContent = indices.length;
+    "Showing " + state.filteredIndices.length + " of " + state.groups.length + " groups";
+  document.getElementById("reviewTotalLabel").textContent = state.filteredIndices.length;
 
   renderReviewGroup();
   updateReviewActionInfo();
@@ -4356,8 +4493,9 @@ function reviewMarkSkip() {
   if (state.filteredIndices.length === 0) return;
   var realIdx = state.filteredIndices[state.currentGroupIndex];
   state.decisions[realIdx] = "skip";
+  _saveDecisions();
   if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
-  else renderReviewGroup();
+  else { renderReviewGroup(); _checkChunkEnd(); }
   updateReviewActionInfo();
 }
 
@@ -4365,8 +4503,9 @@ function reviewMarkMove() {
   if (state.filteredIndices.length === 0) return;
   var realIdx = state.filteredIndices[state.currentGroupIndex];
   state.decisions[realIdx] = "move";
+  _saveDecisions();
   if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
-  else renderReviewGroup();
+  else { renderReviewGroup(); _checkChunkEnd(); }
   updateReviewActionInfo();
 }
 
@@ -4374,8 +4513,9 @@ function reviewMarkDelete() {
   if (state.filteredIndices.length === 0) return;
   var realIdx = state.filteredIndices[state.currentGroupIndex];
   state.decisions[realIdx] = "delete";
+  _saveDecisions();
   if (state.currentGroupIndex < state.filteredIndices.length - 1) reviewNav(1);
-  else renderReviewGroup();
+  else { renderReviewGroup(); _checkChunkEnd(); }
   updateReviewActionInfo();
 }
 
@@ -4403,6 +4543,7 @@ function reviewBulkMove() {
       }
       renderReviewGroup();
       updateReviewActionInfo();
+      _saveDecisionsNow();
       toast("Marked " + marked + " groups as duplicates");
     }
   );
@@ -4418,6 +4559,7 @@ function reviewBulkSkip() {
   }
   renderReviewGroup();
   updateReviewActionInfo();
+  _saveDecisionsNow();
   toast("Kept " + kept + " remaining groups");
 }
 

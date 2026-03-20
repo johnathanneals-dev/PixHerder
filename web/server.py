@@ -831,6 +831,9 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_get_scans()
         elif path == "/api/scan/progress":
             self._handle_scan_progress_sse()
+        elif path == "/api/decisions/load":
+            report = params.get("report", [""])[0]
+            self._handle_decisions_load(report)
         elif path == "/api/scan/check-resume":
             self._handle_check_resume(params)
         elif path == "/api/groups":
@@ -890,6 +893,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_save_settings()
         elif path == "/api/oddball/run":
             self._handle_oddball_run()
+        elif path == "/api/decisions/save":
+            self._handle_decisions_save()
         elif path == "/api/scans/delete":
             self._handle_delete_scan()
         elif path == "/api/shutdown":
@@ -1434,6 +1439,48 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         oddball_thread.start()
 
         self.send_json({"status": "started"})
+
+    def _handle_decisions_save(self):
+        """Save review decisions for a scan report."""
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+        report = body.get("report", "")
+        decisions = body.get("decisions", [])
+        if not report:
+            self.send_error_json("No report specified")
+            return
+        scans_dir = Path(__file__).parent.parent / "scans"
+        os.makedirs(str(scans_dir), exist_ok=True)
+        # Sanitize filename
+        safe_name = os.path.basename(report).replace(".json", "")
+        dec_path = scans_dir / ("decisions_" + safe_name + ".json")
+        try:
+            with open(str(dec_path), "w", encoding="utf-8") as f:
+                json.dump({"report": report, "decisions": decisions}, f)
+            self.send_json({"success": True})
+        except Exception as e:
+            self.send_error_json("Failed to save decisions: " + str(e))
+
+    def _handle_decisions_load(self, report):
+        """Load saved review decisions for a scan report."""
+        if not report:
+            self.send_json({"decisions": []})
+            return
+        scans_dir = Path(__file__).parent.parent / "scans"
+        safe_name = os.path.basename(report).replace(".json", "")
+        dec_path = scans_dir / ("decisions_" + safe_name + ".json")
+        if dec_path.is_file():
+            try:
+                with open(str(dec_path), "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self.send_json({"decisions": data.get("decisions", [])})
+            except Exception:
+                self.send_json({"decisions": []})
+        else:
+            self.send_json({"decisions": []})
 
     def _handle_delete_scan(self):
         try:
