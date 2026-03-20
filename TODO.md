@@ -30,6 +30,9 @@ Persistent task list tracked in the repo. Updated with every commit cycle.
 - [ ] Dashboard stats: show cumulative session totals instead of zeros when no active scan
 - [ ] "Continue to Finalize" rename to "Access Wizard Steps" with updated explanation
 - [ ] Wizard steps should stay accessible/clickable when conditions are met, not grey out when clicking another step
+- [ ] OneDrive sync management: prominent "Pause OneDrive" reminder/prompt before Send Files Home and Finish operations
+- [ ] OneDrive "Keep or Delete" dialog: explain in advance what it means and what to choose, so users aren't terrified by it
+- [ ] Consider auto-detecting OneDrive sync state and warning if sync is active before bulk operations
 - [ ] Built-in #help view with anchored topics, replacing verbose UI explanations with "Learn more" links
 - [ ] Help section navigation: full nav + "Back to where I was" button remembering previous view
 
