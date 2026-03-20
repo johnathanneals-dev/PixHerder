@@ -487,5 +487,5 @@ def recycle_staging(staging_dir, progress_cb=None):
         "errors": errors,
         "error_details": error_details[:20],
         "total": total,
-        "used_fallback": use_fallback,
+        "used_fallback": False,
     }

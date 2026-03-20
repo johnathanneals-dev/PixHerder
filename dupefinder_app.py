@@ -61,9 +61,9 @@ def _run_native_mode(port):
     from web.server import create_server
     from web.bridge import Api
 
-    # Start the HTTP server in background (for images + static files)
+    # Start the HTTP server in background (for images + static files, no heartbeat)
     try:
-        server = create_server(port)
+        server = create_server(port, enable_heartbeat=False)
     except OSError as e:
         print("[ERROR] Could not start server on port " + str(port) + ": " + str(e))
         sys.exit(1)

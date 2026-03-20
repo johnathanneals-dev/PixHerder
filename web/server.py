@@ -1145,7 +1145,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "keep-alive")
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
 
         try:
@@ -1644,10 +1643,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             import stat
             if not os.access(filepath, os.W_OK):
                 os.chmod(filepath, stat.S_IWRITE | stat.S_IREAD)
-            try:
-                _recycle_file_powershell(filepath)
-            except Exception:
-                os.remove(filepath)  # fallback if PowerShell unavailable
+            _recycle_file_powershell(filepath)
             _log_activity("browser_delete", {"path": filepath})
             self.send_json({"success": True})
         except Exception as e:
@@ -2396,35 +2392,35 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         if not result.get("staging_dir"):
             staging_path = _find_staging_subfolder()
             if staging_path:
-                    has_files = any(
-                        f for _, _, files in os.walk(staging_path)
-                        for f in files
-                    )
-                    if has_files:
-                        result["staging_dir"] = staging_path
-                        result["status"] = "complete"
+                has_files = any(
+                    f for _, _, files in os.walk(staging_path)
+                    for f in files
+                )
+                if has_files:
+                    result["staging_dir"] = staging_path
+                    result["status"] = "complete"
 
-                        # Try to find source_dir from settings or manifest
-                        settings = load_settings()
-                        source = settings.get("default_pictures_path", "")
-                        if not source:
-                            source = default_pictures_path()
-                        scans_dir = Path(__file__).parent.parent / "scans"
-                        if scans_dir.is_dir():
-                            for mf in scans_dir.glob(
-                                    "staging_manifest_*.json"):
-                                try:
-                                    with open(str(mf), "r",
-                                              encoding="utf-8") as f:
-                                        manifest = json.load(f)
-                                    if manifest.get(
-                                            "staging_dir") == staging_path:
-                                        source = manifest.get(
-                                            "source_dir", source)
-                                        break
-                                except Exception:
-                                    pass
-                        result["source_dir"] = source
+                    # Try to find source_dir from settings or manifest
+                    settings = load_settings()
+                    source = settings.get("default_pictures_path", "")
+                    if not source:
+                        source = default_pictures_path()
+                    scans_dir = Path(__file__).parent.parent / "scans"
+                    if scans_dir.is_dir():
+                        for mf in scans_dir.glob(
+                                "staging_manifest_*.json"):
+                            try:
+                                with open(str(mf), "r",
+                                          encoding="utf-8") as f:
+                                    manifest = json.load(f)
+                                if manifest.get(
+                                        "staging_dir") == staging_path:
+                                    source = manifest.get(
+                                        "source_dir", source)
+                                    break
+                            except Exception:
+                                pass
+                    result["source_dir"] = source
 
         self.send_json(result)
 
@@ -2553,7 +2549,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 _server_instance = None
 
 
-def create_server(port=8787):
+def create_server(port=8787, enable_heartbeat=True):
     """Create and return a ThreadingHTTPServer instance."""
     global _server_instance
     server = http.server.ThreadingHTTPServer(
@@ -2562,10 +2558,11 @@ def create_server(port=8787):
     )
     _server_instance = server
 
-    # Start heartbeat checker
-    _touch_heartbeat()
-    checker = threading.Thread(target=_heartbeat_checker, daemon=True)
-    checker.start()
+    # Start heartbeat checker (browser mode only)
+    if enable_heartbeat:
+        _touch_heartbeat()
+        checker = threading.Thread(target=_heartbeat_checker, daemon=True)
+        checker.start()
 
     _log_activity("server_started", {"port": port})
 
