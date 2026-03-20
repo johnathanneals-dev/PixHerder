@@ -11,6 +11,7 @@ Persistent task list tracked in the repo. Updated with every commit cycle.
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
 - [ ] "Delete All Remaining" button accessible from review process
 - [ ] My Files browser: add "Move to Keepers" and "Move to Be Reviewed" buttons
+- [ ] Move to Keepers: let user choose My Files, Removed Duplicates, or both as source
 
 ## Planned
 
@@ -26,6 +27,11 @@ Persistent task list tracked in the repo. Updated with every commit cycle.
 - [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
 - [ ] Server restart reliability -- os.execv() hangs, needs better restart mechanism
 - [ ] Testing data tracking doc for consistency across test sessions
+- [ ] Dashboard stats: show cumulative session totals instead of zeros when no active scan
+- [ ] "Continue to Finalize" rename to "Access Wizard Steps" with updated explanation
+- [ ] Wizard steps should stay accessible/clickable when conditions are met, not grey out when clicking another step
+- [ ] Built-in #help view with anchored topics, replacing verbose UI explanations with "Learn more" links
+- [ ] Help section navigation: full nav + "Back to where I was" button remembering previous view
 
 ## Completed
 

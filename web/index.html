@@ -1072,7 +1072,10 @@
         <div id="wizReviewInfo" style="margin-bottom:16px;">
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizReviewInfoText"></div>
         </div>
-        <button class="btn btn-primary" id="wizReviewBtn" onclick="wizardStartReview()">Open Review</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="wizReviewBtn" onclick="wizardStartReview()">Open Review</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
+        </div>
         <div id="wizReviewComplete" style="display:none;margin-top:16px;">
           <div style="color:var(--accent);font-weight:600;" id="wizReviewCompleteMsg"></div>
         </div>
