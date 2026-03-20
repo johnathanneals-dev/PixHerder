@@ -384,14 +384,9 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
             try:
                 _recycle_file_powershell(original_path)
                 deleted += 1
-            except Exception:
-                # Fallback: try direct remove only if recycle failed
-                try:
-                    os.remove(original_path)
-                    deleted += 1
-                except Exception as e:
-                    error_count += 1
-                    errors.append(str(original_path) + ": " + str(e))
+            except Exception as e:
+                error_count += 1
+                errors.append(str(original_path) + ": recycle failed: " + str(e))
 
         if progress_cb:
             progress_cb(i + 1, total, "syncback")
@@ -466,37 +461,13 @@ def recycle_staging(staging_dir, progress_cb=None):
     recycled = 0
     errors = 0
     error_details = []
-    use_fallback = False
 
     for i, filepath in enumerate(files):
         try:
             # Clear read-only flag if set
             os.chmod(str(filepath), stat.S_IWRITE | stat.S_IREAD)
-
-            if use_fallback:
-                # PowerShell failed earlier -- permanently delete instead
-                os.remove(str(filepath))
-                recycled += 1
-            else:
-                try:
-                    _recycle_file_powershell(filepath)
-                    recycled += 1
-                except Exception as ps_err:
-                    if i == 0:
-                        # First file failed -- PowerShell may be blocked.
-                        # Fall back to permanent delete for all files.
-                        use_fallback = True
-                        error_details.append(
-                            "PowerShell unavailable, falling back to "
-                            "permanent delete: " + str(ps_err)
-                        )
-                        os.remove(str(filepath))
-                        recycled += 1
-                    else:
-                        errors += 1
-                        error_details.append(
-                            str(filepath) + ": " + str(ps_err)
-                        )
+            _recycle_file_powershell(filepath)
+            recycled += 1
         except Exception as e:
             errors += 1
             error_details.append(str(filepath) + ": " + str(e))

@@ -125,11 +125,7 @@ function _finishPhase3(restoreResult, recycleResult) {
   Promise.all(cleanupPromises).then(function() {
     // Clear in-memory staging session on the server
     if (_stagingSession) {
-      api("POST", "/api/staging/restore", {
-        staging_dir: "cleared",
-        source_dir: "cleared",
-        full_restore: true
-      }).catch(function() {});
+      api("POST", "/api/staging/reset").catch(function() {});
     }
 
     // Show completion

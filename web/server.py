@@ -915,6 +915,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_syncback_start()
         elif path == "/api/staging/cleanup":
             self._handle_staging_cleanup()
+        elif path == "/api/staging/reset":
+            self._handle_staging_reset()
         elif path == "/api/staging/recycle-bin":
             self._handle_staging_recycle_bin()
         elif path == "/api/browser/delete":
@@ -1239,7 +1241,25 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_error_json("Error reading report: " + str(e), 500)
 
     def _serve_image(self, filepath):
+        import shutil as _shutil
         filepath = os.path.normpath(filepath)
+
+        # Validate path is within allowed directories (prevent traversal)
+        settings = load_settings()
+        allowed_dirs = [
+            settings.get("staging_dir", DEFAULTS["staging_dir"]),
+            settings.get("move_destination", DEFAULTS["move_destination"]),
+            settings.get("keepers_dir", DEFAULTS.get("keepers_dir", "")),
+        ]
+        src = staging_progress.get("source_dir") or ""
+        if src:
+            allowed_dirs.append(src)
+        allowed_dirs = [os.path.normpath(d) for d in allowed_dirs if d]
+        if not any(filepath.startswith(d + os.sep) or filepath == d
+                   for d in allowed_dirs):
+            self.send_error(403, "Access denied")
+            return
+
         if not os.path.isfile(filepath):
             self.send_error(404, "File not found")
             return
@@ -1255,8 +1275,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         ct = content_types.get(ext, "application/octet-stream")
 
         try:
-            stat = os.stat(filepath)
-            etag = '"' + str(stat.st_mtime) + "-" + str(stat.st_size) + '"'
+            file_stat = os.stat(filepath)
+            etag = '"' + str(file_stat.st_mtime) + "-" + str(file_stat.st_size) + '"'
 
             # Check if client has cached version
             if_none_match = self.headers.get("If-None-Match")
@@ -1265,16 +1285,15 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 return
 
-            with open(filepath, "rb") as f:
-                data = f.read()
-
             self.send_response(200)
             self.send_header("Content-Type", ct)
-            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Length", str(file_stat.st_size))
             self.send_header("Cache-Control", "max-age=3600")
             self.send_header("ETag", etag)
             self.end_headers()
-            self.wfile.write(data)
+
+            with open(filepath, "rb") as f:
+                _shutil.copyfileobj(f, self.wfile)
         except Exception as e:
             self.send_error(500, str(e))
 
@@ -1546,6 +1565,14 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         try:
             os.remove(str(target))
+            # Also delete corresponding decisions file if it exists
+            safe_name = os.path.basename(filename).replace(".json", "")
+            dec_path = SCANS_DIR / ("decisions_" + safe_name + ".json")
+            if dec_path.exists():
+                try:
+                    os.remove(str(dec_path))
+                except Exception:
+                    pass  # Non-critical: orphaned decision file is harmless
             self.send_json({"status": "deleted", "filename": filename})
         except Exception as e:
             self.send_error_json("Failed to delete: " + str(e), 500)
@@ -1760,6 +1787,22 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         if not source_dir:
             self.send_error_json("Source directory not specified")
             return
+
+        # Validate paths match the active staging session
+        known_staging = staging_progress.get("staging_dir") or ""
+        if staging_dir and known_staging:
+            if os.path.normpath(staging_dir) != os.path.normpath(known_staging):
+                self.send_error_json(
+                    "Staging directory mismatch: does not match active session",
+                    403)
+                return
+        known_source = staging_progress.get("source_dir") or ""
+        if source_dir and known_source:
+            if os.path.normpath(source_dir) != os.path.normpath(known_source):
+                self.send_error_json(
+                    "Source directory mismatch: does not match active session",
+                    403)
+                return
 
         os.makedirs(source_dir, exist_ok=True)
 
@@ -2274,6 +2317,39 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             source_dir, settings.get("staging_dir", DEFAULTS["staging_dir"]))
         extensions = settings.get("extensions")
 
+        # Check available disk space on target drive (best-effort)
+        try:
+            import shutil as _shutil
+            source_size = 0
+            ext_set = set(extensions) if extensions else None
+            for root, dirs, fnames in os.walk(source_dir):
+                for fname in fnames:
+                    if ext_set:
+                        ext = os.path.splitext(fname)[1].lower()
+                        if ext not in ext_set:
+                            continue
+                    fpath = os.path.join(root, fname)
+                    try:
+                        source_size += os.path.getsize(fpath)
+                    except OSError:
+                        pass
+            target_drive = os.path.splitdrive(staging_dir)[0]
+            if target_drive:
+                usage = _shutil.disk_usage(target_drive + os.sep)
+                buffer = 100 * 1024 * 1024  # 100 MB buffer
+                if usage.free < source_size + buffer:
+                    needed_gb = round(
+                        (source_size + buffer) / (1024 ** 3), 1)
+                    free_gb = round(usage.free / (1024 ** 3), 1)
+                    self.send_error_json(
+                        "Not enough disk space. Need about "
+                        + str(needed_gb) + " GB but only "
+                        + str(free_gb) + " GB free on "
+                        + target_drive, 400)
+                    return
+        except Exception:
+            pass  # If space check fails, proceed anyway
+
         staging_cancel = threading.Event()
         staging_thread = threading.Thread(
             target=_run_staging,
@@ -2421,6 +2497,22 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             "result": result.get("status"),
         })
         self.send_json(result)
+
+    def _handle_staging_reset(self):
+        """Reset in-memory staging session state (no file operations)."""
+        staging_progress.update({
+            "status": "idle",
+            "staging_dir": "",
+            "source_dir": "",
+            "current": 0,
+            "total": 0,
+            "bytes_copied": 0,
+            "bytes_total": 0,
+            "stage": "",
+            "message": "",
+        })
+        _log_activity("staging_reset", {"source": "finish_cleanup"})
+        self.send_json({"status": "reset"})
 
     def _handle_staging_recycle_bin(self):
         try:

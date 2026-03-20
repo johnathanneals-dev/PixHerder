@@ -34,7 +34,7 @@ def perceptual_hash(filepath, hash_size=DEFAULT_HASH_SIZE):
         Tuple of (imagehash_object_or_None, error_string_or_None).
     """
     try:
-        img = Image.open(str(filepath))
-        return (imagehash.phash(img, hash_size=hash_size), None)
+        with Image.open(str(filepath)) as img:
+            return (imagehash.phash(img, hash_size=hash_size), None)
     except Exception as e:
         return (None, str(e))

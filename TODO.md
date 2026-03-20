@@ -6,16 +6,17 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ---
 
-## Audit Phase 1: Safety & Memory [NEXT SESSION - CRITICAL]
+## Audit Phase 1: Safety & Memory [COMPLETED 2026-03-20]
 
-- [ ] #1 Remove all os.remove() fallbacks for user files (staging.py, actions.py) -- leave files in place on Recycle Bin failure
-- [ ] #2 Fix Pillow Image leak in hasher.py -- use context manager for Image.open()
-- [ ] #3 Stream images in server.py _serve_image() -- use shutil.copyfileobj instead of f.read()
-- [ ] #24 Disk space check before migration -- warn if insufficient free space
-- [ ] #25 Manifest validation on restore -- integrity check before Send Files Home
-- [ ] #26 Clean up decision files (scans/decisions_*.json) on finish/cleanup
+- [x] #1 Remove all os.remove() fallbacks for user files (staging.py, actions.py) -- leave files in place on Recycle Bin failure
+- [x] #2 Fix Pillow Image leak in hasher.py -- use context manager for Image.open()
+- [x] #3 Stream images + fix directory traversal in server.py _serve_image() -- path validation + shutil.copyfileobj
+- [x] #24 Disk space check before migration -- warn if insufficient free space
+- [x] #25 Manifest validation on restore -- integrity check before Send Files Home
+- [x] #26 Clean up decision files (scans/decisions_*.json) on scan delete
+- [x] #29 Add /api/staging/reset endpoint -- replace "cleared" path hack in finish flow
 
-## Audit Phase 2: Performance & Quality
+## Audit Phase 2: Performance & Quality [NEXT]
 
 - [ ] #4 Batch PowerShell recycling -- single invocation for all files instead of per-file spawning
 - [ ] #5 Move defaults from temp to LOCALAPPDATA -- prevent Storage Sense from deleting staged files
@@ -34,7 +35,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ## Audit Phase 4: Polish
 
-- [ ] #11 Add /api/staging/reset endpoint (replace fake restore hack in finish.js)
+- [x] #11 Add /api/staging/reset endpoint (replaced fake restore hack in finish.js) -- done in Phase 1
 - [ ] #12 Better error reporting in Return/Reload 3-step API chain
 - [ ] #15 Accessibility -- ARIA labels, focus trapping, keyboard nav
 - [ ] #17 Fix duplicate style attributes in HTML (scanKeepersSection, finishKeepersRow)
@@ -72,7 +73,11 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Help section: full nav + "Back to where I was" button
 - [ ] Testing data tracking doc for consistency across test sessions
 
-## Completed (This Session - 2026-03-19)
+## Completed (2026-03-20)
+
+- [x] Phase 1 safety fixes: removed all os.remove() fallbacks, fixed Image leak, directory traversal fix, streaming images, disk space check, manifest validation, decision cleanup, /api/staging/reset endpoint
+
+## Completed (2026-03-19)
 
 - [x] Frontend modularization -- index.html split into 15 files (style.css + 13 JS modules + HTML)
 - [x] Fix finish flow -- replaced destructive sync-back with safe restore (never deletes originals)
