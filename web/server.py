@@ -916,6 +916,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_browser_delete_folder()
         elif path == "/api/browser/open-explorer":
             self._handle_open_explorer()
+        elif path == "/api/browser/open-recycle-bin":
+            self._handle_open_recycle_bin()
         elif path == "/api/staging/restore":
             self._handle_staging_restore()
         elif path == "/api/staging/recycle":
@@ -1532,6 +1534,18 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"success": True})
         except Exception as e:
             self.send_json({"success": False, "error": str(e)})
+
+    def _handle_open_recycle_bin(self):
+        """Open the Windows Recycle Bin."""
+        try:
+            import subprocess
+            subprocess.Popen(
+                ["explorer.exe", "shell:RecycleBinFolder"],
+                creationflags=0x00000008  # DETACHED_PROCESS
+            )
+            self.send_json({"success": True})
+        except Exception as e:
+            self.send_error_json("Could not open Recycle Bin: " + str(e))
 
     def _handle_open_explorer(self):
         try:

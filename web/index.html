@@ -1457,7 +1457,7 @@
       <div class="action-buttons">
         <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Keep This Group</button>
         <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Mark as Duplicate</button>
-        <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()">Delete</button>
+        <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()">Delete Duplicate(s)</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()">Mark All Remaining</button>
         <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">Keep All Remaining</button>
@@ -3041,6 +3041,12 @@ function parseHash() {
   return { view: view, params: params };
 }
 
+function _openRecycleBin() {
+  api("POST", "/api/browser/open-recycle-bin").then(function(r) {
+    if (!r.success) toast("Could not open Recycle Bin", "error");
+  }).catch(function() { toast("Could not open Recycle Bin", "error"); });
+}
+
 function _rescanFolder(type) {
   var path = _dashFolderPaths[type];
   if (!path) { toast("No folder to scan", "warning"); return; }
@@ -4601,6 +4607,7 @@ function showActionResult(d) {
     + '<button class="btn btn-secondary" onclick="_navToWizardStep(2)">Scan Again</button>'
     + '<button class="btn btn-secondary" onclick="_navToReview()">Review</button>'
     + '<button class="btn btn-secondary" onclick="navigate(\'finish\')">Finalize</button>'
+    + '<button class="btn btn-secondary" onclick="_openRecycleBin()">Open Recycle Bin</button>'
     + '</div></div>';
 
   // Clear decisions
