@@ -380,13 +380,18 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
             # Still in staging = keep the original
             skipped += 1
         else:
-            # Removed from staging = delete the original
+            # Removed from staging = recycle the original (safe delete)
             try:
-                os.remove(original_path)
+                _recycle_file_powershell(original_path)
                 deleted += 1
-            except Exception as e:
-                error_count += 1
-                errors.append(str(original_path) + ": " + str(e))
+            except Exception:
+                # Fallback: try direct remove only if recycle failed
+                try:
+                    os.remove(original_path)
+                    deleted += 1
+                except Exception as e:
+                    error_count += 1
+                    errors.append(str(original_path) + ": " + str(e))
 
         if progress_cb:
             progress_cb(i + 1, total, "syncback")
