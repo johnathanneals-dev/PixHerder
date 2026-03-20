@@ -2124,6 +2124,21 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_error_json("Directory not found", 404)
             return
 
+        # Block system directories
+        lower = dirpath.lower()
+        windir = os.environ.get("WINDIR", "C:\\Windows").lower()
+        blocked = [
+            windir,
+            os.path.join(windir, "system32"),
+            os.environ.get("PROGRAMFILES", "C:\\Program Files").lower(),
+            os.environ.get("PROGRAMFILES(X86)",
+                           "C:\\Program Files (x86)").lower(),
+        ]
+        if any(lower == b or lower.startswith(b + os.sep)
+               for b in blocked):
+            self.send_error_json("Access denied", 403)
+            return
+
         folders = []
         try:
             for entry in sorted(os.listdir(dirpath)):

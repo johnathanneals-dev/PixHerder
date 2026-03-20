@@ -345,6 +345,19 @@ class Api:
         dirpath = params.get("path", "")
         if not dirpath or not os.path.isdir(dirpath):
             return {"folders": [], "error": "Invalid path"}
+        # Block system directories
+        lower = os.path.normpath(dirpath).lower()
+        windir = os.environ.get("WINDIR", "C:\\Windows").lower()
+        blocked = [
+            windir,
+            os.path.join(windir, "system32"),
+            os.environ.get("PROGRAMFILES", "C:\\Program Files").lower(),
+            os.environ.get("PROGRAMFILES(X86)",
+                           "C:\\Program Files (x86)").lower(),
+        ]
+        if any(lower == b or lower.startswith(b + os.sep)
+               for b in blocked):
+            return {"folders": [], "error": "Access denied"}
         try:
             folders = []
             for entry in os.scandir(dirpath):
