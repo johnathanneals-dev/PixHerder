@@ -57,7 +57,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Keepers folder workflow -- rescan Removed Duplicates, promote to Verified Keepers
 - [ ] Batch/chunked scanning for large collections
-- [ ] Server modularization -- split server.py into route modules
+- [ ] **pywebview migration** -- replace browser with native window (plan approved, in progress)
+- [ ] Server modularization -- split server.py into route modules (partially addressed by pywebview migration)
 - [ ] Marketability -- branding, installer, landing page, packaging
 - [ ] Thumb drive portable mode -- running from USB with virtual environment
 - [ ] Additional keyboard shortcuts (E=execute, F=finish, Space=lightbox, 1-9=jump to group)
