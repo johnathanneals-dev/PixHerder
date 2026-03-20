@@ -122,7 +122,6 @@ def _heartbeat_checker():
             time.sleep(0.5)
             if _server_instance:
                 _server_instance.shutdown()
-            os._exit(0)
 
 
 # ---- Shared state (accessed by handler and background threads) ----
@@ -1587,7 +1586,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             time.sleep(0.5)
             if _server_instance:
                 _server_instance.shutdown()
-            os._exit(0)
         threading.Thread(target=_shutdown, daemon=True).start()
 
     def _handle_restart(self):
@@ -1606,7 +1604,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             )
             if _server_instance:
                 _server_instance.shutdown()
-            os._exit(0)
         threading.Thread(target=_restart, daemon=True).start()
 
     def _handle_browser_delete(self):
