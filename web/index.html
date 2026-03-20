@@ -837,7 +837,7 @@
       <h2>Browse Files</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <div style="text-align:center;">
-          <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>Cleaned Files</button>
+          <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>My Files</button>
           <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
         </div>
         <div style="text-align:center;">
@@ -883,7 +883,7 @@
             </div>
             <div>
               <button class="btn btn-warning btn-fixed" onclick="_restartAllFiles()">Start Over</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Cleaned Files so you can rescan everything from scratch.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into My Files so you can rescan everything from scratch.</div>
             </div>
           </div>
         </div>
@@ -891,7 +891,7 @@
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
               <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()">Rescue &amp; Review</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to Cleaned Files for another round of scanning. If Cleaned Files already has files, you can choose to merge them together or send the Cleaned Files home first.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to My Files for another round of scanning. If My Files already has files, you can choose to merge them together or send the My Files home first.</div>
             </div>
             <div>
               <button class="btn btn-primary btn-fixed" onclick="promoteToKeepers()">Move to Keepers</button>
@@ -1089,7 +1089,7 @@
         </div>
         <h3 style="margin-top:20px;">Browse Files</h3>
         <div style="display:flex;gap:12px;margin:12px 0 24px;">
-          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">Cleaned Files</button>
+          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">My Files</button>
           <button class="btn btn-secondary" id="wizDupesBtn" onclick="openBrowser('dupes')">Removed Duplicates</button>
         </div>
         <h3>Next Steps</h3>
@@ -1136,7 +1136,7 @@
         <input class="form-input" type="text" id="scanDir"
                placeholder="copy/paste your path to what you want scanned here">
         <div style="margin-top:6px;display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" id="scanFillStagingBtn" onclick="fillScanDir('staging')">Cleaned Files</button>
+          <button class="btn btn-secondary btn-sm" id="scanFillStagingBtn" onclick="fillScanDir('staging')">My Files</button>
           <button class="btn btn-secondary btn-sm" id="scanFillDupesBtn" onclick="fillScanDir('dupes')">Removed Duplicates</button>
         </div>
       </div>
@@ -1202,7 +1202,7 @@
   <div class="view" id="view-staging-progress">
     <div class="progress-center">
       <h2>Staging Files...</h2>
-      <p class="subtitle">Copying your files to Cleaned Files for reliable scanning.</p>
+      <p class="subtitle">Copying your files to My Files for reliable scanning.</p>
       <div class="progress-stage" id="stagingStage">Counting files</div>
 
       <div class="progress-container">
@@ -1246,8 +1246,8 @@
         <div class="card" style="text-align:left;">
           <h3 style="margin-bottom:12px;">Ready to apply cleanup</h3>
           <p style="color:var(--text-dim);margin-bottom:16px;">
-            Files you removed from Cleaned Files will be deleted from their original location.
-            Files still in Cleaned Files will be left untouched.
+            Files you removed from My Files will be deleted from their original location.
+            Files still in My Files will be left untouched.
           </p>
           <div style="padding:10px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;font-size:13px;">
             <strong>Warning:</strong> This is the only action in DupeFinder that permanently deletes files
@@ -2131,10 +2131,10 @@ function wizardGoToStep(n) {
       var sBtn = document.getElementById("wizStagingBtn");
       var dBtn = document.getElementById("wizDupesBtn");
       if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-        sBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+        sBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
         sBtn.disabled = false;
       } else {
-        sBtn.textContent = "Cleaned Files (empty)";
+        sBtn.textContent = "My Files (empty)";
         sBtn.disabled = true;
       }
       if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
@@ -2458,7 +2458,7 @@ function browserRefresh() {
 function buildBreadcrumb(fullPath) {
   var root = browserState.rootPath.replace(/\\/g, "/");
   var current = fullPath.replace(/\\/g, "/");
-  var rootLabel = browserState.type === "staging" ? "Cleaned Files" : "Removed Duplicates";
+  var rootLabel = browserState.type === "staging" ? "My Files" : "Removed Duplicates";
 
   var html = '<span class="browser-crumb" data-nav="' + escHtml(browserState.rootPath) + '">'
     + escHtml(rootLabel) + '</span>';
@@ -2728,7 +2728,7 @@ function cleanupStaging() {
     document.getElementById("dialogTitle").textContent = "Remove Workspace";
     document.getElementById("dialogMessage").innerHTML =
       '<div style="margin-bottom:16px;">You have <strong>' + count.toLocaleString() +
-      '</strong> files in Cleaned Files. What would you like to do with them?</div>' +
+      '</strong> files in My Files. What would you like to do with them?</div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
       '<button class="btn btn-danger" onclick="_recycleStagingConfirm(' + count + ')">Send to Recycle Bin</button>' +
       '<button class="btn btn-primary" onclick="closeDialog(); sendFilesHome()">Send Files Home</button>' +
@@ -2762,7 +2762,7 @@ function _executeRecycleStaging() {
   closeDialog();
   startWorkingView(
     "Recycling Workspace",
-    "Sending Cleaned Files to the Recycle Bin.",
+    "Sending My Files to the Recycle Bin.",
     function(done) {
       api("POST", "/api/staging/recycle-bin", {
         staging_dir: _stagingSession.staging_dir
@@ -3190,7 +3190,7 @@ function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
   } else if (hasStaging && !hasDupes) {
     // Has files but no dupes yet — needs to scan
     btn.textContent = "Continue to Scan";
-    hint.textContent = "Scan Cleaned Files to find duplicates.";
+    hint.textContent = "Scan My Files to find duplicates.";
     _dashContinueTarget = "wizard-step2";
   } else if (hasDupes && !hasStaging) {
     // Only dupes — maybe wants to review or rescue
@@ -3265,13 +3265,13 @@ function _dashUpdateFolders() {
 
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
       stagingBtn.disabled = false;
-      stagingBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+      stagingBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
       stagingHint.textContent = "";
       _dashFolderPaths.staging = data.staging.path;
       hasAny = true;
     } else {
       stagingBtn.disabled = true;
-      stagingBtn.textContent = "Cleaned Files";
+      stagingBtn.textContent = "My Files";
       stagingHint.textContent = "No staged files";
       _dashFolderPaths.staging = "";
     }
@@ -3356,17 +3356,17 @@ function rescueAndReview() {
     }
 
     if (stagingHasFiles) {
-      document.getElementById("dialogTitle").textContent = "Cleaned Files Has Files";
+      document.getElementById("dialogTitle").textContent = "My Files Has Files";
       document.getElementById("dialogMessage").innerHTML =
-        '<div style="margin-bottom:16px;">Cleaned Files still has <strong>' +
+        '<div style="margin-bottom:16px;">My Files still has <strong>' +
         data.staging.file_count.toLocaleString() + '</strong> files. How would you like to proceed?</div>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
         '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes</button>' +
         '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Return / Reload</button>' +
         '</div>' +
         '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
-        '<span style="color:#fff;font-weight:600;">Merge Dupes</span> files from Removed Duplicates will be merged with the files in Cleaned Files. You\'ll find all the files in the Cleaned Files folder again.<br><br>' +
-        '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your Cleaned Files home first, then brings the Removed Duplicates back for another review.' +
+        '<span style="color:#fff;font-weight:600;">Merge Dupes</span> files from Removed Duplicates will be merged with the files in My Files. You\'ll find all the files in the My Files folder again.<br><br>' +
+        '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your My Files home first, then brings the Removed Duplicates back for another review.' +
         '</div>' +
         '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
@@ -3378,20 +3378,20 @@ function rescueAndReview() {
     showDialog(
       "Rescue & Review",
       "This will move " + data.dupes.file_count.toLocaleString() + " files from Removed Duplicates " +
-      "into Cleaned Files for scanning and review.\n\nContinue?",
+      "into My Files for scanning and review.\n\nContinue?",
       "Start",
       "btn-primary",
       function() {
         startWorkingView(
           "Loading Files for Review",
-          "Moving files from Removed Duplicates to Cleaned Files.",
+          "Moving files from Removed Duplicates to My Files.",
           function(done) {
             api("POST", "/api/staging/recycle").then(function(r) {
               if (r.success) {
                 wizardState.stagingDir = r.staging_path;
                 wizardState.completedSteps = { 1: true };
                 wizardState.currentStep = 2;
-                done("Files Loaded", r.files_moved.toLocaleString() + " files ready for scanning in Cleaned Files.");
+                done("Files Loaded", r.files_moved.toLocaleString() + " files ready for scanning in My Files.");
                 _workingConfig.destination = "wizard";
               } else {
                 done("Failed", r.error || "Unknown error");
@@ -3411,7 +3411,7 @@ function _rnrMerge() {
   closeDialog();
   startWorkingView(
     "Merging Files",
-    "Moving files from Removed Duplicates to Cleaned Files.",
+    "Moving files from Removed Duplicates to My Files.",
     function(done) {
       api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
         if (r.success) {
@@ -3420,8 +3420,8 @@ function _rnrMerge() {
           fetch("/api/folders/status").then(function(r2) { return r2.json(); }).then(function(fs) {
             var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
             var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
-            var msg = r.files_moved.toLocaleString() + " files moved to Cleaned Files.\n" +
-              "Cleaned Files now has " + cleanedCount.toLocaleString() + " files.";
+            var msg = r.files_moved.toLocaleString() + " files moved to My Files.\n" +
+              "My Files now has " + cleanedCount.toLocaleString() + " files.";
             if (dupesCount > 0) msg += " Removed Duplicates has " + dupesCount.toLocaleString() + " remaining.";
             done("Merge Complete", msg);
           });
@@ -3440,7 +3440,7 @@ function _rnrSyncAndRecycle() {
   closeDialog();
   startWorkingView(
     "Return / Reload",
-    "Sending Cleaned Files home, then loading Removed Duplicates for review.",
+    "Sending My Files home, then loading Removed Duplicates for review.",
     function(done) {
       fetch("/api/staging/status").then(function(r) { return r.json(); }).then(function(status) {
         var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
@@ -3449,7 +3449,7 @@ function _rnrSyncAndRecycle() {
           done("Failed", "Could not determine file locations.");
           return;
         }
-        document.getElementById("workingStatus").textContent = "Sending Cleaned Files home...";
+        document.getElementById("workingStatus").textContent = "Sending My Files home...";
         api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
           if (!r.success) { done("Failed", r.error || "Restore failed"); return; }
           document.getElementById("workingStatus").textContent = "Cleaning up workspace...";
@@ -3460,7 +3460,7 @@ function _rnrSyncAndRecycle() {
                 wizardState.stagingDir = r2.staging_path;
                 wizardState.completedSteps = { 1: true };
                 wizardState.currentStep = 2;
-                done("Ready for Review", r2.files_moved.toLocaleString() + " files loaded into Cleaned Files.");
+                done("Ready for Review", r2.files_moved.toLocaleString() + " files loaded into My Files.");
                 _workingConfig.destination = "wizard";
               } else {
                 done("Failed", r2.error || "Unknown error");
@@ -3503,7 +3503,7 @@ function sendFilesHome() {
         function() {
           showDialog(
             "Confirm",
-            "All files will be returned and Cleaned Files will be cleaned up. Continue?",
+            "All files will be returned and My Files will be cleaned up. Continue?",
             "Send Home", "btn-primary",
             function() { _confirmSendHome(); }
           );
@@ -3555,16 +3555,16 @@ function _restartAllFiles() {
       "Start Over",
       "Put all " + total.toLocaleString() + " files from Removed Duplicates" +
       (keepersCount > 0 ? " and Verified Keepers" : "") +
-      " back into Cleaned Files so you can rescan everything?",
+      " back into My Files so you can rescan everything?",
       "Start Over", "btn-warning",
       function() {
         startWorkingView(
           "Starting Over",
-          "Moving all files back to Cleaned Files.",
+          "Moving all files back to My Files.",
           function(done) {
             api("POST", "/api/consolidate").then(function(r) {
               if (r.success) {
-                done("Ready to Rescan", r.moved.toLocaleString() + " files moved back to Cleaned Files.");
+                done("Ready to Rescan", r.moved.toLocaleString() + " files moved back to My Files.");
               } else {
                 done("Failed", r.error || "Unknown error");
               }
@@ -3783,10 +3783,10 @@ function initScanConfig() {
     var sBtn = document.getElementById("scanFillStagingBtn");
     var dBtn = document.getElementById("scanFillDupesBtn");
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-      sBtn.textContent = "Cleaned Files (" + data.staging.file_count.toLocaleString() + ")";
+      sBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
       sBtn.disabled = false;
     } else {
-      sBtn.textContent = "Cleaned Files (empty)";
+      sBtn.textContent = "My Files (empty)";
       sBtn.disabled = true;
     }
     if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {

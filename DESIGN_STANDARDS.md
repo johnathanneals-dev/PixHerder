@@ -7,7 +7,7 @@ This document defines the visual and interaction standards for DupeFinder. Refer
 ## Design Philosophy
 
 1. **File security first.** No user file is ever permanently deleted by DupeFinder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
-2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (Cleaned Files, Removed Duplicates, Verified Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
+2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (My Files, Removed Duplicates, Verified Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
 
 ---
@@ -85,7 +85,7 @@ This document defines the visual and interaction standards for DupeFinder. Refer
 |-------|-----------|-------|
 | `btn-lg` | None (auto) | Hero actions: Start Guided Cleanup, Finished with Scanning |
 | `btn-fixed` | 160px | Dashboard action buttons in More Options |
-| `btn-browse` | 180px | Folder browse buttons (Cleaned Files, Removed Duplicates, Verified Keepers) |
+| `btn-browse` | 180px | Folder browse buttons (My Files, Removed Duplicates, Verified Keepers) |
 | `btn-sm` | None (auto) | Review action bar, compact toolbars |
 | (default) | None (auto) | Standard buttons in dialogs and forms |
 
@@ -159,7 +159,7 @@ Always use the exact capitalized names the user sees on dashboard buttons:
 
 | Internal | User-facing |
 |----------|-------------|
-| staging / workspace | **Cleaned Files** |
+| staging / workspace | **My Files** |
 | dupes / move_destination | **Removed Duplicates** |
 | keepers | **Verified Keepers** |
 | OneDrive / source | **home folder** or **original folder** |
@@ -265,4 +265,4 @@ When complete, the spinner is replaced with a result card:
 - `navigate()` forces `route()` refresh when hash is unchanged (prevents stale views)
 - Stateful views redirect to dashboard on fresh page load (`_appNavigated` flag)
 - Dashboard always shows current folder counts on load
-- Finish nav link only visible when Cleaned Files has files
+- Finish nav link only visible when My Files has files

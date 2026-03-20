@@ -10,7 +10,7 @@ Persistent task list tracked in the repo. Updated with every commit cycle.
 - [ ] Audit all navigation: ensure buttons everywhere except top menu text links
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
 - [ ] "Delete All Remaining" button accessible from review process
-- [ ] Cleaned Files browser: add "Move to Keepers" and "Move to Be Reviewed" buttons
+- [ ] My Files browser: add "Move to Keepers" and "Move to Be Reviewed" buttons
 
 ## Planned
 
