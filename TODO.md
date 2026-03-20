@@ -19,7 +19,9 @@ Persistent task list tracked in the repo. Updated with every commit cycle.
 - [ ] Keepers folder workflow -- rescan Removed Duplicates, promote confirmed-good files to Verified Keepers
 - [ ] Batch/chunked scanning for large collections (process in configurable chunks)
 - [ ] Large collection optimization (BK-tree or VP-tree for perceptual comparison at 50k+ files)
-- [ ] Code modularization -- split server.py into route modules, split index.html into separate CSS/JS
+- [x] Frontend modularization -- split index.html into style.css + app.js (4,959 -> 911 lines)
+- [ ] Server modularization -- split server.py into route modules (phase 2)
+- [ ] JS modularization -- split app.js into feature modules (phase 3)
 - [ ] Marketability -- branding, installer, landing page, packaging
 - [ ] Thumb drive portable mode -- running from USB with virtual environment
 - [ ] Additional keyboard shortcuts (E=execute, F=finish, Space=lightbox, 1-9=jump to group)
