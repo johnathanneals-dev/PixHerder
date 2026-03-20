@@ -283,7 +283,7 @@ DupeFinder is designed with file security as the top priority. **No user file is
 - All delete operations (individual files, folders, Delete All Remaining, review deletions) go to the **Recycle Bin**
 - The **Finish** flow sends Removed Duplicates to the Recycle Bin
 - **Send Files Home** puts everything back where it came from -- nothing is deleted
-- The only exception is **Apply Cleanup to Originals** (advanced option), which permanently deletes originals from the source folder. This is clearly warned and hidden in the advanced section.
+- The **Finish** flow never deletes your originals. It copies kept files back and recycles local duplicate copies only.
 
 ### Controlled Folder Access
 Windows Defender's Controlled Folder Access is enabled. If the app can't create files, whitelist Python:
