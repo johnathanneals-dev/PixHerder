@@ -41,3 +41,13 @@ final_review/
 
 # Additional reports
 oddballs_report.json
+
+# Generated docs
+DupeFinder_Users_Manual.docx
+generate_manual.py
+
+# Auditor (separate tool)
+Auditor/
+
+# Perceptual dupes (legacy)
+perceptual_dupes/
