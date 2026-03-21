@@ -94,7 +94,7 @@
     </div>
 
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
-      <button class="btn btn-primary btn-lg" onclick="navigate('wizard')">Start Guided Cleanup</button>
+      <button class="btn btn-primary btn-lg" id="dashWizardBtn" onclick="navigate('wizard')">Start Guided Cleanup</button>
       <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')">Direct Scan</button>
     </div>
 
@@ -240,7 +240,7 @@
         </div>
         <div id="wizMigrateActions">
           <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()">Begin Migration</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back to Dashboard</button>
         </div>
         <div id="wizMigrateProgress" style="display:none;margin-top:16px;">
           <div class="progress-container">

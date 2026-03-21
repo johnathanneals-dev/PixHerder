@@ -70,7 +70,7 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
     hintBtn.style.display = "inline-flex";
     _dashHintTarget = function() { _navToReview(); };
   } else if (hasStaging && !hasDupes && hasScans) {
-    hintText.textContent = "No duplicates in last scan. Try a different threshold or send files home.";
+    hintText.textContent = "Scan complete. Try a different threshold, or send files home if you're satisfied.";
     hintBtn.textContent = "Send Files Home";
     hintBtn.style.display = "inline-flex";
     _dashHintTarget = function() { sendFilesHome(); };
@@ -255,6 +255,14 @@ function _dashUpdateFolders() {
     if (rescanDupesBtn) rescanDupesBtn.disabled = !hasDupes;
     if (rescanKeepersBox) rescanKeepersBox.style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
     if (rescanKeepersBtn) rescanKeepersBtn.disabled = !hasKeepers;
+
+    // Disable Start Guided Cleanup when files are already in the system
+    var wizBtn = document.getElementById("dashWizardBtn");
+    if (wizBtn) {
+      var hasAnyFiles = hasStaging || hasDupes || hasKeepers;
+      wizBtn.disabled = hasAnyFiles;
+      wizBtn.title = hasAnyFiles ? "Send your current files home before importing new ones" : "";
+    }
 
     // Update nav states
     _updateNavStates();

@@ -561,8 +561,10 @@ function _updateNavStates() {
   var review = document.getElementById("navReview");
   var finalize = document.getElementById("navFinalize");
 
-  // Migrate: always available
-  migrate.classList.remove("disabled");
+  // Migrate: disabled when files are already in the system
+  var hasAnyFiles = !!(_dashFolderPaths.staging || _dashFolderPaths.dupes || _dashFolderPaths.keepers);
+  migrate.classList.toggle("disabled", hasAnyFiles);
+  migrate.title = hasAnyFiles ? "Send your current files home before importing new ones" : "";
 
   // Scan: available if staging session exists (files migrated)
   var hasStagingSession = !!(wizardState.stagingDir || (_stagingSession && _stagingSession.staging_dir));
