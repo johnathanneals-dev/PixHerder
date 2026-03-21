@@ -12,7 +12,7 @@ function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
   // Determine the most logical next step
   if (hasStaging && hasDupes) {
     // Has both — user has been scanning, likely wants to finalize or rescan
-    btn.textContent = "Continue to Finalize";
+    btn.textContent = "Rescan My Files";
     hint.textContent = "Browse your files and finish up, or rescan for more duplicates.";
     _dashContinueTarget = "wizard-step4";
   } else if (hasStaging && !hasDupes) {
@@ -146,15 +146,17 @@ function _dashUpdateFolders() {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
 
-    // Rescan boxes
-    var rescanBox = document.getElementById("dashRescanBoxes");
+    // Rescan boxes (positioned under their respective browse buttons)
+    var rescanDupesBox = document.getElementById("dashRescanBoxes");
+    var rescanKeepersBox = document.getElementById("dashRescanKeepersBox");
     var rescanDupesBtn = document.getElementById("dashRescanDupesBtn");
     var rescanKeepersBtn = document.getElementById("dashRescanKeepersBtn");
     var rescanDupesHint = document.getElementById("dashRescanDupesHint");
     var rescanKeepersHint = document.getElementById("dashRescanKeepersHint");
-    rescanBox.style.display = (hasDupes || hasKeepers) ? "block" : "none";
+    rescanDupesBox.style.display = hasDupes ? "block" : "none";
     rescanDupesBtn.disabled = !hasDupes;
     rescanDupesHint.textContent = hasDupes ? data.dupes.file_count.toLocaleString() + " files" : "No files";
+    rescanKeepersBox.style.display = hasKeepers ? "block" : "none";
     rescanKeepersBtn.disabled = !hasKeepers;
     rescanKeepersHint.textContent = hasKeepers ? data.keepers.file_count.toLocaleString() + " files" : "No files";
 

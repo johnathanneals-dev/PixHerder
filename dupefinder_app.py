@@ -38,6 +38,16 @@ def main():
     settings = load_settings()
     port = args.port or settings.get("port", 8787)
 
+    # Single-instance check: if port is already in use, exit silently
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", port))
+        sock.close()
+    except OSError:
+        # Port in use — another instance is already running
+        sys.exit(0)
+
     _run_native_mode(port)
 
 

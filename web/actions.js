@@ -123,7 +123,7 @@ function showActionResult(d) {
   var errors = result.errors || [];
 
   document.getElementById("actResultTitle").textContent = "Actions Complete";
-  var msg = "Moved: " + moved + " files. Deleted: " + deleted + " files.";
+  var msg = "Moved: " + moved + " files. Recycled: " + deleted + " files.";
   if (skipped > 0) msg += " Skipped: " + skipped + " (already processed).";
   if (errors.length > 0) msg += " Errors: " + errors.length + ".";
   document.getElementById("actResultMsg").textContent = msg;

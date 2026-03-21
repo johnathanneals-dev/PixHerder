@@ -98,10 +98,18 @@
         <div style="text-align:center;">
           <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
           <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          <div id="dashRescanBoxes" style="display:none;margin-top:8px;">
+            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Rescan Removed Duplicates</button>
+            <div id="dashRescanDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          </div>
         </div>
         <div style="text-align:center;">
           <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled>Verified Keepers</button>
           <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          <div id="dashRescanKeepersBox" style="display:none;margin-top:8px;">
+            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Rescan Verified Keepers</button>
+            <div id="dashRescanKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          </div>
         </div>
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
@@ -110,18 +118,6 @@
           <button class="btn btn-secondary" onclick="_dashStagePicker()">Choose a different step</button>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
-      </div>
-      <div id="dashRescanBoxes" style="display:none;margin-bottom:16px;">
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div style="text-align:center;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Rescan Removed Duplicates</button>
-            <div id="dashRescanDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
-          </div>
-          <div style="text-align:center;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Rescan Verified Keepers</button>
-            <div id="dashRescanKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
-          </div>
-        </div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
@@ -660,6 +656,7 @@
 
   <!-- Review View -->
   <div class="view" id="view-review" style="padding-bottom:80px;">
+    <h1>Review Duplicate Groups</h1>
     <div class="review-header">
       <div style="display:flex;align-items:center;gap:16px;">
         <button class="btn btn-ghost" id="reviewBackBtn" onclick="navigate('dashboard')">&larr; Back</button>
@@ -747,7 +744,7 @@
         <h3>Pending Actions</h3>
         <div class="card-grid" style="margin:16px 0;">
           <div class="stat-card"><div class="num" id="actMoveCount">0</div><div class="label">Files to Move</div></div>
-          <div class="stat-card"><div class="num" id="actDeleteCount">0</div><div class="label">Files to Delete</div></div>
+          <div class="stat-card"><div class="num" id="actDeleteCount">0</div><div class="label">Files to Recycle</div></div>
           <div class="stat-card"><div class="num" id="actSpaceCount">0</div><div class="label">Space to Reclaim</div></div>
         </div>
 
