@@ -3,10 +3,9 @@
 ## Quick Start
 
 1. Double-click the **DupeFinder** shortcut on your desktop (see setup below)
-2. Your browser opens to `http://127.0.0.1:8787`
-3. **Bookmark the page** (Ctrl+D) when prompted on the dashboard
-4. Click **Start Guided Cleanup** and follow the 4-step wizard
-5. Click **Shut Down** in the status bar when done
+2. The DupeFinder window opens
+3. Click **Start Guided Cleanup** and follow the 4-step wizard
+4. Close the window when done
 
 ---
 
@@ -14,20 +13,54 @@
 
 1. Copy the DupeFinder folder to wherever you want it (your PC, a thumb drive, etc.)
 2. Double-click **setup.bat** inside the folder
-3. Setup will download Python, install dependencies, and generate launchers
+3. Setup will download Python, install dependencies, run security checks, and generate launchers
 4. When prompted, choose **Y** to create a desktop shortcut
 5. That's it -- double-click the shortcut (or `launch.vbs`) to start
 
 Setup only needs to run once. If you move the folder to a new location, run `setup.bat` again.
 
-The server runs hidden in the background. The status bar at the bottom of the browser shows it's running. Use **Shut Down** to stop it cleanly, or **Restart** to apply setting changes or recover from errors. If you need to debug, use `launch.bat` instead (shows a terminal window with error output).
+DupeFinder opens as a native desktop window. The status bar at the bottom shows the server is running. Close the window to exit. If you need to troubleshoot, use `launch.bat` instead (shows a terminal window with error output).
 
 ### Uninstalling
 
-1. Shut down the server from the browser
+1. Close the DupeFinder window
 2. Delete the DupeFinder folder
 3. Delete the desktop shortcut if you created one
 4. Optionally delete temp folders used for staging and dupes (found in your system temp directory)
+
+---
+
+## Windows Security Setup
+
+DupeFinder works with your existing Windows security settings, but some features may need permission. The setup script checks for these automatically and will tell you if anything needs attention.
+
+### Controlled Folder Access (CFA)
+
+If Windows Defender's Controlled Folder Access is turned on, you may need to allow DupeFinder's Python to write files. Without this, scans may fail to save results.
+
+**How to check and fix:**
+
+1. Open **Windows Security** (search "Windows Security" in the Start menu)
+2. Click **Virus & threat protection**
+3. Scroll down to **Ransomware protection** and click **Manage ransomware protection**
+4. If **Controlled folder access** is turned on, click **Allow an app through Controlled folder access**
+5. Click **Add an allowed app** and browse to add these files from the DupeFinder folder:
+   - `python\pythonw.exe` (the main executable)
+   - `python\python.exe` (used for troubleshooting)
+
+If CFA is turned off, you don't need to do anything.
+
+### PowerShell
+
+DupeFinder uses PowerShell to send files to the Windows Recycle Bin. This works on all standard Windows 10/11 installations. If your computer has restrictions on PowerShell (common in some work environments), file recycling may not work. In that case, files will stay where they are -- nothing is ever permanently deleted without your explicit action.
+
+### Firewall
+
+DupeFinder uses a local connection (port 8787) to display images in the app window. This connection never leaves your computer -- no internet access is needed after setup. If a firewall (like Portmaster or a corporate firewall) blocks local connections, you may need to allow port 8787 for `127.0.0.1` only.
+
+### Antivirus Software
+
+Some antivirus programs (Norton, McAfee, Avast, etc.) may flag DupeFinder because it uses Python scripts. This is a false positive. If your antivirus blocks DupeFinder, add the DupeFinder folder to your antivirus exclusion list.
 
 ---
 
