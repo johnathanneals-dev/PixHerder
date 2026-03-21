@@ -289,6 +289,23 @@ When complete, the spinner is replaced with a result card:
 - **Order**: Dashboard first, then workflow steps in order, then utility links (Activity, Settings last)
 - **Wrapping**: `flex-wrap: wrap` — fills from left on narrow windows
 
+### Flow Stepper
+
+The dashboard displays a horizontal progress stepper showing the 4 workflow stages:
+
+```text
+  [Import] -----> [Scan] -----> [Review] -----> [Finish]
+     *
+```
+
+- Each step is a labeled node connected by lines
+- The current step is highlighted with `--accent` color
+- Completed steps show a checkmark
+- Future steps are dimmed (`--text-dim`)
+- Below the stepper, a contextual hint suggests the next action (e.g., "Import your files to get started" or "Review your scan results")
+- The stepper updates automatically based on folder state and scan history
+- Clicking a completed step does not navigate -- it is informational only
+
 ### In-App Navigation Rules
 
 - `navigate()` forces `route()` refresh when hash is unchanged (prevents stale views)
@@ -377,6 +394,33 @@ When complete, the spinner is replaced with a result card:
 - **Runtime CFA detection**: test write on startup, show dialog with whitelist instructions if blocked
 - **Graceful degradation**: if PowerShell blocked, files stay in place (never permanently deleted)
 - **User manual**: plain English security setup section with step-by-step instructions
+
+---
+
+## Recovery Archive
+
+The rolling recovery archive provides a safety net for recently recycled files. It appears on the dashboard when recovery slots contain files.
+
+### Dashboard Display
+
+- A card or section on the dashboard shows "Recovery Archive" with file counts per slot
+- Browse and Restore buttons use `btn-secondary` style (neutral action)
+- The archive indicator is hidden when both slots are empty
+- Slot labels show the operation name and timestamp (e.g., "Finish -- 2:35 PM")
+
+### Slot System
+
+- 2 rolling slots: newest operation in slot 1, previous in slot 2
+- When a third operation occurs, slot 2 is discarded, slot 1 moves to slot 2, new operation takes slot 1
+- Restore moves files back to their original folder (My Files, Removed Duplicates, or Verified Keepers)
+- Clear button uses `btn-danger` style (destructive) with confirmation dialog
+- Archive is cleared automatically during the Finish flow
+
+### Behavior
+
+- Recovery archive is informational on the dashboard -- never blocks the user's workflow
+- Restore operations use the `#working` blocking progress view like all other file operations
+- File counts update after every recycle or restore operation
 
 ---
 

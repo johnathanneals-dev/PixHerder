@@ -91,13 +91,19 @@ Choose how to scan for duplicates:
   - 5 = near-duplicate (default)
   - 10+ = catches more but may flag false positives
 - **Include subfolders**: scan recursively (default: on)
+- **Auto-recycle exact duplicates**: when checked, byte-for-byte identical files are automatically sent to the Recycle Bin without going through review. Keeps the largest file in each group. This is completely safe -- exact matches have zero false positives. Leave unchecked if you want to review everything yourself. Default: unchecked.
+- **Scan batch size**: how many files to scan at once (All, 500, 1000, 2000, 5000). Default: 2000. After you review and act on one batch, the next scan picks up where it left off. Recommended for large collections.
 
 Click **Start Scan** and watch progress. When complete, Step 3 opens.
 
-**Best practice for multiple passes:**
-1. First pass: Exact only -- knock out guaranteed duplicates
-2. Second pass: Perceptual at threshold 2-3 -- catch resized/recompressed copies
-3. Third pass: Perceptual at threshold 5-8 -- find more aggressive edits (review carefully)
+**Recommended progressive approach for large collections:**
+
+1. Set scan batch size to 2000 (default)
+2. First pass: Exact only with auto-recycle on -- clears out guaranteed duplicates automatically
+3. Review any remaining groups, apply decisions
+4. Second pass: Perceptual at threshold 2-3 -- catch resized/recompressed copies
+5. Third pass: Perceptual at threshold 5-8 -- find more aggressive edits (review carefully)
+6. Each scan picks up where the last left off, so you work through the collection in manageable chunks
 
 Use the **Rescan** button in Step 4 to return here after each pass.
 
@@ -212,6 +218,90 @@ This is designed to be an iterative loop. Each pass reduces the file count as yo
 ### Verified Keepers
 
 After rescanning and deleting the real duplicates, click **Move to Keepers** to save the remaining Removed Duplicates files as confirmed keepers. Files in Verified Keepers are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
+
+---
+
+## Auto-Recycle Exact Duplicates
+
+When scanning with Exact (MD5) mode, you can check the **Auto-recycle exact duplicates** box on the scan config page. This tells DupeFinder to skip the review step for byte-for-byte identical files and send them straight to the Recycle Bin.
+
+**When to use it:**
+
+- You have a large collection and want to clear out obvious duplicates quickly
+- You trust that identical files (same size, same content, same checksum) are safe to remove
+- You want to focus your review time on the trickier perceptual matches
+
+**How it works:**
+
+- Only affects exact (MD5) matches -- files that are bit-for-bit identical
+- Keeps the largest file in each group (highest quality version)
+- Duplicates go to the Windows Recycle Bin, so you can always recover them
+- Zero false positives -- if two files have the same MD5 hash, they are the same file
+- Does not affect perceptual matches, which still go through normal review
+
+**When not to use it:**
+
+- You want to manually review every group, even exact matches
+- You want to choose which copy to keep based on filename or location rather than size
+
+The checkbox is off by default. You can turn it on and off between scan passes.
+
+---
+
+## Recovery Archive
+
+DupeFinder keeps a safety net for recently recycled files. Before files are sent to the Recycle Bin, copies are saved in a recovery folder (DupeFinder_Recovery).
+
+**How it works:**
+
+- The recovery archive keeps the 2 most recent operations (rolling 2-slot system)
+- Each time you recycle files, the oldest slot is replaced with the new backup
+- You can browse and restore files from the dashboard
+- The archive is cleared automatically when you finish your session
+
+**When to use it:**
+
+- You recycled a batch and realized you wanted to keep some of those files
+- You want a quick way to undo a recent action without digging through the Recycle Bin
+- The Recycle Bin has too many files to search through easily
+
+**Restoring files:**
+
+1. Go to the dashboard
+2. If the recovery archive has files, you'll see a restore option
+3. Browse the available recovery slots
+4. Select the files you want to restore
+
+The recovery archive is a convenience feature on top of the Recycle Bin. Even after the archive is cleared, recycled files are still in the Windows Recycle Bin until you empty it.
+
+---
+
+## Chunked Scanning
+
+For large photo collections, scanning everything at once can be overwhelming. Chunked scanning lets you work through your files in manageable batches.
+
+**How it works:**
+
+- On the scan config page, choose a scan batch size: All, 500, 1000, 2000, or 5000
+- Default is 2000 files per batch
+- DupeFinder scans the first batch, then you review and act on those results
+- The next scan automatically picks up where the last one left off
+- Repeat until all files have been processed
+
+**Recommended batch sizes:**
+
+- **500** -- small batches, good for careful review of tricky collections
+- **1000** -- moderate batches, balances speed and review quality
+- **2000** (default) -- good for most collections, enough to find patterns without being overwhelming
+- **5000** -- large batches for quick passes, best with auto-recycle on exact matches
+- **All** -- scan everything at once, best for small collections (under 5000 files)
+
+**Tips:**
+
+- Start with the default (2000) and adjust based on how the review feels
+- Combine with auto-recycle on exact matches to clear obvious duplicates first
+- Each batch builds on the previous -- you never re-scan files you've already handled
+- You can change the batch size between passes
 
 ---
 

@@ -66,6 +66,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ## Feature Backlog (from testing session)
 
+- [ ] Sticky browser toolbar: buttons stay at top when scrolling in folder view
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Audit all navigation: ensure buttons everywhere except top menu text links
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
@@ -74,7 +75,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Move to Keepers: let user choose My Files, Removed Duplicates, or both as source
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Keepers folder workflow -- rescan Removed Duplicates, promote to Verified Keepers
-- [ ] Batch/chunked scanning for large collections
+- [x] Batch/chunked scanning for large collections
 - [x] **pywebview migration** -- native window replaces browser (completed 2026-03-20)
 - [ ] Server modularization -- split server.py into route modules (partially addressed by pywebview migration)
 - [ ] Marketability -- branding, installer, landing page, packaging
@@ -91,6 +92,13 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Built-in #help view with anchored topics replacing verbose UI text
 - [ ] Help section: full nav + "Back to where I was" button
 - [ ] Testing data tracking doc for consistency across test sessions
+
+## Completed (2026-03-21)
+
+- [x] Auto-recycle exact duplicates: checkbox on scan config, byte-for-byte identical files automatically sent to Recycle Bin (keeps largest), zero false positives, default unchecked
+- [x] Smart dashboard flow guidance: progress stepper (Import > Scan > Review > Finish) with contextual hints showing workflow position and next action
+- [x] Rolling recovery archive: 2-slot backup in DupeFinder_Recovery folder, copies preserved before recycling, browse/restore from dashboard, cleared on session finish
+- [x] Chunked scanning: scan batch size dropdown (All/500/1000/2000/5000, default 2000), scans first N files, next scan picks up remaining after review+actions
 
 ## Completed (2026-03-20)
 
