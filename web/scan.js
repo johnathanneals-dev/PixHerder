@@ -270,6 +270,13 @@ function updateScanUI(d) {
   document.getElementById("scanStage").textContent = stageNames[d.stage] || d.stage || "Working...";
   document.getElementById("scanErrors").textContent = d.errors || 0;
 
+  // Grey out cancel button at point of no return (saving phase)
+  var noReturn = (d.stage === "saving" || d.stage === "done");
+  var cancelBtn = document.getElementById("scanCancelBtn");
+  var wizCancelBtn = document.getElementById("wizScanCancelBtn");
+  if (cancelBtn) cancelBtn.disabled = noReturn;
+  if (wizCancelBtn) wizCancelBtn.disabled = noReturn;
+
   // Weighted overall progress so the bar never sits at 100% while work remains.
   // Weights depend on which scan mode is active.
   var pct = 0;

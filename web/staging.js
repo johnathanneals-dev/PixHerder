@@ -50,6 +50,14 @@ function updateStagingUI(d) {
   var mbTotal = d.bytes_total ? Math.round(d.bytes_total / (1024*1024)) : 0;
   document.getElementById("stagingProgressRight").textContent = mbCopied + " / " + mbTotal + " MB";
   document.getElementById("stagingStage").textContent = d.stage || "staging";
+
+  // Grey out cancel button at point of no return (finalizing/saving manifest)
+  var noReturn = (d.stage === "saving" || d.stage === "finalizing" || d.status === "complete");
+  var cancelBtn = document.getElementById("stagingCancelBtn");
+  var wizCancelBtn = document.getElementById("wizStagingCancelBtn");
+  if (cancelBtn) cancelBtn.disabled = noReturn;
+  if (wizCancelBtn) wizCancelBtn.disabled = noReturn;
+
   document.getElementById("stagingCopied").textContent = d.copied || 0;
   document.getElementById("stagingSkipped").textContent = d.skipped || 0;
   document.getElementById("stagingFailed").textContent = d.failed || 0;
