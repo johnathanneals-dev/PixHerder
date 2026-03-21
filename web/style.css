@@ -338,7 +338,7 @@
     border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
   }
   .card-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px; margin-bottom: 32px;
   }
   .stat-card {

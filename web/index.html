@@ -652,9 +652,11 @@
           <h3 style="color:var(--accent);margin-bottom:12px;" id="scanCompleteTitle">Scan Complete</h3>
           <p id="scanCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
           <div id="scanCompleteSummary" style="margin-bottom:16px;"></div>
-          <button class="btn btn-primary" id="scanReviewBtn" onclick="" style="display:none;">Review Results</button>
-          <button class="btn btn-secondary" id="scanReturnFolderBtn" onclick="_returnToScanFolder()" style="display:none;margin-left:8px;">Return to Folder</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back to Dashboard</button>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="scanReviewBtn" onclick="" style="display:none;">Review Results</button>
+            <button class="btn btn-secondary" id="scanReturnFolderBtn" onclick="_returnToScanFolder()" style="display:none;">Return to Folder</button>
+            <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
+          </div>
         </div>
       </div>
     </div>
