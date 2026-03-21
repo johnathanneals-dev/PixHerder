@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from engine.comparator import pick_original
-from engine.config import LOGS_DIR
+from engine.config import LOGS_DIR, verify_copy
 
 
 def log_action(action_type, details):
@@ -122,6 +122,11 @@ def move_files(groups, move_dir, keep_strategy="largest",
 
             try:
                 shutil.copy2(str(dupe_path), str(dest))
+                if not verify_copy(dupe_path, dest):
+                    errors += 1
+                    error_details.append(
+                        str(dupe_path) + ": copy verification failed")
+                    continue
                 # Clear read-only flag if set (common with OneDrive staged files)
                 if not os.access(str(dupe_path), os.W_OK):
                     os.chmod(str(dupe_path), stat.S_IWRITE | stat.S_IREAD)
@@ -277,6 +282,8 @@ def rescue_file(source_path, original_path):
         os.makedirs(str(dest.parent), exist_ok=True)
 
         shutil.copy2(str(source), str(dest))
+        if not verify_copy(source, dest):
+            return {"success": False, "error": "Copy verification failed"}
         os.remove(str(source))
 
         log_action("rescue", {

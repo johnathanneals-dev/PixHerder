@@ -20,6 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from engine.config import (
     SCANS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
     DEFAULTS, load_settings, save_settings, default_pictures_path,
+    verify_copy as _verify_copy,
 )
 from engine.scanner import find_images, count_images
 from engine.comparator import pick_original
@@ -871,6 +872,9 @@ class Api:
                         counter += 1
                 try:
                     shutil.copy2(src, dest)
+                    if not _verify_copy(src, dest):
+                        errors_count += 1
+                        continue
                     try:
                         os.chmod(src, stat.S_IWRITE | stat.S_IREAD)
                         os.remove(src)

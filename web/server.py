@@ -21,7 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from engine.config import (
     SCANS_DIR, LOGS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
     DEFAULTS, IMAGE_EXTENSIONS, load_settings, save_settings, ensure_dirs,
-    default_pictures_path,
+    default_pictures_path, verify_copy,
 )
 from engine.scanner import find_images, count_images
 from engine.hasher import md5_hash, perceptual_hash
@@ -1958,6 +1958,10 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                             os.chmod(p, stat.S_IWRITE), f(p)))
                     else:
                         _shutil.copy2(src, dst)
+                        if not verify_copy(src, dst):
+                            errors += 1
+                            error_details.append(item + ": copy verification failed")
+                            continue
                         os.remove(src)
                     moved += 1
                 except Exception as e2:
@@ -2032,6 +2036,9 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                         counter += 1
                 try:
                     _shutil.copy2(src, dst)
+                    if not verify_copy(src, dst):
+                        errors += 1
+                        continue
                     os.remove(src)
                     moved += 1
                 except Exception:
@@ -2085,6 +2092,9 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                             counter += 1
                     try:
                         _shutil.copy2(src, dst)
+                        if not verify_copy(src, dst):
+                            errors += 1
+                            continue
                         os.remove(src)
                         moved += 1
                     except Exception:

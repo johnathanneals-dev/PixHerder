@@ -85,3 +85,16 @@ def save_settings(data):
     with open(str(SETTINGS_PATH), "w") as f:
         json.dump(settings, f, indent=2)
     return settings
+
+
+def verify_copy(source, destination):
+    """Verify a copy succeeded by comparing file sizes.
+
+    Returns True if destination exists and matches source size.
+    """
+    try:
+        src_size = os.path.getsize(str(source))
+        dst_size = os.path.getsize(str(destination))
+        return src_size == dst_size
+    except OSError:
+        return False
