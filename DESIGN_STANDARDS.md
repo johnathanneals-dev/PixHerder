@@ -22,7 +22,8 @@ This document defines the visual and interaction standards for DupeFinder. Refer
 | `--surface` | `#131318` | Cards, dialogs |
 | `--surface-2` | `#1a1a22` | Elevated surfaces, button backgrounds |
 | `--surface-3` | `#222230` | Hover states |
-| `--border` | `#2a2a35` | Dividers, card borders |
+| `--border` | `#2a2a35` | Dividers, form input borders |
+| `--border-container` | `#555` | Non-interactive container borders (stat cards, cards, dialogs, scan items, error lists) |
 
 ### Text
 
@@ -85,7 +86,7 @@ This document defines the visual and interaction standards for DupeFinder. Refer
 |-------|-----------|-------|
 | `btn-lg` | None (auto) | Hero actions: Start Guided Cleanup, Finished with Scanning |
 | `btn-fixed` | 160px | Dashboard action buttons in More Options |
-| `btn-browse` | 180px | Folder browse buttons (My Files, Removed Duplicates, Verified Keepers) |
+| `btn-browse` | 240px | Folder browse and scan buttons (My Files, Removed Duplicates, Verified Keepers, Rescan) |
 | `btn-sm` | None (auto) | Review action bar, compact toolbars |
 | (default) | None (auto) | Standard buttons in dialogs and forms |
 
@@ -93,6 +94,22 @@ This document defines the visual and interaction standards for DupeFinder. Refer
 
 - Secondary buttons: `1px solid var(--text-dim)` for visibility on dark background
 - All other buttons: no border (color provides contrast)
+- Non-interactive containers (cards, stat cards, dialogs, scan items): `1px solid var(--border-container)` (#555)
+
+### Disabled / Greyed-Out Standard
+
+All disabled interactive elements use the same standard:
+
+| Element | Property | Value |
+|---------|----------|-------|
+| Buttons (`:disabled`) | `opacity` | `0.4` |
+| Buttons (`:disabled`) | `cursor` | `not-allowed` |
+| Nav links (`.disabled`) | `opacity` | `0.4` |
+| Nav links (`.disabled`) | `cursor` | `not-allowed` |
+| Nav links (`.disabled`) | `color` | `var(--text-muted)` |
+| Nav links (`.disabled`) | `pointer-events` | `none` |
+
+This ensures disabled buttons and greyed-out nav links have the same visual weight throughout the application.
 
 ---
 
