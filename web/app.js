@@ -110,9 +110,9 @@ function deleteLightboxFile() {
   if (!_lightboxFilePath) return;
   var filename = _lightboxFilePath.split("\\").pop();
   showDialog(
-    "Delete File",
+    "Recycle File",
     "Send " + filename + " to the Recycle Bin?",
-    "Delete",
+    "Send to Recycle Bin",
     "btn-danger",
     function() {
       var deletedPath = _lightboxFilePath;

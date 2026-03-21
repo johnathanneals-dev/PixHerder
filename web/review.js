@@ -282,7 +282,7 @@ function renderReviewGroup() {
   html += '<div class="group-title">Group ' + (realIdx + 1);
   if (decision === "skip") html += ' <span class="decision-badge decision-skip">KEEPING</span>';
   if (decision === "move") html += ' <span class="decision-badge decision-move">DUPLICATE</span>';
-  if (decision === "delete") html += ' <span class="decision-badge decision-delete">DELETE</span>';
+  if (decision === "delete") html += ' <span class="decision-badge decision-delete">RECYCLE</span>';
   html += '</div>';
 
   html += '<div class="group-meta">';
@@ -495,7 +495,7 @@ function updateReviewActionInfo() {
   }
   document.getElementById("reviewActionInfo").textContent =
     "Reviewed: " + reviewed + " / " + state.groups.length +
-    " | Move: " + moves + " | Delete: " + deletes +
+    " | Move: " + moves + " | Recycle: " + deletes +
     " | Space: " + formatBytes(moveBytes + deleteBytes);
 }
 
@@ -507,7 +507,7 @@ function goToActions() {
     if (state.decisions[k] === "delete") hasDeletes = true;
   }
   if (!hasMoves && !hasDeletes) {
-    toast("No groups marked for move or delete yet", "warning");
+    toast("No groups marked for move or recycle yet", "warning");
     return;
   }
   navigate("actions");
