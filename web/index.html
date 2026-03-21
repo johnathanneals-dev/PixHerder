@@ -261,6 +261,7 @@
             <span class="slider-value" id="wizThresholdVal">5</span>
           </div>
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Lower = stricter matching, fewer results, faster. Higher = looser matching, more results, slower.</div>
         </div>
         <div class="form-group">
           <label><input type="checkbox" id="wizRecursive" checked> Include subfolders</label>
@@ -418,6 +419,7 @@
           <span class="slider-value" id="thresholdVal">5</span>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Lower = stricter matching, fewer results, faster. Higher = looser matching, more results, slower.</div>
       </div>
 
       <div class="form-group">
@@ -738,6 +740,7 @@
   <div class="view" id="view-actions">
     <h1>Execute Actions</h1>
     <p class="subtitle">Review and execute pending file operations.</p>
+    <p style="font-size:13px;color:var(--text-dim);margin:-8px 0 16px 0;line-height:1.5;">Files marked as duplicates will be moved from My Files to Removed Duplicates. Files marked for recycling will be sent to the Windows Recycle Bin.</p>
 
     <div id="actionsContent">
       <div class="card" id="actionsSummaryCard">
