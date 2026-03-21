@@ -604,6 +604,9 @@ function initDashboard() {
   // Fetch folder status for browse buttons
   _dashUpdateFolders();
 
+  // Check recovery archive
+  _dashUpdateRecovery();
+
   api("GET", "/api/scans").then(function(scans) {
     var list = document.getElementById("scanList");
     var statsBox = document.getElementById("dashboardStats");
@@ -668,5 +671,87 @@ function deleteScan(filename) {
       initDashboard();
     }).catch(function(err) { toast("Error: " + err.message, "error"); });
   });
+}
+
+// ---- Recovery Archive ----
+
+function _dashUpdateRecovery() {
+  api("GET", "/api/recovery/status").then(function(data) {
+    var box = document.getElementById("dashRecovery");
+    if (!data.exists || data.total_files === 0) {
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "block";
+    var mb = Math.round(data.total_bytes / (1024 * 1024));
+    var info = data.total_files + " files (" + mb + " MB) in "
+             + data.slots.length + " recovery slot"
+             + (data.slots.length > 1 ? "s" : "");
+    document.getElementById("dashRecoveryInfo").textContent = info;
+  }).catch(function() {
+    document.getElementById("dashRecovery").style.display = "none";
+  });
+}
+
+function _showRecoveryFiles() {
+  api("GET", "/api/recovery/list").then(function(data) {
+    if (!data.files || data.files.length === 0) {
+      toast("Recovery archive is empty");
+      return;
+    }
+    var html = '<div style="max-height:400px;overflow-y:auto;">';
+    for (var i = 0; i < data.files.length; i++) {
+      var f = data.files[i];
+      var name = f.archived_name || "Unknown";
+      var origPath = f.original_path || "";
+      var shortPath = origPath.length > 60 ? "..." + origPath.substring(origPath.length - 57) : origPath;
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;'
+        + 'padding:8px 0;border-bottom:1px solid var(--border);">'
+        + '<div><div style="font-weight:500;">' + escHtml(name) + '</div>'
+        + '<div style="font-size:11px;color:var(--text-dim);">' + escHtml(shortPath) + '</div></div>'
+        + '<button class="btn btn-primary btn-sm" onclick="_restoreRecoveryFile(\''
+        + escAttr(f.archived_path) + '\')">Restore</button></div>';
+    }
+    html += '</div>';
+
+    document.getElementById("dialogTitle").textContent = "Recovery Archive";
+    document.getElementById("dialogMessage").innerHTML = html;
+    document.getElementById("dialogConfirmBtn").style.display = "none";
+    document.getElementById("dialog").classList.add("active");
+    document.getElementById("dialogOverlay").classList.add("active");
+  }).catch(function() {
+    toast("Could not load recovery archive", "error");
+  });
+}
+
+function _restoreRecoveryFile(archivedPath) {
+  api("POST", "/api/recovery/restore", { archived_path: archivedPath }).then(function(r) {
+    if (r.success) {
+      toast("File restored to My Files");
+      closeDialog();
+      _dashUpdateRecovery();
+      _refreshFolderPaths();
+    } else {
+      toast("Restore failed: " + (r.error || "Unknown error"), "error");
+    }
+  }).catch(function(err) {
+    toast("Restore failed: " + err.message, "error");
+  });
+}
+
+function _clearRecoveryArchive() {
+  showDialog(
+    "Clear Recovery Archive",
+    "This will permanently remove all files in the recovery archive. Files already in the Recycle Bin are not affected.",
+    "Clear Archive", "btn-danger",
+    function() {
+      api("POST", "/api/recovery/clear").then(function() {
+        toast("Recovery archive cleared");
+        _dashUpdateRecovery();
+      }).catch(function(err) {
+        toast("Error: " + err.message, "error");
+      });
+    }
+  );
 }
 

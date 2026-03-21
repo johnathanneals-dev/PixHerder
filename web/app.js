@@ -429,7 +429,11 @@ var _bridgeMap = {
   "POST /api/browser/delete-folder": "browser_delete_folder",
   "POST /api/browser/open-explorer": "open_explorer",
   "POST /api/browser/open-recycle-bin": "open_recycle_bin",
-  "POST /api/browser/move-to-keepers": "move_to_keepers"
+  "POST /api/browser/move-to-keepers": "move_to_keepers",
+  "GET /api/recovery/status": "recovery_status",
+  "GET /api/recovery/list": "recovery_list",
+  "POST /api/recovery/restore": "recovery_restore",
+  "POST /api/recovery/clear": "recovery_clear"
 };
 
 function _useBridge() {

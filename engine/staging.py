@@ -418,8 +418,18 @@ def cleanup_staging(staging_dir):
         return {"status": "error", "error": str(e)}
 
 
-def _recycle_file_powershell(filepath):
-    """Send a single file to the Windows Recycle Bin via PowerShell."""
+def _recycle_file_powershell(filepath, archive_slot=None):
+    """Send a single file to the Windows Recycle Bin via PowerShell.
+
+    If archive_slot is provided, copies the file to the recovery archive
+    before recycling.
+    """
+    if archive_slot is not None:
+        try:
+            from engine.recovery import archive_file
+            archive_file(archive_slot, filepath)
+        except Exception:
+            pass  # Archive failure should not block recycle
     import subprocess
 
     ps_path = str(filepath).replace("'", "''")

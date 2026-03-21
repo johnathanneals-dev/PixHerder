@@ -167,6 +167,22 @@
       </div>
     </div>
 
+    <!-- Recovery Archive -->
+    <div id="dashRecovery" style="display:none;margin-bottom:24px;">
+      <h2>Recovery Archive</h2>
+      <div class="card" style="max-width:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <span id="dashRecoveryInfo" style="color:var(--text-dim);font-size:13px;"></span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="_showRecoveryFiles()">Browse Archive</button>
+            <button class="btn btn-ghost btn-sm" onclick="_clearRecoveryArchive()">Clear Archive</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <h2>Previous Scans</h2>
     <div class="scan-list" id="scanList">
       <div class="empty-state"><p>Loading...</p></div>

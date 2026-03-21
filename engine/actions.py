@@ -159,7 +159,8 @@ def move_files(groups, move_dir, keep_strategy="largest",
 
 
 def delete_files(groups, keep_strategy="largest",
-                 progress_cb=None, cancel_event=None):
+                 progress_cb=None, cancel_event=None,
+                 archive_slot=None):
     """Delete duplicate files with per-file error handling.
 
     Args:
@@ -168,6 +169,7 @@ def delete_files(groups, keep_strategy="largest",
         keep_strategy: Strategy for pick_original if groups are path lists.
         progress_cb: Optional callback(current, total, stage).
         cancel_event: Optional threading.Event for cancellation.
+        archive_slot: Optional recovery archive slot number for backup.
 
     Returns:
         Dict with deleted (int), errors (list of dicts), cancelled (bool).
@@ -232,7 +234,7 @@ def delete_files(groups, keep_strategy="largest",
                     os.chmod(dupe_path_str, stat.S_IWRITE | stat.S_IREAD)
                 # Send to Recycle Bin -- leave in place if recycling fails
                 from engine.staging import _recycle_file_powershell
-                _recycle_file_powershell(dupe_path_str)
+                _recycle_file_powershell(dupe_path_str, archive_slot=archive_slot)
                 deleted += 1
                 log_action("delete", {
                     "path": dupe_path_str,

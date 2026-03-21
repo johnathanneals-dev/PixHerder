@@ -322,6 +322,14 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
             scan_progress["message"] = ("Auto-recycling "
                 + str(len(exact_groups_data)) + " exact duplicate groups...")
 
+            # Start recovery archive slot
+            ar_slot = None
+            try:
+                from engine.recovery import start_new_operation
+                ar_slot = start_new_operation("auto_recycle")
+            except Exception:
+                pass
+
             recycle_groups = []
             for g in exact_groups_data:
                 recycle_groups.append({
@@ -333,6 +341,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
             recycle_result = delete_files(
                 recycle_groups, keep_strategy,
                 cancel_event=scan_cancel,
+                archive_slot=ar_slot,
             )
             auto_recycled = recycle_result.get("deleted", 0)
 
@@ -566,6 +575,15 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
     })
 
     try:
+        # Start recovery archive slot for delete operations
+        archive_slot = None
+        if action_type == "delete":
+            try:
+                from engine.recovery import start_new_operation
+                archive_slot = start_new_operation("delete_action")
+            except Exception:
+                pass
+
         if action_type == "move":
             result = move_files(
                 groups, move_dir, keep_strategy,
@@ -578,6 +596,7 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
                 groups, keep_strategy,
                 progress_cb=_update_action_progress,
                 cancel_event=action_cancel,
+                archive_slot=archive_slot,
             )
             action_progress["result"] = result
 

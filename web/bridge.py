@@ -1073,6 +1073,42 @@ class Api:
         subprocess.Popen(["explorer", "shell:RecycleBinFolder"])
         return {"status": "opened"}
 
+    # ---- Recovery Archive ----
+
+    def recovery_status(self, params=None):
+        from engine.recovery import get_archive_status
+        return get_archive_status()
+
+    def recovery_list(self, params=None):
+        from engine.recovery import list_archived_files
+        return {"files": list_archived_files()}
+
+    def recovery_restore(self, params=None):
+        if params is None:
+            params = {}
+        from engine.recovery import restore_file
+        archived_path = params.get("archived_path", "")
+        # Restore to staging (My Files) by default
+        settings = load_settings()
+        dest_dir = params.get("destination", "")
+        if not dest_dir:
+            dest_dir = _find_staging_subfolder() or ""
+        if not dest_dir:
+            return {"success": False, "error": "No destination folder available"}
+        result = restore_file(archived_path, dest_dir)
+        if result.get("success"):
+            _log_activity("recovery_restore", {
+                "archived_path": archived_path,
+                "destination": result.get("destination", ""),
+            })
+        return result
+
+    def recovery_clear(self, params=None):
+        from engine.recovery import clear_archive
+        result = clear_archive()
+        _log_activity("recovery_cleared", {})
+        return result
+
     def app_shutdown(self, params=None):
         """Close the pywebview window."""
         if self._window:
