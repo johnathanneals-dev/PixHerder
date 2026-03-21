@@ -33,6 +33,7 @@
     min-height: 100vh;
     line-height: 1.5;
     padding-bottom: 32px;
+    border: 2px solid var(--accent);
   }
 
   /* ---- Status Bar ---- */
