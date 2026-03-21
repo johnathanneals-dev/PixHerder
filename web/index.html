@@ -463,6 +463,18 @@
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Byte-for-byte identical files are automatically sent to the Recycle Bin. The largest file in each group is kept. Recoverable from the Recycle Bin if needed.</div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Scan batch size</label>
+        <select class="form-input" id="scanLimit" style="width:auto;">
+          <option value="0">All files</option>
+          <option value="500">500 files</option>
+          <option value="1000">1,000 files</option>
+          <option value="2000" selected>2,000 files</option>
+          <option value="5000">5,000 files</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Process files in manageable batches. After reviewing each batch, scan again for the next group. "All files" scans everything at once.</div>
+      </div>
+
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
         <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
         <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>

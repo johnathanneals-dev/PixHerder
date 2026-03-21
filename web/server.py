@@ -162,7 +162,7 @@ def _update_oddball_progress(current, total, stage):
 
 def _run_scan(directory, mode, threshold, recursive, hash_size,
               keep_strategy, extensions, resume_data=None,
-              auto_recycle=False):
+              auto_recycle=False, scan_limit=0):
     """Background scan thread target."""
     global scan_progress
     start_time = time.time()
@@ -186,10 +186,21 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
     try:
         ext_set = set(extensions) if extensions else None
         image_paths = list(find_images(directory, recursive, ext_set))
+        total_found = len(image_paths)
+
+        # Apply scan limit (chunked scanning)
+        if scan_limit and scan_limit > 0 and total_found > scan_limit:
+            image_paths = image_paths[:scan_limit]
+
         total_images = len(image_paths)
 
+        batch_msg = "Found " + str(total_images) + " images"
+        if scan_limit and scan_limit > 0 and total_found > scan_limit:
+            batch_msg = ("Scanning batch: " + str(total_images) + " of "
+                        + str(total_found) + " total images")
+
         scan_progress["total"] = total_images
-        scan_progress["message"] = "Found " + str(total_images) + " images"
+        scan_progress["message"] = batch_msg
 
         if total_images < 2:
             scan_progress.update({
@@ -1293,6 +1304,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         # Handle resume
         resume = body.get("resume", False)
         auto_recycle = body.get("auto_recycle", False)
+        scan_limit = body.get("scan_limit", 0)
         resume_data = None
         if resume:
             _, resume_data = find_checkpoint(directory, mode)
@@ -1306,7 +1318,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
-                  keep_strategy, extensions, resume_data, auto_recycle),
+                  keep_strategy, extensions, resume_data, auto_recycle,
+                  scan_limit),
             daemon=True,
         )
         scan_thread.start()

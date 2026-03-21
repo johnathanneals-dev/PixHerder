@@ -128,6 +128,7 @@ function startScan() {
   var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
   var recursive = document.getElementById("scanRecursive").checked;
   var autoRecycle = document.getElementById("scanAutoRecycle").checked;
+  var scanLimit = parseInt(document.getElementById("scanLimit").value) || 0;
 
   // Check if this is a OneDrive path
   api("POST", "/api/staging/check", { directory: dir }).then(function(result) {
@@ -142,10 +143,10 @@ function startScan() {
       showStagingDialog(dir, result.staging_dir, msg, result.existing_session,
         mode, threshold, recursive);
     } else {
-      _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle);
+      _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle, scanLimit);
     }
   }).catch(function() {
-    _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle);
+    _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle, scanLimit);
   });
 }
 
@@ -196,7 +197,7 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
   }
 }
 
-function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle) {
+function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle, scanLimit) {
   api("GET", "/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
     .then(function(data) {
       if (data.has_checkpoint) {
@@ -206,11 +207,11 @@ function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle) {
         showResumeDialog(
           "An interrupted scan was found for this folder.",
           "Stage: " + info.stage + " | Hashes cached: " + cached + " | Last active: " + ts,
-          function() { _doStartScan(dir, mode, threshold, recursive, true, autoRecycle); },
-          function() { _doStartScan(dir, mode, threshold, recursive, false, autoRecycle); }
+          function() { _doStartScan(dir, mode, threshold, recursive, true, autoRecycle, scanLimit); },
+          function() { _doStartScan(dir, mode, threshold, recursive, false, autoRecycle, scanLimit); }
         );
       } else {
-        _doStartScan(dir, mode, threshold, recursive, false, autoRecycle);
+        _doStartScan(dir, mode, threshold, recursive, false, autoRecycle, scanLimit);
       }
     })
     .catch(function() {
@@ -218,11 +219,11 @@ function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle) {
     });
 }
 
-function _doStartScan(dir, mode, threshold, recursive, resume, autoRecycle) {
+function _doStartScan(dir, mode, threshold, recursive, resume, autoRecycle, scanLimit) {
   _lastScanMode = mode;
   api("POST", "/api/scan/start", {
     directory: dir, mode: mode, threshold: threshold, recursive: recursive,
-    resume: resume, auto_recycle: !!autoRecycle
+    resume: resume, auto_recycle: !!autoRecycle, scan_limit: scanLimit || 0
   }).then(function() {
     navigate("scan-progress");
   }).catch(function(err) {
