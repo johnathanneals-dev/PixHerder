@@ -94,19 +94,12 @@ function _doExecute(moveGroups, deleteGroups, moveDir) {
           d.current + " / " + d.total;
       }
       if (d.status === "complete" || d.status === "error") {
-        if (_useBridge()) { window._onActionProgress = null; }
-        else if (_actSSE) { _actSSE.close(); _actSSE = null; }
+        window._onActionProgress = null;
         showActionResult(d);
       }
     }
-    if (_useBridge()) {
-      window._onActionProgress = _onActProgress;
-      window.pywebview.api.subscribe_action_progress();
-    } else {
-      var _actSSE = new EventSource("/api/action/progress");
-      _actSSE.onmessage = function(e) { _onActProgress(JSON.parse(e.data)); };
-      _actSSE.onerror = function() { _actSSE.close(); setTimeout(function() { showActionResult({ status: "complete", result: {} }); }, 1000); };
-    }
+    window._onActionProgress = _onActProgress;
+    window.pywebview.api.subscribe_action_progress();
   }).catch(function(err) {
     toast("Error starting action: " + err.message, "error");
   });

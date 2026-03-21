@@ -220,7 +220,6 @@ function _doStartScan(dir, mode, threshold, recursive, resume) {
 /* ==================================================================
    SCAN PROGRESS
    ================================================================== */
-var _scanSSE = null;
 var _scanStartTime = null;
 var _lastScanMode = "exact";
 
@@ -233,29 +232,14 @@ function initScanProgress() {
   _scanStartTime = Date.now();
 
   // Connect progress stream
-  if (_useBridge()) {
-    window._onScanProgress = function(d) {
-      updateScanUI(d);
-      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
-        window._onScanProgress = null;
-        showScanComplete(d);
-      }
-    };
-    window.pywebview.api.subscribe_scan_progress();
-  } else {
-    if (_scanSSE) _scanSSE.close();
-    _scanSSE = new EventSource("/api/scan/progress");
-    _scanSSE.onmessage = function(e) {
-      var d = JSON.parse(e.data);
-      updateScanUI(d);
-      if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
-        _scanSSE.close();
-        _scanSSE = null;
-        showScanComplete(d);
-      }
-    };
-    _scanSSE.onerror = function() { if (_scanSSE) _scanSSE.close(); _scanSSE = null; };
-  }
+  window._onScanProgress = function(d) {
+    updateScanUI(d);
+    if (d.status === "complete" || d.status === "error" || d.status === "cancelled") {
+      window._onScanProgress = null;
+      showScanComplete(d);
+    }
+  };
+  window.pywebview.api.subscribe_scan_progress();
 }
 
 function updateScanUI(d) {

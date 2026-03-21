@@ -8,8 +8,6 @@ var wizardState = {
   dupesDir: null,
   browserReturnTo: "wizard"
 };
-var _wizScanSSE = null;
-var _wizStagingSSE = null;
 
 function initWizard() {
   // If RnR already set up the wizard state, jump to the right step immediately
@@ -196,8 +194,7 @@ function wizardStartMigration() {
       document.getElementById("wizMigRight").textContent = mb + " / " + mbT + " MB";
 
       if (d.status === "complete") {
-        if (_useBridge()) window._onStagingProgress = null;
-        else if (_wizStagingSSE) _wizStagingSSE.close();
+        window._onStagingProgress = null;
         document.getElementById("wizMigrateProgress").style.display = "none";
         document.getElementById("wizMigrateComplete").style.display = "block";
         document.getElementById("wizMigrateCompleteMsg").textContent = d.message || "Migration complete";
@@ -208,21 +205,14 @@ function wizardStartMigration() {
         };
         wizardMarkComplete(1);
       } else if (d.status === "error" || d.status === "cancelled") {
-        if (_useBridge()) window._onStagingProgress = null;
-        else if (_wizStagingSSE) _wizStagingSSE.close();
+        window._onStagingProgress = null;
         document.getElementById("wizMigrateProgress").style.display = "none";
         document.getElementById("wizMigrateBtn").disabled = false;
         toast(d.message || "Migration failed", "error");
       }
     }
-    if (_useBridge()) {
-      window._onStagingProgress = _onWizStaging;
-      window.pywebview.api.subscribe_staging_progress();
-    } else {
-      if (_wizStagingSSE) _wizStagingSSE.close();
-      _wizStagingSSE = new EventSource("/api/staging/progress");
-      _wizStagingSSE.onmessage = function(e) { _onWizStaging(JSON.parse(e.data)); };
-    }
+    window._onStagingProgress = _onWizStaging;
+    window.pywebview.api.subscribe_staging_progress();
   }).catch(function(err) {
     document.getElementById("wizMigrateBtn").disabled = false;
     document.getElementById("wizMigrateProgress").style.display = "none";
@@ -263,29 +253,21 @@ function wizardStartScan() {
         document.getElementById("wizScanLeft").textContent = d.current + " / " + d.total;
         document.getElementById("wizScanStage").textContent = d.stage || "scanning";
         if (d.status === "complete") {
-          if (_useBridge()) window._onScanProgress = null;
-          else if (_wizScanSSE) _wizScanSSE.close();
+          window._onScanProgress = null;
           document.getElementById("wizScanProgress").style.display = "none";
           document.getElementById("wizScanComplete").style.display = "block";
           document.getElementById("wizScanCompleteMsg").textContent = d.message || "Scan complete";
           wizardState.lastReport = d.result_file;
           wizardMarkComplete(2);
         } else if (d.status === "error" || d.status === "cancelled") {
-          if (_useBridge()) window._onScanProgress = null;
-          else if (_wizScanSSE) _wizScanSSE.close();
+          window._onScanProgress = null;
           document.getElementById("wizScanProgress").style.display = "none";
           document.getElementById("wizScanActions").style.display = "block";
           toast(d.message || "Scan failed", "error");
         }
       }
-      if (_useBridge()) {
-        window._onScanProgress = _onWizScan;
-        window.pywebview.api.subscribe_scan_progress();
-      } else {
-        if (_wizScanSSE) _wizScanSSE.close();
-        _wizScanSSE = new EventSource("/api/scan/progress");
-        _wizScanSSE.onmessage = function(e) { _onWizScan(JSON.parse(e.data)); };
-      }
+      window._onScanProgress = _onWizScan;
+      window.pywebview.api.subscribe_scan_progress();
     })
     .catch(function(err) {
       document.getElementById("wizScanProgress").style.display = "none";

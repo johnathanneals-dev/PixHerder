@@ -256,7 +256,7 @@ function openInExplorer() {
   var dir = browserState.currentPath || browserState.rootPath;
   if (!dir) return;
   api("POST", "/api/browser/open-explorer", { path: dir }).then(function() {
-    window.blur();
+    // Explorer opens natively in pywebview
   }).catch(function(err) {
     toast("Could not open Explorer: " + err.message, "error");
   });

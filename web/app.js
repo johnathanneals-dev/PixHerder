@@ -478,8 +478,7 @@ function parseHash() {
 
 function _openRecycleBin() {
   api("POST", "/api/browser/open-recycle-bin").then(function(r) {
-    if (r.success) window.blur();
-    else toast("Could not open Recycle Bin", "error");
+    if (!r.success) toast("Could not open Recycle Bin", "error");
   }).catch(function() { toast("Could not open Recycle Bin", "error"); });
 }
 

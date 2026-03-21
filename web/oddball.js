@@ -31,14 +31,8 @@ function runOddball() {
         showOddballResults(d);
       }
     }
-    if (_useBridge()) {
-      window._onOddballProgress = _onOddProg;
-      window.pywebview.api.subscribe_oddball_progress();
-    } else {
-      var sse = new EventSource("/api/oddball/progress");
-      sse.onmessage = function(e) { _onOddProg(JSON.parse(e.data)); };
-      sse.onerror = function() { sse.close(); };
-    }
+    window._onOddballProgress = _onOddProg;
+    window.pywebview.api.subscribe_oddball_progress();
   }).catch(function(err) {
     toast("Error: " + err.message, "error");
     document.getElementById("oddballSetup").style.display = "block";

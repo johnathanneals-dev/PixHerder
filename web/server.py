@@ -821,8 +821,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._serve_static(path)
         elif path == "/api/scans":
             self._handle_get_scans()
-        elif path == "/api/scan/progress":
-            self._handle_scan_progress_sse()
         elif path == "/api/decisions/load":
             report = params.get("report", [""])[0]
             self._handle_decisions_load(report)
@@ -836,17 +834,11 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._serve_image(filepath)
         elif path == "/api/settings":
             self._handle_get_settings()
-        elif path == "/api/action/progress":
-            self._handle_action_progress_sse()
-        elif path == "/api/oddball/progress":
-            self._handle_oddball_progress_sse()
         elif path == "/api/folders/status":
             self._handle_folders_status()
         elif path == "/api/activity":
             limit = int(params.get("limit", ["50"])[0])
             self._handle_get_activity(limit)
-        elif path == "/api/staging/progress":
-            self._handle_staging_progress_sse()
         elif path == "/api/staging/status":
             self._handle_staging_status()
         elif path == "/api/browse":
@@ -855,8 +847,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             page_size = int(params.get("page_size", ["50"])[0])
             sort_by = params.get("sort", ["name"])[0]
             self._handle_browse(dirpath, page, page_size, sort_by)
-        elif path == "/api/staging/syncback/progress":
-            self._handle_syncback_progress_sse()
         elif path == "/api/browse-folders":
             dirpath = params.get("path", [""])[0]
             self._handle_browse_folders(dirpath)
@@ -1118,70 +1108,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                         continue
 
         self.send_json(scans)
-
-    def _handle_scan_progress_sse(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        try:
-            while True:
-                data = dict(scan_progress)
-                data["elapsed"] = round(data.get("elapsed", 0), 1)
-                msg = "data: " + json.dumps(data) + "\n\n"
-                self.wfile.write(msg.encode("utf-8"))
-                self.wfile.flush()
-
-                if data.get("status") in ("complete", "error", "cancelled", "idle"):
-                    break
-
-                time.sleep(0.5)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
-
-    def _handle_action_progress_sse(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        try:
-            while True:
-                data = dict(action_progress)
-                msg = "data: " + json.dumps(data) + "\n\n"
-                self.wfile.write(msg.encode("utf-8"))
-                self.wfile.flush()
-
-                if data.get("status") in ("complete", "error", "idle"):
-                    break
-
-                time.sleep(0.5)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
-
-    def _handle_oddball_progress_sse(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        try:
-            while True:
-                data = dict(oddball_progress)
-                msg = "data: " + json.dumps(data) + "\n\n"
-                self.wfile.write(msg.encode("utf-8"))
-                self.wfile.flush()
-
-                if data.get("status") in ("complete", "error", "idle"):
-                    break
-
-                time.sleep(0.5)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
 
     def _handle_get_groups(self, report):
         if not report:
@@ -2374,27 +2300,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         staging_cancel.set()
         self.send_json({"status": "cancelling"})
 
-    def _handle_staging_progress_sse(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        try:
-            while True:
-                data = dict(staging_progress)
-                msg = "data: " + json.dumps(data) + "\n\n"
-                self.wfile.write(msg.encode("utf-8"))
-                self.wfile.flush()
-
-                if data.get("status") in ("complete", "error", "cancelled", "idle"):
-                    break
-
-                time.sleep(0.5)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
-
     def _handle_staging_status(self):
         result = dict(staging_progress)
 
@@ -2463,27 +2368,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         syncback_thread.start()
 
         self.send_json({"status": "started"})
-
-    def _handle_syncback_progress_sse(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
-
-        try:
-            while True:
-                data = dict(syncback_progress)
-                msg = "data: " + json.dumps(data) + "\n\n"
-                self.wfile.write(msg.encode("utf-8"))
-                self.wfile.flush()
-
-                if data.get("status") in ("complete", "error", "idle"):
-                    break
-
-                time.sleep(0.5)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
 
     def _handle_staging_cleanup(self):
         try:

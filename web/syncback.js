@@ -1,5 +1,4 @@
 // ---- Sync Back ----
-var _syncbackSSE = null;
 
 function initSyncback() {
   document.getElementById("syncbackStart").style.display = "block";
@@ -26,14 +25,12 @@ function startSyncback() {
       document.getElementById("syncbackProgressLeft").textContent = d.current + " / " + d.total;
       document.getElementById("syncbackStage").textContent = d.message || "Syncing";
       if (d.status === "complete") {
-        if (_useBridge()) window._onSyncbackProgress = null;
-        else if (_syncbackSSE) _syncbackSSE.close();
+        window._onSyncbackProgress = null;
         document.getElementById("syncbackProgress").style.display = "none";
         document.getElementById("syncbackCompleteBox").style.display = "block";
         document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
       } else if (d.status === "error") {
-        if (_useBridge()) window._onSyncbackProgress = null;
-        else if (_syncbackSSE) _syncbackSSE.close();
+        window._onSyncbackProgress = null;
         document.getElementById("syncbackProgress").style.display = "none";
         document.getElementById("syncbackCompleteBox").style.display = "block";
         document.getElementById("syncbackCompleteTitle").textContent = "Sync Failed";
@@ -41,14 +38,8 @@ function startSyncback() {
         document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
       }
     }
-    if (_useBridge()) {
-      window._onSyncbackProgress = _onSyncProg;
-      window.pywebview.api.subscribe_syncback_progress();
-    } else {
-      if (_syncbackSSE) _syncbackSSE.close();
-      _syncbackSSE = new EventSource("/api/staging/syncback/progress");
-      _syncbackSSE.onmessage = function(e) { _onSyncProg(JSON.parse(e.data)); };
-    }
+    window._onSyncbackProgress = _onSyncProg;
+    window.pywebview.api.subscribe_syncback_progress();
   });
 }
 
