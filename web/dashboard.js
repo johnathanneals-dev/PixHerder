@@ -146,21 +146,17 @@ function _dashUpdateFolders() {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
 
-    // Rescan boxes (positioned under their respective browse buttons)
+    // Scan buttons (positioned under their respective browse buttons)
     var rescanStagingBox = document.getElementById("dashRescanStagingBox");
     var rescanDupesBox = document.getElementById("dashRescanBoxes");
     var rescanKeepersBox = document.getElementById("dashRescanKeepersBox");
     var rescanDupesBtn = document.getElementById("dashRescanDupesBtn");
     var rescanKeepersBtn = document.getElementById("dashRescanKeepersBtn");
-    var rescanDupesHint = document.getElementById("dashRescanDupesHint");
-    var rescanKeepersHint = document.getElementById("dashRescanKeepersHint");
     rescanStagingBox.style.display = hasStaging ? "block" : "none";
     rescanDupesBox.style.display = hasDupes ? "block" : "none";
     rescanDupesBtn.disabled = !hasDupes;
-    rescanDupesHint.textContent = hasDupes ? data.dupes.file_count.toLocaleString() + " files" : "No files";
     rescanKeepersBox.style.display = hasKeepers ? "block" : "none";
     rescanKeepersBtn.disabled = !hasKeepers;
-    rescanKeepersHint.textContent = hasKeepers ? data.keepers.file_count.toLocaleString() + " files" : "No files";
 
     // Update nav states
     _updateNavStates();

@@ -102,24 +102,19 @@
           <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
           <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
           <div id="dashRescanBoxes" style="display:none;margin-top:8px;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Rescan Removed Duplicates</button>
-            <div id="dashRescanDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Scan Removed Duplicates</button>
           </div>
         </div>
         <div style="text-align:center;">
           <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled>Verified Keepers</button>
           <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
           <div id="dashRescanKeepersBox" style="display:none;margin-top:8px;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Rescan Verified Keepers</button>
-            <div id="dashRescanKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Scan Verified Keepers</button>
           </div>
         </div>
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-secondary" onclick="_dashStagePicker()">Access Wizard Steps</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
-        </div>
+        <button class="btn btn-secondary" onclick="_dashStagePicker()">Access Wizard Steps</button>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
