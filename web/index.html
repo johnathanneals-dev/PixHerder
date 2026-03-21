@@ -357,18 +357,20 @@
 
   <!-- File Browser View -->
   <div class="view" id="view-browser">
-    <div class="browser-toolbar">
+    <!-- Browser row 1: back + folder nav -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
       <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-secondary" id="browserNavStaging" onclick="openBrowserFromDashboard('staging')" style="font-size:12px;padding:4px 12px;">My Files</button>
-        <button class="btn btn-secondary" id="browserNavDupes" onclick="openBrowserFromDashboard('dupes')" style="font-size:12px;padding:4px 12px;">Removed Duplicates</button>
-        <button class="btn btn-secondary" id="browserNavKeepers" onclick="openBrowserFromDashboard('keepers')" style="font-size:12px;padding:4px 12px;">Verified Keepers</button>
-      </div>
-      <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
+      <button class="btn btn-secondary" id="browserNavStaging" onclick="openBrowserFromDashboard('staging')" style="font-size:12px;padding:4px 12px;">My Files</button>
+      <button class="btn btn-secondary" id="browserNavDupes" onclick="openBrowserFromDashboard('dupes')" style="font-size:12px;padding:4px 12px;">Removed Duplicates</button>
+      <button class="btn btn-secondary" id="browserNavKeepers" onclick="openBrowserFromDashboard('keepers')" style="font-size:12px;padding:4px 12px;">Verified Keepers</button>
+      <div class="browser-breadcrumb" id="browserBreadcrumb" style="margin-left:8px;"></div>
+    </div>
+    <!-- Browser row 2: actions + sort + count -->
+    <div class="browser-toolbar">
+      <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
+      <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;">Move All to Verified Keepers</button>
+      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
-        <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
-        <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;">Move All to Verified Keepers</button>
-        <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
         <select class="form-input" id="browserSort" onchange="browserRefresh()"
                 style="width:auto;padding:4px 8px;font-size:12px;">
           <option value="name">Name</option>
