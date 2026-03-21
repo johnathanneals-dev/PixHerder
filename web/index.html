@@ -78,6 +78,14 @@
 
   <!-- Dashboard View -->
   <div class="view active" id="view-dashboard">
+    <!-- Flow guidance: progress stepper + smart hint -->
+    <div id="dashFlowGuide" style="display:none;margin-bottom:24px;">
+      <div id="dashStepper" style="display:flex;align-items:center;gap:0;margin-bottom:12px;"></div>
+      <div id="dashHint" style="font-size:13px;color:var(--text-dim);padding:12px 16px;background:var(--surface);border:1px solid var(--border-container);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:space-between;">
+        <span id="dashHintText"></span>
+        <button class="btn btn-primary btn-sm" id="dashHintAction" style="display:none;white-space:nowrap;margin-left:12px;" onclick="_dashHintClick()"></button>
+      </div>
+    </div>
     <div class="card-grid" id="dashboardStats" style="display:none;">
       <div class="stat-card"><div class="num" id="dStatTotal">0</div><div class="label">Total Files</div></div>
       <div class="stat-card"><div class="num" id="dStatGroups">0</div><div class="label">Duplicate Groups</div></div>

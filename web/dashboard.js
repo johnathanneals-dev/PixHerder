@@ -4,6 +4,102 @@
 var _dashFolderPaths = { staging: "", dupes: "", keepers: "" };
 
 var _dashContinueTarget = "finish"; // default
+var _dashHintTarget = null;
+
+// ---- Flow Guidance ----
+
+function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
+  var guide = document.getElementById("dashFlowGuide");
+  if (!guide) return;
+
+  // Determine step states
+  var hasFiles = hasStaging || hasDupes || hasKeepers;
+  if (!hasFiles) {
+    guide.style.display = "none";
+    return;
+  }
+  guide.style.display = "block";
+
+  var steps = [
+    { num: 1, label: "Import", state: "completed" }, // always done if files exist
+    { num: 2, label: "Scan", state: hasScans ? "completed" : (hasStaging ? "current" : "pending") },
+    { num: 3, label: "Review", state: hasDupes ? (hasScans ? "current" : "completed") : "pending" },
+    { num: 4, label: "Finish", state: (!hasStaging && !hasDupes && hasKeepers) ? "current" : "pending" }
+  ];
+
+  // If has dupes and scans, review is current
+  if (hasDupes && hasScans) {
+    steps[2].state = "current";
+    steps[1].state = "completed";
+  }
+  // If no staging but has dupes, finish might be next
+  if (!hasStaging && hasDupes) {
+    steps[3].state = "current";
+    steps[2].state = "completed";
+  }
+
+  // Build stepper HTML
+  var stepper = document.getElementById("dashStepper");
+  var html = "";
+  for (var i = 0; i < steps.length; i++) {
+    var s = steps[i];
+    var numContent = s.state === "completed" ? "&#10003;" : s.num;
+    html += '<div class="flow-step ' + s.state + '" onclick="_dashStepClick(' + s.num + ')">';
+    html += '<span class="step-num">' + numContent + '</span>';
+    html += '<span class="step-label">' + s.label + '</span>';
+    html += '</div>';
+    if (i < steps.length - 1) {
+      var connState = (steps[i].state === "completed") ? "completed" : "";
+      html += '<div class="flow-connector ' + connState + '"></div>';
+    }
+  }
+  stepper.innerHTML = html;
+
+  // Build hint
+  var hintText = document.getElementById("dashHintText");
+  var hintBtn = document.getElementById("dashHintAction");
+
+  if (hasStaging && !hasScans) {
+    hintText.textContent = "Ready to scan. Find duplicates in your files.";
+    hintBtn.textContent = "Scan My Files";
+    hintBtn.style.display = "inline-flex";
+    _dashHintTarget = function() { _rescanFolder("staging"); };
+  } else if (hasScans && hasDupes) {
+    hintText.textContent = "Duplicates found. Review them to decide what to keep.";
+    hintBtn.textContent = "Review";
+    hintBtn.style.display = "inline-flex";
+    _dashHintTarget = function() { _navToReview(); };
+  } else if (hasStaging && !hasDupes && hasScans) {
+    hintText.textContent = "No duplicates in last scan. Try a different threshold or send files home.";
+    hintBtn.textContent = "Send Files Home";
+    hintBtn.style.display = "inline-flex";
+    _dashHintTarget = function() { sendFilesHome(); };
+  } else if (!hasStaging && hasDupes) {
+    hintText.textContent = "Review your removed duplicates, or send your files home to finish.";
+    hintBtn.style.display = "none";
+    _dashHintTarget = null;
+  } else if (!hasStaging && !hasDupes && hasKeepers) {
+    hintText.textContent = "Your files are ready. Send them home to finish up.";
+    hintBtn.textContent = "Send Files Home";
+    hintBtn.style.display = "inline-flex";
+    _dashHintTarget = function() { sendFilesHome(); };
+  } else {
+    hintText.textContent = "Use the scan buttons above, or access wizard steps for more options.";
+    hintBtn.style.display = "none";
+    _dashHintTarget = null;
+  }
+}
+
+function _dashHintClick() {
+  if (_dashHintTarget) _dashHintTarget();
+}
+
+function _dashStepClick(step) {
+  if (step === 1) _navToWizardStep(1);
+  else if (step === 2) _rescanFolder("staging");
+  else if (step === 3) _navToReview();
+  else if (step === 4) navigate("finish");
+}
 
 function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
   var hint = document.getElementById("dashContinueHint");
@@ -139,6 +235,14 @@ function _dashUpdateFolders() {
     if (hasAnySystemFiles) {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
+
+    // Flow guidance (check for scans to determine step)
+    api("GET", "/api/scans").then(function(scans) {
+      var hasScans = scans && scans.length > 0;
+      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans);
+    }).catch(function() {
+      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, false);
+    });
 
     // Scan buttons (positioned under their respective browse buttons)
     var rescanStagingBox = document.getElementById("dashRescanStagingBox");

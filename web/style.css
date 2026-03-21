@@ -337,6 +337,33 @@
     background: var(--surface); border: 1px solid var(--border-container);
     border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
   }
+  /* ---- Dashboard Flow Stepper ---- */
+  .flow-step {
+    display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+    border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; font-weight: 500; white-space: nowrap;
+  }
+  .flow-step:hover { background: var(--surface-2); }
+  .flow-step .step-num {
+    width: 24px; height: 24px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 12px;
+    font-weight: 700; border: 2px solid var(--border);
+    color: var(--text-dim); background: none;
+  }
+  .flow-step.completed .step-num {
+    background: var(--accent); border-color: var(--accent); color: #0a0a0c;
+  }
+  .flow-step.current .step-num {
+    border-color: var(--accent); color: var(--accent);
+  }
+  .flow-step.completed .step-label { color: var(--text-dim); }
+  .flow-step.current .step-label { color: var(--text); font-weight: 600; }
+  .flow-step.pending .step-label { color: var(--text-muted); }
+  .flow-connector {
+    width: 24px; height: 2px; background: var(--border); flex-shrink: 0;
+  }
+  .flow-connector.completed { background: var(--accent); }
+
   .card-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px; margin-bottom: 32px;
