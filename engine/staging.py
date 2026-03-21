@@ -12,6 +12,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
+from engine.config import IMAGE_EXTENSIONS
 
 from engine.config import SCANS_DIR
 
@@ -42,10 +43,7 @@ def manifest_path_for(source_dir):
 def count_files_for_staging(source_dir, extensions=None):
     """Count files and estimate total bytes for staging."""
     if extensions is None:
-        extensions = {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-            ".tiff", ".tif", ".webp", ".heic", ".heif",
-        }
+        extensions = IMAGE_EXTENSIONS
     file_count = 0
     total_bytes = 0
     for root, dirs, files in os.walk(source_dir):
@@ -78,10 +76,7 @@ def start_staging(source_dir, staging_dir, extensions=None,
         Dict with copied, skipped, failed, errors, staging_dir, manifest_path.
     """
     if extensions is None:
-        extensions = {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-            ".tiff", ".tif", ".webp", ".heic", ".heif",
-        }
+        extensions = IMAGE_EXTENSIONS
 
     os.makedirs(staging_dir, exist_ok=True)
 

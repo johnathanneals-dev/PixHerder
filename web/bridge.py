@@ -51,10 +51,8 @@ _threads = {
     "syncback": None,
 }
 
-IMAGE_EXTS = {
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-    ".tiff", ".tif", ".webp", ".heic", ".heif",
-}
+from engine.config import IMAGE_EXTENSIONS
+IMAGE_EXTS = IMAGE_EXTENSIONS
 
 
 class Api:

@@ -20,7 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from engine.config import (
     SCANS_DIR, LOGS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
-    DEFAULTS, load_settings, save_settings, ensure_dirs,
+    DEFAULTS, IMAGE_EXTENSIONS, load_settings, save_settings, ensure_dirs,
     default_pictures_path,
 )
 from engine.scanner import find_images, count_images
@@ -1005,10 +1005,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
     def _handle_folders_status(self):
         settings = load_settings()
-        image_exts = {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-            ".tiff", ".tif", ".webp", ".heic", ".heif",
-        }
+        image_exts = IMAGE_EXTENSIONS
 
         def _count_images(dirpath):
             if not dirpath or not os.path.isdir(dirpath):
@@ -1914,10 +1911,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         os.makedirs(staging_path, exist_ok=True)
 
         # Check if staging has image files already
-        image_exts = {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-            ".tiff", ".tif", ".webp", ".heic", ".heif",
-        }
+        image_exts = IMAGE_EXTENSIONS
         staging_files = 0
         for root, dirs, files in os.walk(staging_path):
             for f in files:
@@ -2183,10 +2177,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
 
-        image_exts = {
-            ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-            ".tiff", ".tif", ".webp", ".heic", ".heif",
-        }
+        image_exts = IMAGE_EXTENSIONS
 
         entries = []
         try:

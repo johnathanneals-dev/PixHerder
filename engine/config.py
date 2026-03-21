@@ -16,6 +16,12 @@ LOGS_DIR = PROJECT_ROOT / "logs"
 CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
 ACTIVITY_LOG = LOGS_DIR / "activity.log"
 
+# Canonical image extension list -- import this everywhere, do not duplicate
+IMAGE_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+    ".tiff", ".tif", ".webp", ".heic", ".heif",
+}
+
 DEFAULTS = {
     "threshold": 5,
     "move_destination": os.path.join(tempfile.gettempdir(), "DupeFinder_dupes"),

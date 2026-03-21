@@ -4,12 +4,9 @@ Discovers image files in directories with extension filtering.
 """
 
 from pathlib import Path
+from engine.config import IMAGE_EXTENSIONS
 
-
-SUPPORTED_EXTENSIONS = {
-    ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-    ".tiff", ".tif", ".webp", ".heic", ".heif",
-}
+SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS
 
 
 def find_images(directory, recursive=True, extensions=None):
