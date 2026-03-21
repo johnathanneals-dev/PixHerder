@@ -9,7 +9,8 @@ var state = {
   currentGroupIndex: 0,
   decisions: {},
   currentReport: null,
-  settings: {}
+  settings: {},
+  _currentView: null
 };
 
 // Shared wizard state (declared here for load-order safety, wizard.js overwrites)
@@ -131,7 +132,17 @@ function moveLightboxToKeepers() {
           }
           var countEl = document.getElementById("browserCount");
           var match = (countEl.textContent || "").match(/(\d+)/);
-          if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+          if (match) {
+            var newCount = parseInt(match[1]) - 1;
+            countEl.textContent = newCount + " items";
+            // Adjust page if on boundary (Issue 13)
+            var itemsLeft = document.querySelectorAll(".browser-item").length;
+            if (itemsLeft === 0 && newCount > 0 && browserState.currentPage > 2) {
+              browserState.currentPage = browserState.currentPage - 1;
+            }
+          }
+          // Refresh folder paths to update nav states (Issue 9)
+          _refreshFolderPaths();
         } else {
           toast("Move failed: " + (r.error || "unknown error"), "error");
         }
@@ -168,14 +179,24 @@ function deleteLightboxFile() {
             }
             var countEl = document.getElementById("browserCount");
             var match = (countEl.textContent || "").match(/(\d+)/);
-            if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+            if (match) {
+              var newCount = parseInt(match[1]) - 1;
+              countEl.textContent = newCount + " items";
+              // Adjust page if on boundary (Issue 13)
+              var itemsLeft = document.querySelectorAll(".browser-item").length;
+              if (itemsLeft === 0 && newCount > 0 && browserState.currentPage > 2) {
+                browserState.currentPage = browserState.currentPage - 1;
+              }
+            }
+            // Refresh folder paths to update nav states (Issue 10)
+            _refreshFolderPaths();
           } else if (view === "review") {
             // Remove the deleted file from group data and re-render
             var realIdx = state.filteredIndices[state.currentGroupIndex];
             var group = state.groups[realIdx];
             if (group) {
               if (group.keep === deletedPath) {
-                // Deleted the keep file — promote first dupe to keep
+                // Deleted the keep file -- promote first dupe to keep
                 if (group.duplicates && group.duplicates.length > 0) {
                   group.keep = group.duplicates.shift();
                 }
@@ -183,8 +204,16 @@ function deleteLightboxFile() {
                 group.duplicates = group.duplicates.filter(function(d) { return d !== deletedPath; });
               }
               group.files = 1 + (group.duplicates ? group.duplicates.length : 0);
+              // If group has no files left, remove from filtered indices (Issue 17)
+              if (group.files <= 0 || (!group.keep && (!group.duplicates || group.duplicates.length === 0))) {
+                state.filteredIndices.splice(state.currentGroupIndex, 1);
+                if (state.currentGroupIndex >= state.filteredIndices.length) {
+                  state.currentGroupIndex = Math.max(0, state.filteredIndices.length - 1);
+                }
+              }
             }
             renderReviewGroup();
+            updateReviewActionInfo();
           }
           toast("File deleted");
         } else {
@@ -499,18 +528,26 @@ function _navToWizardStep(step) {
 }
 
 function _navToReview() {
-  // Find the most recent scan report
-  if (state.lastReport) {
-    navigate("review", { report: state.lastReport });
-  } else {
-    api("GET", "/api/scans").then(function(scans) {
-      if (scans.length > 0) {
-        navigate("review", { report: scans[0].filename });
-      } else {
-        toast("No scan results to review", "warning");
+  // Always fetch fresh scan list to avoid referencing deleted reports (Issue 7)
+  api("GET", "/api/scans").then(function(scans) {
+    if (!scans || scans.length === 0) {
+      toast("No scan results to review", "warning");
+      return;
+    }
+    // Use lastReport if it still exists in the scan list
+    if (state.lastReport) {
+      for (var i = 0; i < scans.length; i++) {
+        if (scans[i].filename === state.lastReport) {
+          navigate("review", { report: state.lastReport });
+          return;
+        }
       }
-    });
-  }
+    }
+    // Fall back to most recent scan
+    navigate("review", { report: scans[0].filename });
+  }).catch(function() {
+    toast("Could not load scan results", "error");
+  });
 }
 
 function _updateNavStates() {
@@ -548,6 +585,24 @@ function route() {
   var parsed = parseHash();
   var view = parsed.view;
   var params = parsed.params;
+
+  // View teardown: clear cached data when leaving certain views (Issue 34)
+  var prevView = state._currentView || "";
+  if (prevView === "review" && view !== "review" && view !== "actions") {
+    // Don't clear when going to actions -- it needs groups and decisions
+    state.groups = [];
+    state.filteredIndices = [];
+    state.currentGroupIndex = 0;
+    state.currentReport = null;
+  }
+  if (prevView === "browser" && view !== "browser") {
+    browserState.currentPage = 1;
+  }
+  if (prevView === "settings" && view !== "settings") {
+    // Issue 33: invalidate cached settings so next use fetches fresh
+    state.settings = null;
+  }
+  state._currentView = view;
 
   // Hide all views
   var views = document.querySelectorAll(".view");

@@ -28,6 +28,8 @@ function initWorking() {
 }
 
 function _workingContinue() {
+  // Refresh folder paths after working operation completes (Issue 23)
+  _refreshFolderPaths();
   navigate(_workingConfig.destination);
 }
 

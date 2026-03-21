@@ -10,9 +10,9 @@ var wizardState = {
 };
 
 function initWizard() {
-  // If RnR already set up the wizard state, jump to the right step immediately
-  // before any async fetches (prevents Step 1 flash)
+  // If RnR already set up the wizard state, validate directory exists (Issue 27)
   if (wizardState.completedSteps[1] && wizardState.stagingDir) {
+    // Quick check - will be validated properly by the async path below
     _wizardDetermineStep();
   }
 
@@ -203,6 +203,7 @@ function wizardStartMigration() {
           source_dir: wizardState.sourceDir,
           staging_dir: wizardState.stagingDir
         };
+        _refreshFolderPaths();
         wizardMarkComplete(1);
       } else if (d.status === "error" || d.status === "cancelled") {
         window._onStagingProgress = null;
@@ -278,7 +279,34 @@ function wizardStartScan() {
 
 function wizardStartReview() {
   if (!wizardState.lastReport) { toast("Complete a scan first", "error"); return; }
-  wizardState.browserReturnTo = "wizard";
-  navigate("review", { report: wizardState.lastReport, returnTo: "wizard" });
+  // Validate report still exists before navigating (Issue 28)
+  api("GET", "/api/scans").then(function(scans) {
+    var found = false;
+    for (var i = 0; i < scans.length; i++) {
+      if (scans[i].filename === wizardState.lastReport) { found = true; break; }
+    }
+    if (found) {
+      wizardState.browserReturnTo = "wizard";
+      navigate("review", { report: wizardState.lastReport, returnTo: "wizard" });
+    } else {
+      // Report was deleted -- try to find another matching scan
+      for (var j = 0; j < scans.length; j++) {
+        if (scans[j].directory === wizardState.stagingDir && scans[j].total_groups > 0) {
+          wizardState.lastReport = scans[j].filename;
+          wizardState.browserReturnTo = "wizard";
+          navigate("review", { report: wizardState.lastReport, returnTo: "wizard" });
+          return;
+        }
+      }
+      wizardState.lastReport = null;
+      wizardState.completedSteps[2] = false;
+      toast("Scan report no longer available. Please rescan.", "warning");
+      wizardGoToStep(2);
+    }
+  }).catch(function() {
+    // If API fails, try navigating anyway and let review handle the error
+    wizardState.browserReturnTo = "wizard";
+    navigate("review", { report: wizardState.lastReport, returnTo: "wizard" });
+  });
 }
 

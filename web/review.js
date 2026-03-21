@@ -138,7 +138,13 @@ function initReview(report, returnTo) {
     return api("GET", "/api/decisions/load?report=" + encodeURIComponent(report)).then(function(saved) {
       if (saved.decisions && typeof saved.decisions === "object") {
         for (var k in saved.decisions) {
-          if (saved.decisions.hasOwnProperty(k)) state.decisions[k] = saved.decisions[k];
+          if (!saved.decisions.hasOwnProperty(k)) continue;
+          var idx = parseInt(k);
+          // Validate decision still matches the group (Issue 16, 32)
+          if (idx >= 0 && idx < state.groups.length) {
+            state.decisions[k] = saved.decisions[k];
+          }
+          // Skip decisions for groups that no longer exist
         }
         // Find first unreviewed group to resume from
         var firstUnreviewed = 0;

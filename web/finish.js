@@ -9,16 +9,17 @@ function initFinish() {
   document.getElementById("finishTitle").textContent = "Finishing Up";
   document.getElementById("finishSubtitle").textContent = "Review what will happen, then confirm.";
 
-  // Ensure staging session is loaded
-  var p = _stagingSession
-    ? Promise.resolve()
-    : api("GET", "/api/staging/status").then(function(d) {
-        if (d.staging_dir && d.source_dir) {
-          _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
-        }
-      });
+  // Always refresh staging session from server to avoid stale data (Issue 21)
+  var p = api("GET", "/api/staging/status").then(function(d) {
+    if (d.staging_dir && d.source_dir) {
+      _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
+    } else if (!_stagingSession) {
+      _stagingSession = null;
+    }
+  }).catch(function() {});
 
   p.then(function() {
+    // Always fetch fresh counts (Issue 20, 22)
     return api("GET", "/api/folders/status").then(function(data) {
       _finishCounts.staging = (data.staging && data.staging.file_count) || 0;
       _finishCounts.dupes = (data.dupes && data.dupes.file_count) || 0;
@@ -130,6 +131,7 @@ function _finishPhase3(restoreResult, recycleResult) {
 
     // Show completion
     _stagingSession = null;
+    _refreshFolderPaths();
     document.getElementById("finishProgress").style.display = "none";
     document.getElementById("finishComplete").style.display = "block";
     document.getElementById("finishTitle").textContent = "All Done!";

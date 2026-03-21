@@ -58,6 +58,8 @@ function updateStagingUI(d) {
       _stagingSession.manifest_path = d.manifest_path;
       _stagingSession.staging_dir = d.staging_dir || _stagingSession.staging_dir;
     }
+    // Refresh folder paths after staging completes
+    _refreshFolderPaths();
     // Wire up the scan button to scan the staged folder
     document.getElementById("stagingScanBtn").onclick = function() {
       if (_stagingSession) {

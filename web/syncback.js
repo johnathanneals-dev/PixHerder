@@ -11,6 +11,19 @@ function startSyncback() {
     toast("No staging session to sync back", "error");
     return;
   }
+  // Validate staging session matches filesystem before starting (Issue 31)
+  api("GET", "/api/staging/status").then(function(status) {
+    if (status.staging_dir) {
+      _stagingSession.staging_dir = status.staging_dir;
+      _stagingSession.source_dir = status.source_dir || _stagingSession.source_dir;
+    }
+    _doStartSyncback();
+  }).catch(function() {
+    _doStartSyncback();
+  });
+}
+
+function _doStartSyncback() {
   document.getElementById("syncbackStart").style.display = "none";
   document.getElementById("syncbackProgress").style.display = "block";
 
@@ -29,6 +42,7 @@ function startSyncback() {
         document.getElementById("syncbackProgress").style.display = "none";
         document.getElementById("syncbackCompleteBox").style.display = "block";
         document.getElementById("syncbackCompleteMsg").textContent = d.message || "";
+        _refreshFolderPaths();
       } else if (d.status === "error") {
         window._onSyncbackProgress = null;
         document.getElementById("syncbackProgress").style.display = "none";
@@ -54,6 +68,7 @@ function cleanupStaging() {
       }).then(function() {
         toast("Staging folder cleaned up");
         _stagingSession = null;
+        _refreshFolderPaths();
         navigate("dashboard");
       });
       return;

@@ -2,6 +2,8 @@
    ACTIONS
    ================================================================== */
 function initActions() {
+  // Recount from current state.groups and state.decisions (Issue 18)
+  // File existence is verified server-side during execution (Issue 19)
   var moveGroups = [];
   var deleteGroups = [];
   var moveBytes = 0;
@@ -150,6 +152,8 @@ function showActionResult(d) {
 
   // Clear decisions
   state.decisions = {};
+  // Refresh folder paths after actions modify files
+  _refreshFolderPaths();
   toast("Actions completed successfully");
 }
 

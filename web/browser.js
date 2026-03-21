@@ -26,10 +26,25 @@ function openBrowser(type) {
 
 function initBrowser() {
   if (!browserState.rootPath) {
-    // No folder in memory (page refresh/restart) — go to dashboard
+    // No folder in memory (page refresh/restart) -- go to dashboard
     navigate("dashboard");
     return;
   }
+  // Validate root path still exists via API before loading (Issue 12)
+  api("GET", "/api/browse?path=" + encodeURIComponent(browserState.rootPath) + "&page=1&page_size=1").then(function(data) {
+    if (data.error) {
+      toast("Folder no longer available", "warning");
+      navigate("dashboard");
+      return;
+    }
+    _initBrowserContent();
+  }).catch(function() {
+    toast("Folder no longer available", "warning");
+    navigate("dashboard");
+  });
+}
+
+function _initBrowserContent() {
   var backLabel = browserState.returnTo === "dashboard" ? "Back to Dashboard" : "Back to Finalize";
   document.getElementById("browserBackBtn").innerHTML = "&larr; " + backLabel;
   // Show scan button for both staging and dupes folders
@@ -147,9 +162,13 @@ function browserNavigate(path) {
 }
 
 function browserRefresh() {
+  // Reload from page 1 to get consistent state (Issue 11)
+  // but preserve current scroll position intent by keeping currentPage
+  var savedPage = browserState.currentPage;
   browserState.currentPage = 1;
   document.getElementById("browserGrid").innerHTML = "";
   browserLoadPage(true);
+  // Note: infinite scroll will reload subsequent pages as user scrolls
 }
 
 function buildBreadcrumb(fullPath) {
@@ -210,6 +229,7 @@ function deleteCurrentFolder() {
           }
           browserNavigate(parent);
           toast("Folder deleted");
+          _refreshFolderPaths();
         } else {
           toast("Delete failed: " + (r.error || "Unknown error"), "error");
         }
@@ -242,6 +262,7 @@ function deleteFolderItem(path) {
           var match = (countEl.textContent || "").match(/(\d+)/);
           if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
           toast("Folder deleted");
+          _refreshFolderPaths();
         } else {
           toast("Delete failed: " + (r.error || "Unknown error"), "error");
         }
