@@ -66,6 +66,18 @@ function initScanConfig() {
   _lastScanContext = ctx;
   _scanContext = null;
 
+  // Show return-to-folder button on config page if launched from a folder
+  var retConfigBtn = document.getElementById("scanReturnFolderConfigBtn");
+  if (retConfigBtn) {
+    if (ctx) {
+      var labels = { staging: "My Files", dupes: "Removed Duplicates", keepers: "Verified Keepers" };
+      retConfigBtn.textContent = "Return to " + (labels[ctx] || "Folder");
+      retConfigBtn.style.display = "inline-flex";
+    } else {
+      retConfigBtn.style.display = "none";
+    }
+  }
+
   api("GET", "/api/settings").then(function(settings) {
     state.settings = settings;
     document.getElementById("scanThreshold").value = settings.threshold || 5;
