@@ -74,6 +74,22 @@ def load_settings():
     return settings
 
 
+def _is_system_path(path_str):
+    """Check if a path points to a protected system directory."""
+    if not path_str or not isinstance(path_str, str):
+        return False
+    lower = os.path.normpath(path_str).lower()
+    windir = os.environ.get("WINDIR", "C:\\Windows").lower()
+    blocked = [
+        windir,
+        os.path.join(windir, "system32"),
+        os.environ.get("PROGRAMFILES", "C:\\Program Files").lower(),
+        os.environ.get("PROGRAMFILES(X86)",
+                        "C:\\Program Files (x86)").lower(),
+    ]
+    return any(lower == b or lower.startswith(b + os.sep) for b in blocked)
+
+
 def save_settings(data):
     """Validate and write settings to disk."""
     # Merge with defaults to ensure all keys exist
@@ -82,6 +98,13 @@ def save_settings(data):
         for key in DEFAULTS:
             if key in data:
                 settings[key] = data[key]
+
+    # Validate path settings -- reject system directories
+    path_keys = ["move_destination", "staging_dir", "keepers_dir"]
+    for pk in path_keys:
+        if pk in settings and _is_system_path(settings[pk]):
+            settings[pk] = DEFAULTS[pk]
+
     with open(str(SETTINGS_PATH), "w") as f:
         json.dump(settings, f, indent=2)
     return settings
