@@ -272,12 +272,10 @@ document.addEventListener("visibilitychange", function() {
 function scanFromBrowser() {
   var dir = browserState.rootPath;
   if (!dir) return;
-  // Pre-fill scan config with this folder and navigate there
+  // Set scan context based on current browser folder
+  _scanContext = browserState.type || null;
+  document.getElementById("scanDir").value = dir;
   navigate("scan-config");
-  // Wait for view to render, then set the directory
-  setTimeout(function() {
-    document.getElementById("scanDir").value = dir;
-  }, 100);
 }
 
 // escAttr is defined near end of script -- handles HTML entity escaping

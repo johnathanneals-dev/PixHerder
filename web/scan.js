@@ -1,6 +1,16 @@
 /* ==================================================================
    SCAN CONFIG
    ================================================================== */
+var _lastScanContext = null; // Tracks which folder was being scanned
+
+function _returnToScanFolder() {
+  if (_lastScanContext) {
+    openBrowserFromDashboard(_lastScanContext);
+  } else {
+    navigate("dashboard");
+  }
+}
+
 function fillScanDir(type) {
   if (type === "staging") {
     // Try staging session, then API, then settings default
@@ -32,17 +42,17 @@ function initScanConfig() {
 
   // Context-aware layout
   if (ctx === "staging") {
-    title.textContent = "Scanning My Files";
+    title.textContent = "Configure My Files Scan";
     subtitle.textContent = "Scan your files to find duplicates.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
   } else if (ctx === "dupes") {
-    title.textContent = "Scanning Removed Duplicates";
+    title.textContent = "Configure Removed Duplicates Scan";
     subtitle.textContent = "Review your removed duplicates with different scan settings.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
   } else if (ctx === "keepers") {
-    title.textContent = "Scanning Verified Keepers";
+    title.textContent = "Configure Verified Keepers Scan";
     subtitle.textContent = "Rescan your verified keepers to check for remaining duplicates.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
@@ -52,7 +62,8 @@ function initScanConfig() {
     if (folderGroup) folderGroup.style.display = "block";
   }
 
-  // Reset context after applying (so menu link shows full options)
+  // Save context for return button, then reset (so menu link shows full options)
+  _lastScanContext = ctx;
   _scanContext = null;
 
   api("GET", "/api/settings").then(function(settings) {
@@ -317,6 +328,18 @@ function showScanComplete(d) {
   }
 
   document.getElementById("scanCompleteMsg").textContent = d.message || "";
+
+  // Show return-to-folder button if scan was launched from a folder
+  var retBtn = document.getElementById("scanReturnFolderBtn");
+  if (retBtn) {
+    if (_lastScanContext) {
+      var labels = { staging: "My Files", dupes: "Removed Duplicates", keepers: "Verified Keepers" };
+      retBtn.textContent = "Return to " + (labels[_lastScanContext] || "Folder");
+      retBtn.style.display = "inline-flex";
+    } else {
+      retBtn.style.display = "none";
+    }
+  }
 
   if (d.summary) {
     var s = d.summary;
