@@ -920,7 +920,7 @@ class Api:
                 except Exception:
                     errors_count += 1
         _log_activity("dupes_promote", {"moved": moved})
-        return {"status": "promoted", "moved": moved, "errors": errors_count}
+        return {"success": True, "moved": moved, "errors": errors_count}
 
     def consolidate(self, params=None):
         settings = load_settings()
