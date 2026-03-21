@@ -355,7 +355,7 @@
   .btn {
     padding: 10px 20px; border-radius: var(--radius-sm); border: none;
     font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-primary { background: var(--accent); color: #0a0a0c; }
@@ -373,7 +373,7 @@
   .btn-sm { padding: 6px 12px; font-size: 12px; }
   .btn-lg { padding: 14px 28px; font-size: 16px; }
   .btn-fixed { min-width: 160px; text-align: center; }
-  .btn-browse { min-width: 180px; text-align: center; }
+  .btn-browse { width: 240px; text-align: center; white-space: nowrap; }
 
   /* ---- Forms ---- */
   .form-group { margin-bottom: 20px; }
