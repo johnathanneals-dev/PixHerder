@@ -377,6 +377,20 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                     "type": "perceptual",
                 })
 
+        # Check for cancellation before saving
+        if scan_cancel.is_set():
+            elapsed = time.time() - start_time
+            scan_progress.update({
+                "status": "cancelled",
+                "stage": "done",
+                "elapsed": round(elapsed, 1),
+                "message": "Scan cancelled by user.",
+            })
+            _log_activity("scan_cancelled", {
+                "directory": directory, "mode": mode,
+            })
+            return
+
         # Save results
         scan_progress["stage"] = "saving"
         scan_progress["message"] = "Saving results..."
@@ -385,6 +399,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         elapsed = time.time() - start_time
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = "scan_" + timestamp + "_" + mode + ".json"
+        os.makedirs(str(SCANS_DIR), exist_ok=True)
         result_path = SCANS_DIR / filename
 
         report = {
