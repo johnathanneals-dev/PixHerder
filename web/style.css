@@ -584,11 +584,11 @@
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px); border-top: 2px solid var(--accent-dim);
     padding: 12px 32px; display: flex; align-items: center;
-    justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    z-index: 101;
+    justify-content: space-between; gap: 12px;
+    z-index: 101; overflow-x: auto;
   }
-  .action-info { font-size: 13px; color: var(--text-dim); font-family: monospace; }
-  .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .action-info { font-size: 13px; color: var(--text-dim); font-family: monospace; white-space: nowrap; }
+  .action-buttons { display: flex; gap: 8px; flex-shrink: 0; }
 
   .kbd-hints {
     display: flex; gap: 12px; font-size: 11px; color: var(--text-muted);
