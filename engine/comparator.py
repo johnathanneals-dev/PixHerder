@@ -145,56 +145,135 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
         if checkpoint_cb and (i + 1) % batch_size == 0:
             checkpoint_cb(computed_hashes, file_info)
 
-    # Phase 2: cluster by similarity (O(n^2))
+    # Phase 2: cluster by similarity
+    # Use bit-prefix bucketing to reduce comparisons.
+    # Images are placed in multiple buckets based on hash bit segments.
+    # Only images sharing at least one bucket are compared, dramatically
+    # reducing the search space for large collections.
     n = len(hashes)
-    total_comparisons = (n * (n - 1)) // 2 if n > 1 else 0
-    comparisons_done = 0
     used = set()
     groups = []
-    # Report progress roughly every 1% (min every 500 comparisons)
-    report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
-    last_reported = 0
 
-    for i in range(n):
-        if i in used:
-            continue
-        if cancel_event and cancel_event.is_set():
-            cancelled = True
-            break
+    if n > 500 and threshold <= 20:
+        # Multi-probe bucketing: split hash bits into bands, bucket by band
+        # Each band of k bits can differ by at most threshold/num_bands bits
+        # for a match, so items in the same bucket are candidates.
+        # Build candidate pairs using bit sampling
+        # Use 4 bands of the hash — items must match in at least one band
+        num_bands = 4
+        hash_hex_len = len(str(hashes[0][1]))
+        chars_per_band = max(1, hash_hex_len // num_bands)
 
-        path_a, hash_a = hashes[i]
-        group = [path_a]
-        distances = {}
-        used.add(i)
+        buckets = [defaultdict(list) for _ in range(num_bands)]
+        for idx, (_, h) in enumerate(hashes):
+            h_str = str(h)
+            for band in range(num_bands):
+                start = band * chars_per_band
+                end = start + chars_per_band
+                key = h_str[start:end]
+                buckets[band][key].append(idx)
 
-        for j in range(i + 1, n):
-            if j in used:
-                comparisons_done += 1
-                continue
+        # Collect candidate pairs from buckets
+        candidate_pairs = set()
+        for band_buckets in buckets:
+            for members in band_buckets.values():
+                if len(members) > 1:
+                    for ii in range(len(members)):
+                        for jj in range(ii + 1, len(members)):
+                            a, b = members[ii], members[jj]
+                            if a < b:
+                                candidate_pairs.add((a, b))
+                            else:
+                                candidate_pairs.add((b, a))
 
-            path_b, hash_b = hashes[j]
-            distance = int(hash_a - hash_b)  # hamming distance
+        total_comparisons = len(candidate_pairs)
+        comparisons_done = 0
+        report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
+        last_reported = 0
 
+        # Build adjacency from candidates
+        matches = defaultdict(list)  # idx -> [(idx, distance)]
+        for i_idx, j_idx in candidate_pairs:
+            if cancel_event and cancel_event.is_set():
+                cancelled = True
+                break
+
+            distance = int(hashes[i_idx][1] - hashes[j_idx][1])
             if distance <= threshold:
-                group.append(path_b)
-                distances[str(path_b)] = distance
-                used.add(j)
+                matches[i_idx].append((j_idx, distance))
+                matches[j_idx].append((i_idx, distance))
 
             comparisons_done += 1
+            if progress_cb and (comparisons_done - last_reported) >= report_interval:
+                progress_cb(comparisons_done, total_comparisons, "phash_compare")
+                last_reported = comparisons_done
 
-        if progress_cb and (comparisons_done - last_reported) >= report_interval:
-            progress_cb(comparisons_done, total_comparisons, "phash_compare")
-            last_reported = comparisons_done
+        # Cluster from adjacency
+        if not cancelled:
+            for i_idx in range(n):
+                if i_idx in used:
+                    continue
+                if not matches.get(i_idx):
+                    continue
 
-        if len(group) > 1:
-            groups.append({
-                "paths": group,
-                "distances": distances,
-            })
+                path_a = hashes[i_idx][0]
+                group = [path_a]
+                distances = {}
+                used.add(i_idx)
+
+                for j_idx, dist in matches[i_idx]:
+                    if j_idx not in used:
+                        group.append(hashes[j_idx][0])
+                        distances[str(hashes[j_idx][0])] = dist
+                        used.add(j_idx)
+
+                if len(group) > 1:
+                    groups.append({"paths": group, "distances": distances})
+
+    else:
+        # Small collection — brute force O(n^2) is fine
+        total_comparisons = (n * (n - 1)) // 2 if n > 1 else 0
+        comparisons_done = 0
+        report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
+        last_reported = 0
+
+        for i in range(n):
+            if i in used:
+                continue
+            if cancel_event and cancel_event.is_set():
+                cancelled = True
+                break
+
+            path_a, hash_a = hashes[i]
+            group = [path_a]
+            distances = {}
+            used.add(i)
+
+            for j in range(i + 1, n):
+                if j in used:
+                    comparisons_done += 1
+                    continue
+
+                path_b, hash_b = hashes[j]
+                distance = int(hash_a - hash_b)
+
+                if distance <= threshold:
+                    group.append(path_b)
+                    distances[str(path_b)] = distance
+                    used.add(j)
+
+                comparisons_done += 1
+
+            if progress_cb and (comparisons_done - last_reported) >= report_interval:
+                progress_cb(comparisons_done, total_comparisons, "phash_compare")
+                last_reported = comparisons_done
+
+            if len(group) > 1:
+                groups.append({"paths": group, "distances": distances})
 
     # Send final progress for comparison phase
-    if progress_cb and total_comparisons > 0:
-        progress_cb(total_comparisons, total_comparisons, "phash_compare")
+    if progress_cb:
+        progress_cb(1, 1, "phash_compare")
 
     return {
         "groups": groups,
