@@ -126,6 +126,13 @@ function _dashUpdateFolders() {
     var hasDupes = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
     var hasKeepers = data.keepers && data.keepers.exists && data.keepers.file_count > 0;
 
+    // Update total files stat card
+    var totalFiles = (data.staging ? data.staging.file_count || 0 : 0)
+                   + (data.dupes ? data.dupes.file_count || 0 : 0)
+                   + (data.keepers ? data.keepers.file_count || 0 : 0);
+    var totalEl = document.getElementById("dStatTotal");
+    if (totalEl) totalEl.textContent = totalFiles.toLocaleString();
+
     // Dynamic continue button
     var hasAnySystemFiles = hasStaging || hasDupes || hasKeepers;
     document.getElementById("dashContinueAction").style.display = hasAnySystemFiles ? "block" : "none";
@@ -499,7 +506,13 @@ function initDashboard() {
 
     if (!scans || scans.length === 0) {
       list.innerHTML = '<div class="empty-state"><h3>No scans yet</h3><p>Click "Start New Scan" to find duplicates.</p></div>';
-      statsBox.style.display = "none";
+      // Still show stats box if we have files (total count comes from folder status)
+      var totalEl = document.getElementById("dStatTotal");
+      if (totalEl && totalEl.textContent !== "0") {
+        statsBox.style.display = "grid";
+      } else {
+        statsBox.style.display = "none";
+      }
       return;
     }
 
