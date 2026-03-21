@@ -385,7 +385,7 @@
   }
   .form-input {
     width: 100%; padding: 10px 14px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    border: 1px solid var(--border-container); border-radius: var(--radius-sm);
     color: var(--text); font-size: 14px; font-family: monospace;
   }
   .form-input:focus { outline: none; border-color: var(--accent); }
@@ -511,7 +511,7 @@
     padding: 12px 0; margin-bottom: 16px;
   }
   .filter-bar select, .filter-bar input[type="text"] {
-    padding: 6px 10px; background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 10px; background: var(--surface); border: 1px solid var(--border-container);
     border-radius: 6px; color: var(--text); font-size: 12px;
   }
   .filter-bar select:focus, .filter-bar input[type="text"]:focus {

@@ -498,6 +498,14 @@ function _updateNavStates() {
   // Finalize: available if staging has files
   var hasFiles = hasStagingSession;
   finalize.classList.toggle("disabled", !hasFiles);
+
+  // Folder nav links: available if folders have files
+  var navMyFiles = document.getElementById("navMyFiles");
+  var navDupes = document.getElementById("navDupes");
+  var navKeepers = document.getElementById("navKeepers");
+  if (navMyFiles) navMyFiles.classList.toggle("disabled", !_dashFolderPaths.staging);
+  if (navDupes) navDupes.classList.toggle("disabled", !_dashFolderPaths.dupes);
+  if (navKeepers) navKeepers.classList.toggle("disabled", !_dashFolderPaths.keepers);
 }
 
 function route() {

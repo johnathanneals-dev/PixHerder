@@ -18,6 +18,9 @@
       <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)">Scan</button>
       <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()">Review</button>
       <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')">Finalize</button>
+      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')">My Files</button>
+      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')">Removed Duplicates</button>
+      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')">Verified Keepers</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')">Activity</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
     </div>
@@ -357,16 +360,9 @@
 
   <!-- File Browser View -->
   <div class="view" id="view-browser">
-    <!-- Browser row 1: back + folder nav -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
-      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
-      <button class="btn btn-secondary" id="browserNavStaging" onclick="openBrowserFromDashboard('staging')" style="font-size:12px;padding:4px 12px;">My Files</button>
-      <button class="btn btn-secondary" id="browserNavDupes" onclick="openBrowserFromDashboard('dupes')" style="font-size:12px;padding:4px 12px;">Removed Duplicates</button>
-      <button class="btn btn-secondary" id="browserNavKeepers" onclick="openBrowserFromDashboard('keepers')" style="font-size:12px;padding:4px 12px;">Verified Keepers</button>
-      <div class="browser-breadcrumb" id="browserBreadcrumb" style="margin-left:8px;"></div>
-    </div>
-    <!-- Browser row 2: actions + sort + count -->
     <div class="browser-toolbar">
+      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
+      <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
       <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
       <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;">Move All to Verified Keepers</button>
       <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
