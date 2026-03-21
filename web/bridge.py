@@ -395,6 +395,10 @@ class Api:
             delete_checkpoint(ckpt)
 
         srv.scan_cancel = threading.Event()
+        _log_activity("bridge_scan_start", {
+            "directory": directory, "mode": mode,
+            "scans_dir_exists": os.path.isdir(str(SCANS_DIR)),
+        })
         srv.scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
