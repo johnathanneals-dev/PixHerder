@@ -63,7 +63,7 @@ def _run_native_mode(port):
 
     # Start the HTTP server in background (for images + static files, no heartbeat)
     try:
-        server = create_server(port, enable_heartbeat=False)
+        server = create_server(port, enable_heartbeat=False, require_token=False)
     except OSError as e:
         print("[ERROR] Could not start server on port " + str(port) + ": " + str(e))
         sys.exit(1)

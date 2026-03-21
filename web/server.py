@@ -41,6 +41,12 @@ from engine.staging import (
 )
 
 
+# ---- Session Token (browser-mode CSRF protection) ----
+import secrets
+_session_token = secrets.token_hex(16)
+_require_token = True  # Set to False in native mode
+
+
 # ---- Activity Log ----
 
 def _log_activity(event, details=None):
@@ -877,6 +883,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
     # ---- POST routes ----
 
     def do_POST(self):
+        # Check session token (browser-mode CSRF protection)
+        if _require_token:
+            token = self.headers.get("X-DupeFinder-Token", "")
+            if token != _session_token:
+                self.send_error_json("Invalid session token", 403)
+                return
+
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
@@ -946,6 +959,12 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         try:
             with open(str(html_path), "r", encoding="utf-8") as f:
                 content = f.read()
+            # Inject session token for CSRF protection
+            if _require_token:
+                token_script = ('<script>window._dfToken="'
+                                + _session_token + '";</script>')
+                content = content.replace("</body>",
+                                          token_script + "</body>")
             body = content.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -2562,9 +2581,10 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 _server_instance = None
 
 
-def create_server(port=8787, enable_heartbeat=True):
+def create_server(port=8787, enable_heartbeat=True, require_token=True):
     """Create and return a ThreadingHTTPServer instance."""
-    global _server_instance
+    global _server_instance, _require_token
+    _require_token = require_token
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", port),
         DupeFinderHandler,

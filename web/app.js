@@ -469,6 +469,10 @@ function api(method, path, body) {
   }
   // Fallback: HTTP fetch (browser mode)
   var opts = { method: method, headers: {} };
+  // Include session token for CSRF protection
+  if (window._dfToken) {
+    opts.headers["X-DupeFinder-Token"] = window._dfToken;
+  }
   if (body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
