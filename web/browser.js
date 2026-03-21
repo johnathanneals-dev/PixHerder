@@ -174,6 +174,9 @@ function buildBreadcrumb(fullPath) {
   }
 
   var bc = document.getElementById("browserBreadcrumb");
+  // Hide breadcrumb at root level (top nav already shows location)
+  var isAtRoot = (current === root || current.replace(/[\\/]+$/, "") === root.replace(/[\\/]+$/, ""));
+  bc.style.display = isAtRoot ? "none" : "";
   bc.innerHTML = html;
   bc.onclick = function(ev) {
     var crumb = ev.target.closest(".browser-crumb");
