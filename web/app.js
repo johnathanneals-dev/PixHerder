@@ -106,6 +106,42 @@ function closeLightbox() {
   document.getElementById("lightboxImg").src = "";
   _lightboxFilePath = "";
 }
+function moveLightboxToKeepers() {
+  if (!_lightboxFilePath) return;
+  var filename = _lightboxFilePath.split("\\").pop();
+  showDialog(
+    "Move to Verified Keepers",
+    "Move " + filename + " to Verified Keepers?",
+    "Move to Keepers",
+    "btn-primary",
+    function() {
+      var filePath = _lightboxFilePath;
+      api("POST", "/api/browser/move-to-keepers", { path: filePath }).then(function(r) {
+        if (r.success) {
+          closeLightbox();
+          toast("Moved to Verified Keepers");
+          // Remove from browser grid
+          var items = document.querySelectorAll(".browser-item");
+          for (var i = 0; i < items.length; i++) {
+            var img = items[i].querySelector("img");
+            if (img && img.src.indexOf(encodeURIComponent(filePath)) !== -1) {
+              items[i].remove();
+              break;
+            }
+          }
+          var countEl = document.getElementById("browserCount");
+          var match = (countEl.textContent || "").match(/(\d+)/);
+          if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
+        } else {
+          toast("Move failed: " + (r.error || "unknown error"), "error");
+        }
+      }).catch(function(err) {
+        toast("Move failed: " + err.message, "error");
+      });
+    }
+  );
+}
+
 function deleteLightboxFile() {
   if (!_lightboxFilePath) return;
   var filename = _lightboxFilePath.split("\\").pop();
@@ -363,7 +399,8 @@ var _bridgeMap = {
   "POST /api/browser/delete": "browser_delete",
   "POST /api/browser/delete-folder": "browser_delete_folder",
   "POST /api/browser/open-explorer": "open_explorer",
-  "POST /api/browser/open-recycle-bin": "open_recycle_bin"
+  "POST /api/browser/open-recycle-bin": "open_recycle_bin",
+  "POST /api/browser/move-to-keepers": "move_to_keepers"
 };
 
 function _useBridge() {

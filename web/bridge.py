@@ -989,6 +989,40 @@ class Api:
         except Exception as e:
             return {"error": str(e)}
 
+    def move_to_keepers(self, params=None):
+        if params is None:
+            params = {}
+        filepath = params.get("path", "")
+        if not filepath or not os.path.isfile(filepath):
+            return {"success": False, "error": "File not found"}
+
+        settings = load_settings()
+        keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+        os.makedirs(keepers_dir, exist_ok=True)
+        filename = os.path.basename(filepath)
+        dest = os.path.join(keepers_dir, filename)
+
+        # Collision avoidance
+        if os.path.exists(dest):
+            base, ext = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(dest):
+                dest = os.path.join(keepers_dir, base + "_" + str(counter) + ext)
+                counter += 1
+
+        try:
+            shutil.copy2(filepath, dest)
+            if os.path.exists(dest) and os.path.getsize(dest) == os.path.getsize(filepath):
+                os.remove(filepath)
+                _log_activity("move_to_keepers", {
+                    "source": filepath, "destination": dest,
+                })
+                return {"success": True, "destination": dest}
+            else:
+                return {"success": False, "error": "Copy verification failed"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def browser_delete_folder(self, params=None):
         if params is None:
             params = {}

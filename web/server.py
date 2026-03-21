@@ -881,6 +881,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_staging_recycle()
         elif path == "/api/dupes/purge":
             self._handle_dupes_purge()
+        elif path == "/api/browser/move-to-keepers":
+            self._handle_move_to_keepers()
         elif path == "/api/dupes/promote":
             self._handle_dupes_promote()
         elif path == "/api/consolidate":
@@ -1625,6 +1627,51 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
             threading.Thread(target=_cleanup, daemon=True).start()
+        except Exception as e:
+            self.send_json({"success": False, "error": str(e)})
+
+    def _handle_move_to_keepers(self):
+        try:
+            body = self.read_json_body()
+        except Exception:
+            self.send_error_json("Invalid JSON body")
+            return
+
+        filepath = body.get("path", "")
+        if not filepath or not os.path.isfile(filepath):
+            self.send_json({"success": False, "error": "File not found"})
+            return
+
+        settings = load_settings()
+        keepers_dir = settings.get("keepers_dir", "")
+        if not keepers_dir:
+            import tempfile
+            keepers_dir = os.path.join(tempfile.gettempdir(), "DupeFinder_Keepers")
+
+        os.makedirs(keepers_dir, exist_ok=True)
+        filename = os.path.basename(filepath)
+        dest = os.path.join(keepers_dir, filename)
+
+        # Collision avoidance
+        if os.path.exists(dest):
+            base, ext = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(dest):
+                dest = os.path.join(keepers_dir, base + "_" + str(counter) + ext)
+                counter += 1
+
+        try:
+            shutil.copy2(filepath, dest)
+            # Verify copy
+            if os.path.exists(dest) and os.path.getsize(dest) == os.path.getsize(filepath):
+                os.remove(filepath)
+                _log_activity("move_to_keepers", {
+                    "source": filepath,
+                    "destination": dest,
+                })
+                self.send_json({"success": True, "destination": dest})
+            else:
+                self.send_json({"success": False, "error": "Copy verification failed"})
         except Exception as e:
             self.send_json({"success": False, "error": str(e)})
 
