@@ -395,9 +395,13 @@ class Api:
             delete_checkpoint(ckpt)
 
         srv.scan_cancel = threading.Event()
-        _log_activity("bridge_scan_start", {
-            "directory": directory, "mode": mode,
-            "scans_dir_exists": os.path.isdir(str(SCANS_DIR)),
+        # Reset progress dict to prevent stale data from previous scan
+        scan_progress.update({
+            "status": "running",
+            "stage": "starting",
+            "current": 0, "total": 0, "elapsed": 0, "errors": 0,
+            "message": "Starting scan...",
+            "result_file": None,
         })
         srv.scan_thread = threading.Thread(
             target=_run_scan,
