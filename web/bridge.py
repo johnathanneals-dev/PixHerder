@@ -411,7 +411,8 @@ class Api:
         }
 
     def scan_cancel_op(self, params=None):
-        scan_cancel.set()
+        import web.server as srv
+        srv.scan_cancel.set()
         return {"status": "cancelling"}
 
     def action_move(self, params=None):
@@ -674,7 +675,8 @@ class Api:
         }
 
     def staging_cancel_op(self, params=None):
-        staging_cancel.set()
+        import web.server as srv
+        srv.staging_cancel.set()
         return {"status": "cancelling"}
 
     def staging_syncback(self, params=None):
