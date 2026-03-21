@@ -431,6 +431,14 @@
         </label>
       </div>
 
+      <div class="form-group" id="autoRecycleGroup">
+        <label class="checkbox-label">
+          <input type="checkbox" id="scanAutoRecycle">
+          Auto-recycle exact duplicates
+        </label>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Byte-for-byte identical files are automatically sent to the Recycle Bin. The largest file in each group is kept. Recoverable from the Recycle Bin if needed.</div>
+      </div>
+
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
         <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
         <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>

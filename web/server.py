@@ -161,7 +161,8 @@ def _update_oddball_progress(current, total, stage):
 
 
 def _run_scan(directory, mode, threshold, recursive, hash_size,
-              keep_strategy, extensions, resume_data=None):
+              keep_strategy, extensions, resume_data=None,
+              auto_recycle=False):
     """Background scan thread target."""
     global scan_progress
     start_time = time.time()
@@ -314,6 +315,43 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                     "type": "exact",
                 })
 
+        # Auto-recycle exact duplicates if enabled
+        auto_recycled = 0
+        if auto_recycle and exact_groups_data:
+            scan_progress["stage"] = "auto_recycling"
+            scan_progress["message"] = ("Auto-recycling "
+                + str(len(exact_groups_data)) + " exact duplicate groups...")
+
+            recycle_groups = []
+            for g in exact_groups_data:
+                recycle_groups.append({
+                    "keep": g["keep"],
+                    "duplicates": g["duplicates"],
+                })
+
+            from engine.actions import delete_files
+            recycle_result = delete_files(
+                recycle_groups, keep_strategy,
+                cancel_event=scan_cancel,
+            )
+            auto_recycled = recycle_result.get("deleted", 0)
+
+            # Remove recycled files from image_paths for perceptual scan
+            recycled_paths = set()
+            for g in recycle_groups:
+                for d in g["duplicates"]:
+                    recycled_paths.add(os.path.normpath(d))
+            image_paths = [p for p in image_paths
+                           if os.path.normpath(str(p)) not in recycled_paths]
+
+            _log_activity("auto_recycled", {
+                "groups": len(exact_groups_data),
+                "files": auto_recycled,
+            })
+
+            # Clear exact groups — they've been handled
+            exact_groups_data = []
+
         # Perceptual duplicates
         if mode in ("perceptual", "both"):
             scan_progress["stage"] = "phash_hash"
@@ -456,6 +494,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 "reclaimable_mb": round(mb, 1),
                 "duration": round(elapsed, 1),
                 "errors": len(all_errors),
+                "auto_recycled": auto_recycled,
             },
         })
 
@@ -1234,6 +1273,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 
         # Handle resume
         resume = body.get("resume", False)
+        auto_recycle = body.get("auto_recycle", False)
         resume_data = None
         if resume:
             _, resume_data = find_checkpoint(directory, mode)
@@ -1247,7 +1287,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
-                  keep_strategy, extensions, resume_data),
+                  keep_strategy, extensions, resume_data, auto_recycle),
             daemon=True,
         )
         scan_thread.start()

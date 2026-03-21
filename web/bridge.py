@@ -387,6 +387,7 @@ class Api:
         extensions = settings.get("extensions")
 
         resume = params.get("resume", False)
+        auto_recycle = params.get("auto_recycle", False)
         resume_data = None
         if resume:
             _, resume_data = find_checkpoint(directory, mode)
@@ -406,7 +407,7 @@ class Api:
         srv.scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
-                  keep_strategy, extensions, resume_data),
+                  keep_strategy, extensions, resume_data, auto_recycle),
             daemon=True,
         )
         srv.scan_thread.start()

@@ -127,6 +127,7 @@ function startScan() {
   var mode = modeEl ? modeEl.value : "both";
   var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
   var recursive = document.getElementById("scanRecursive").checked;
+  var autoRecycle = document.getElementById("scanAutoRecycle").checked;
 
   // Check if this is a OneDrive path
   api("POST", "/api/staging/check", { directory: dir }).then(function(result) {
@@ -141,10 +142,10 @@ function startScan() {
       showStagingDialog(dir, result.staging_dir, msg, result.existing_session,
         mode, threshold, recursive);
     } else {
-      _checkResumeAndStart(dir, mode, threshold, recursive);
+      _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle);
     }
   }).catch(function() {
-    _checkResumeAndStart(dir, mode, threshold, recursive);
+    _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle);
   });
 }
 
@@ -195,7 +196,7 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
   }
 }
 
-function _checkResumeAndStart(dir, mode, threshold, recursive) {
+function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle) {
   api("GET", "/api/scan/check-resume?directory=" + encodeURIComponent(dir) + "&mode=" + mode)
     .then(function(data) {
       if (data.has_checkpoint) {
@@ -205,23 +206,23 @@ function _checkResumeAndStart(dir, mode, threshold, recursive) {
         showResumeDialog(
           "An interrupted scan was found for this folder.",
           "Stage: " + info.stage + " | Hashes cached: " + cached + " | Last active: " + ts,
-          function() { _doStartScan(dir, mode, threshold, recursive, true); },
-          function() { _doStartScan(dir, mode, threshold, recursive, false); }
+          function() { _doStartScan(dir, mode, threshold, recursive, true, autoRecycle); },
+          function() { _doStartScan(dir, mode, threshold, recursive, false, autoRecycle); }
         );
       } else {
-        _doStartScan(dir, mode, threshold, recursive, false);
+        _doStartScan(dir, mode, threshold, recursive, false, autoRecycle);
       }
     })
     .catch(function() {
-      _doStartScan(dir, mode, threshold, recursive, false);
+      _doStartScan(dir, mode, threshold, recursive, false, autoRecycle);
     });
 }
 
-function _doStartScan(dir, mode, threshold, recursive, resume) {
+function _doStartScan(dir, mode, threshold, recursive, resume, autoRecycle) {
   _lastScanMode = mode;
   api("POST", "/api/scan/start", {
     directory: dir, mode: mode, threshold: threshold, recursive: recursive,
-    resume: resume
+    resume: resume, auto_recycle: !!autoRecycle
   }).then(function() {
     navigate("scan-progress");
   }).catch(function(err) {
@@ -258,6 +259,7 @@ function updateScanUI(d) {
   var stageNames = {
     "discovering": "Discovering images...",
     "md5": "Computing checksums...",
+    "auto_recycling": "Auto-recycling exact duplicates...",
     "phash_hash": "Computing perceptual hashes...",
     "phash_compare": "Comparing images...",
     "saving": "Saving results...",
@@ -267,7 +269,7 @@ function updateScanUI(d) {
   document.getElementById("scanErrors").textContent = d.errors || 0;
 
   // Grey out cancel button at point of no return (saving phase)
-  var noReturn = (d.stage === "saving" || d.stage === "done");
+  var noReturn = (d.stage === "saving" || d.stage === "auto_recycling" || d.stage === "done");
   var cancelBtn = document.getElementById("scanCancelBtn");
   var wizCancelBtn = document.getElementById("wizScanCancelBtn");
   if (cancelBtn) cancelBtn.disabled = noReturn;
@@ -363,6 +365,9 @@ function showScanComplete(d) {
     html += '<div class="stat-card"><div class="num">' + s.total_groups + '</div><div class="label">Duplicate Groups</div></div>';
     html += '<div class="stat-card"><div class="num">' + s.reclaimable_mb + ' MB</div><div class="label">Reclaimable</div></div>';
     html += '<div class="stat-card"><div class="num">' + formatTime(s.duration) + '</div><div class="label">Duration</div></div>';
+    if (s.auto_recycled && s.auto_recycled > 0) {
+      html += '<div class="stat-card"><div class="num">' + s.auto_recycled + '</div><div class="label">Auto-Recycled</div></div>';
+    }
     html += '</div>';
     document.getElementById("scanCompleteSummary").innerHTML = html;
   }
