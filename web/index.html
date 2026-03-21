@@ -90,27 +90,29 @@
 
     <div id="dashFolders" style="display:none;margin-bottom:32px;">
       <h2>Browse Files</h2>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-        <div style="text-align:center;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+        <div style="text-align:center;min-width:180px;">
           <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>My Files</button>
-          <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
-          <div id="dashRescanStagingBox" style="display:none;margin-top:8px;">
-            <button class="btn btn-primary btn-browse" id="dashRescanStagingBtn" onclick="_rescanFolder('staging')">Rescan My Files</button>
-          </div>
+          <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:180px;">
           <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
-          <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
-          <div id="dashRescanBoxes" style="display:none;margin-top:8px;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Scan Removed Duplicates</button>
-          </div>
+          <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:180px;">
           <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled>Verified Keepers</button>
-          <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
-          <div id="dashRescanKeepersBox" style="display:none;margin-top:8px;">
-            <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Scan Verified Keepers</button>
-          </div>
+          <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
+        </div>
+      </div>
+      <div id="dashRescanRow" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div id="dashRescanStagingBox" style="display:none;min-width:180px;text-align:center;">
+          <button class="btn btn-primary btn-browse" id="dashRescanStagingBtn" onclick="_rescanFolder('staging')">Rescan My Files</button>
+        </div>
+        <div id="dashRescanBoxes" style="display:none;min-width:180px;text-align:center;">
+          <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled>Scan Removed Duplicates</button>
+        </div>
+        <div id="dashRescanKeepersBox" style="display:none;min-width:180px;text-align:center;">
+          <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled>Scan Verified Keepers</button>
         </div>
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">

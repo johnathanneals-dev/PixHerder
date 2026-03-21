@@ -6,33 +6,20 @@ var _dashFolderPaths = { staging: "", dupes: "", keepers: "" };
 var _dashContinueTarget = "finish"; // default
 
 function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
-  var btn = document.getElementById("dashContinueBtn");
   var hint = document.getElementById("dashContinueHint");
+  if (!hint) return;
 
-  // Determine the most logical next step
+  // Update hint text based on state
   if (hasStaging && hasDupes) {
-    // Has both — user has been scanning, likely wants to finalize or rescan
-    btn.textContent = "Rescan My Files";
-    hint.textContent = "Browse your files and finish up, or rescan for more duplicates.";
-    _dashContinueTarget = "wizard-step4";
+    hint.textContent = "Use the scan buttons above, or access wizard steps for more options.";
   } else if (hasStaging && !hasDupes) {
-    // Has files but no dupes yet — needs to scan
-    btn.textContent = "Continue to Scan";
     hint.textContent = "Scan My Files to find duplicates.";
-    _dashContinueTarget = "wizard-step2";
   } else if (hasDupes && !hasStaging) {
-    // Only dupes — maybe wants to review or rescue
-    btn.textContent = "Continue to Review";
-    hint.textContent = "Removed Duplicates has files. Rescue & Review or finish up.";
-    _dashContinueTarget = "finish";
+    hint.textContent = "Removed Duplicates has files. Use Rescue & Review or finish up from wizard steps.";
   } else if (hasKeepers) {
-    btn.textContent = "Finish Up";
-    hint.textContent = "Verified Keepers are ready to go home.";
-    _dashContinueTarget = "finish";
+    hint.textContent = "Verified Keepers are ready to go home. Access wizard steps to finish up.";
   } else {
-    btn.textContent = "Continue";
     hint.textContent = "";
-    _dashContinueTarget = "finish";
   }
 
   // Nav states updated by _dashUpdateFolders
@@ -152,11 +139,11 @@ function _dashUpdateFolders() {
     var rescanKeepersBox = document.getElementById("dashRescanKeepersBox");
     var rescanDupesBtn = document.getElementById("dashRescanDupesBtn");
     var rescanKeepersBtn = document.getElementById("dashRescanKeepersBtn");
-    rescanStagingBox.style.display = hasStaging ? "block" : "none";
-    rescanDupesBox.style.display = hasDupes ? "block" : "none";
-    rescanDupesBtn.disabled = !hasDupes;
-    rescanKeepersBox.style.display = hasKeepers ? "block" : "none";
-    rescanKeepersBtn.disabled = !hasKeepers;
+    if (rescanStagingBox) rescanStagingBox.style.display = hasStaging ? "block" : "none";
+    if (rescanDupesBox) rescanDupesBox.style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
+    if (rescanDupesBtn) rescanDupesBtn.disabled = !hasDupes;
+    if (rescanKeepersBox) rescanKeepersBox.style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
+    if (rescanKeepersBtn) rescanKeepersBtn.disabled = !hasKeepers;
 
     // Update nav states
     _updateNavStates();
