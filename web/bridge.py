@@ -61,15 +61,17 @@ class Api:
 
     def __init__(self):
         self._window = None
+        self._stop_events = {}  # Track stop events per progress type
 
     def set_window(self, window):
         self._window = window
 
     # ---- Progress push (replaces SSE) ----
 
-    def _push_progress(self, progress_dict, callback_name, terminals):
+    def _push_progress(self, progress_dict, callback_name, terminals,
+                       stop_event):
         """Generic progress pusher. Polls dict, calls JS callback."""
-        while True:
+        while not stop_event.is_set():
             data = dict(progress_dict)
             if "elapsed" in data:
                 data["elapsed"] = round(data.get("elapsed", 0), 1)
@@ -82,50 +84,43 @@ class Api:
                 break
             time.sleep(0.5)
 
-    def subscribe_scan_progress(self):
+    def _subscribe(self, key, progress_dict, callback_name, terminals):
+        """Start a progress pusher, cancelling any previous one for this key."""
+        old = self._stop_events.get(key)
+        if old:
+            old.set()
+        stop = threading.Event()
+        self._stop_events[key] = stop
         t = threading.Thread(
             target=self._push_progress,
-            args=(scan_progress, "_onScanProgress",
-                  ("complete", "error", "cancelled", "idle")),
+            args=(progress_dict, callback_name, terminals, stop),
             daemon=True)
         t.start()
         return {"subscribed": True}
+
+    def subscribe_scan_progress(self):
+        return self._subscribe("scan", scan_progress, "_onScanProgress",
+                               ("complete", "error", "cancelled", "idle"))
 
     def subscribe_action_progress(self):
-        t = threading.Thread(
-            target=self._push_progress,
-            args=(action_progress, "_onActionProgress",
-                  ("complete", "error", "idle")),
-            daemon=True)
-        t.start()
-        return {"subscribed": True}
+        return self._subscribe("action", action_progress,
+                               "_onActionProgress",
+                               ("complete", "error", "idle"))
 
     def subscribe_oddball_progress(self):
-        t = threading.Thread(
-            target=self._push_progress,
-            args=(oddball_progress, "_onOddballProgress",
-                  ("complete", "error", "idle")),
-            daemon=True)
-        t.start()
-        return {"subscribed": True}
+        return self._subscribe("oddball", oddball_progress,
+                               "_onOddballProgress",
+                               ("complete", "error", "idle"))
 
     def subscribe_staging_progress(self):
-        t = threading.Thread(
-            target=self._push_progress,
-            args=(staging_progress, "_onStagingProgress",
-                  ("complete", "error", "cancelled", "idle")),
-            daemon=True)
-        t.start()
-        return {"subscribed": True}
+        return self._subscribe("staging", staging_progress,
+                               "_onStagingProgress",
+                               ("complete", "error", "cancelled", "idle"))
 
     def subscribe_syncback_progress(self):
-        t = threading.Thread(
-            target=self._push_progress,
-            args=(syncback_progress, "_onSyncbackProgress",
-                  ("complete", "error", "idle")),
-            daemon=True)
-        t.start()
-        return {"subscribed": True}
+        return self._subscribe("syncback", syncback_progress,
+                               "_onSyncbackProgress",
+                               ("complete", "error", "idle"))
 
     # ---- GET equivalents ----
 
