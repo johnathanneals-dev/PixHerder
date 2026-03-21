@@ -96,7 +96,57 @@ if errorlevel 1 (
 echo  [OK] Dependencies installed.
 
 :: ----------------------------------------------------------------
-:: Step 5: Generate launch.vbs
+:: Step 5: Pre-flight security checks
+:: ----------------------------------------------------------------
+echo.
+echo  Running security checks...
+
+:: Test write access (CFA detection)
+echo test > "%BASE%scans\_write_test.tmp" 2>nul
+if exist "%BASE%scans\_write_test.tmp" (
+    del "%BASE%scans\_write_test.tmp" 2>nul
+    echo  [OK] Write access to data folders.
+) else (
+    echo.
+    echo  [WARNING] Cannot write to DupeFinder data folders.
+    echo  Windows Defender Controlled Folder Access may be blocking Python.
+    echo.
+    echo  To fix: Open Windows Security ^> Virus ^& threat protection
+    echo  ^> Ransomware protection ^> Allow an app through Controlled
+    echo  Folder Access ^> Add these executables:
+    echo    %PYTHON_DIR%\python.exe
+    echo    %PYTHON_DIR%\pythonw.exe
+    echo.
+    echo  DupeFinder may not work correctly until this is resolved.
+    echo.
+    pause
+)
+
+:: Test PowerShell availability (needed for Recycle Bin)
+powershell -ExecutionPolicy Bypass -Command "exit 0" >nul 2>&1
+if errorlevel 1 (
+    echo  [WARNING] PowerShell is restricted on this system.
+    echo  DupeFinder uses PowerShell to send files to the Recycle Bin.
+    echo  File recycling may not work. Files will be kept in place if
+    echo  recycling fails -- nothing will be permanently deleted.
+) else (
+    echo  [OK] PowerShell available.
+)
+
+:: Test port availability
+"%PYTHON_EXE%" -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',8787)); s.close(); print('ok')" >nul 2>&1
+if errorlevel 1 (
+    echo  [WARNING] Port 8787 may be in use or blocked by a firewall.
+    echo  DupeFinder needs this port for its internal server.
+    echo  If blocked, you can change the port in Settings after launch.
+) else (
+    echo  [OK] Port 8787 available.
+)
+
+echo.
+
+:: ----------------------------------------------------------------
+:: Step 6: Generate launch.vbs (uses pythonw.exe for no console)
 :: ----------------------------------------------------------------
 echo  Generating launchers...
 
@@ -105,13 +155,13 @@ echo Set WshShell = CreateObject^("WScript.Shell"^)
 echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
 echo baseDir = fso.GetParentFolderName^(WScript.ScriptFullName^)
 echo WshShell.CurrentDirectory = baseDir
-echo WshShell.Run """" ^& baseDir ^& "\python\python.exe"" """ ^& baseDir ^& "\dupefinder_app.py""", 0, False
+echo WshShell.Run """" ^& baseDir ^& "\python\pythonw.exe"" """ ^& baseDir ^& "\dupefinder_app.py""", 1, False
 ) > "%BASE%launch.vbs"
 
 echo  [OK] launch.vbs created.
 
 :: ----------------------------------------------------------------
-:: Step 6: Generate launch.bat
+:: Step 7: Generate launch.bat (debug mode with console)
 :: ----------------------------------------------------------------
 (
 echo @echo off
@@ -127,7 +177,7 @@ echo pause ^>nul
 echo  [OK] launch.bat created.
 
 :: ----------------------------------------------------------------
-:: Step 7: Offer to create desktop shortcut
+:: Step 9: Offer to create desktop shortcut
 :: ----------------------------------------------------------------
 echo.
 set /p SHORTCUT="  Create a desktop shortcut? [Y/N]: "
@@ -141,7 +191,7 @@ if /i "%SHORTCUT%"=="Y" (
 )
 
 :: ----------------------------------------------------------------
-:: Step 8: Write setup info
+:: Step 10: Write setup info
 :: ----------------------------------------------------------------
 (
 echo {
@@ -162,17 +212,12 @@ echo.
 echo  To start DupeFinder:
 echo    - Double-click the DupeFinder shortcut on your desktop
 echo    - Or double-click launch.vbs in this folder
-echo    - Or run launch.bat for debug mode
+echo    - Or run launch.bat for debug mode (shows console for troubleshooting)
 echo.
 echo  To uninstall:
-echo    - Shut down the server from the browser
+echo    - Close DupeFinder
 echo    - Delete this folder
 echo    - Delete the desktop shortcut if created
-echo.
-echo  Note: If Windows Defender blocks file operations,
-echo  you may need to whitelist Python in Controlled Folder Access:
-echo    Windows Security ^> Virus ^& threat protection ^> Ransomware protection
-echo    ^> Allow an app ^> Add: %PYTHON_EXE%
 echo.
 pause
 exit /b 0
