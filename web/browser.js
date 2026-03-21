@@ -34,6 +34,20 @@ function initBrowser() {
   document.getElementById("browserBackBtn").innerHTML = "&larr; " + backLabel;
   // Show scan button for both staging and dupes folders
   document.getElementById("browserScanBtn").style.display = "";
+  // Show promote button only when browsing dupes
+  var promoteBtn = document.getElementById("browserPromoteBtn");
+  if (promoteBtn) promoteBtn.style.display = (browserState.type === "dupes") ? "" : "none";
+  // Highlight current folder nav button
+  var navS = document.getElementById("browserNavStaging");
+  var navD = document.getElementById("browserNavDupes");
+  var navK = document.getElementById("browserNavKeepers");
+  if (navS) navS.style.opacity = (browserState.type === "staging") ? "1" : "0.5";
+  if (navD) navD.style.opacity = (browserState.type === "dupes") ? "1" : "0.5";
+  if (navK) navK.style.opacity = (browserState.type === "keepers") ? "1" : "0.5";
+  // Disable nav buttons for empty folders
+  if (navS) navS.disabled = !_dashFolderPaths.staging;
+  if (navD) navD.disabled = !_dashFolderPaths.dupes;
+  if (navK) navK.disabled = !_dashFolderPaths.keepers;
   browserState.currentPage = 1;
   document.getElementById("browserGrid").innerHTML = "";
 

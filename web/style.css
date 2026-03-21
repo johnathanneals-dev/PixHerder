@@ -307,17 +307,17 @@
   .topnav-left { display: flex; align-items: center; gap: 24px; }
   .logo {
     font-size: 36px; font-weight: 900; letter-spacing: -0.5px;
-    color: var(--accent); font-family: monospace; cursor: pointer;
+    color: var(--accent); font-family: monospace;
   }
   .nav-links { display: flex; gap: 4px; }
   .nav-link {
     padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
-    color: var(--text-dim); cursor: pointer; border: none; background: none;
+    color: var(--text); cursor: pointer; border: none; background: none;
     transition: all 0.15s;
   }
   .nav-link:hover { color: var(--text); background: var(--surface-2); }
   .nav-link.active { color: var(--accent); background: var(--accent-bg); }
-  .nav-link.disabled { color: var(--text-muted); pointer-events: none; opacity: 0.4; cursor: not-allowed; }
+  .nav-link.disabled { color: var(--text); pointer-events: none; opacity: 0.4; cursor: not-allowed; }
 
   /* ---- Main container ---- */
   .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
@@ -470,7 +470,7 @@
   .scan-list { display: flex; flex-direction: column; gap: 8px; }
   .scan-item {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px; background: var(--surface); border: 1px solid var(--border-container);
+    padding: 16px 20px; background: var(--surface); border: 1px solid #444;
     border-radius: var(--radius-sm); transition: border-color 0.15s;
   }
   .scan-item:hover { border-color: var(--text-dim); }

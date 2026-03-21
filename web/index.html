@@ -11,7 +11,7 @@
 <!-- Top Navigation -->
 <div class="topnav">
   <div class="topnav-left">
-    <div class="logo" onclick="navigate('dashboard')">DupeFinder</div>
+    <div class="logo">DupeFinder</div>
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</button>
       <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)">Migrate</button>
@@ -359,11 +359,15 @@
   <div class="view" id="view-browser">
     <div class="browser-toolbar">
       <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
-      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
-      <span style="color:var(--text-dim);font-size:11px;margin-right:-4px;">Location:</span>
-      <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-secondary" id="browserNavStaging" onclick="openBrowserFromDashboard('staging')" style="font-size:12px;padding:4px 12px;">My Files</button>
+        <button class="btn btn-secondary" id="browserNavDupes" onclick="openBrowserFromDashboard('dupes')" style="font-size:12px;padding:4px 12px;">Removed Duplicates</button>
+        <button class="btn btn-secondary" id="browserNavKeepers" onclick="openBrowserFromDashboard('keepers')" style="font-size:12px;padding:4px 12px;">Verified Keepers</button>
+      </div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
         <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
+        <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;">Move All to Verified Keepers</button>
+        <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
         <select class="form-input" id="browserSort" onchange="browserRefresh()"
                 style="width:auto;padding:4px 8px;font-size:12px;">
           <option value="name">Name</option>
