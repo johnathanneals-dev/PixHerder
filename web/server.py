@@ -477,6 +477,8 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         except Exception:
             pass
 
+        import traceback
+        tb = traceback.format_exc()
         scan_progress.update({
             "status": "error",
             "message": "Scan failed: " + str(e),
@@ -484,6 +486,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         _log_activity("scan_error", {
             "directory": directory,
             "error": str(e),
+            "traceback": tb,
         })
 
 
