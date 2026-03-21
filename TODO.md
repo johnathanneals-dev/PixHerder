@@ -24,15 +24,15 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Remove CORS wildcard header from scan progress SSE
 - [x] Disable heartbeat auto-shutdown in native pywebview mode
 
-## Audit #2: Before Release
+## Audit #2: Before Release [COMPLETED 2026-03-20]
 
-- [ ] Replace os._exit(0) with graceful shutdown (3 locations in server.py)
-- [ ] Restrict /api/browse-folders to allowed paths (filesystem enumeration)
-- [ ] Consolidate extension lists to single source in config.py (5+ duplicated locations)
-- [ ] Add copy verification (size check) before deleting source files in move operations
-- [ ] Track/limit progress polling threads in bridge.py (prevent accumulation)
-- [ ] Validate settings paths -- reject system directories (Windows, System32, Program Files)
-- [ ] Add session token for browser-mode API authentication
+- [x] Replace os._exit(0) with graceful server.shutdown() (3 locations)
+- [x] Restrict /api/browse-folders to block system directories
+- [x] Consolidate extension lists to single IMAGE_EXTENSIONS in config.py
+- [x] Add copy verification (size check) before deleting source files
+- [x] Track/limit progress polling threads in bridge.py
+- [x] Validate settings paths -- reject system directories
+- [x] Add session token for browser-mode CSRF protection
 
 ## Audit Phase 2: Performance & Quality [NEXT]
 
@@ -99,6 +99,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Audit #2 immediate fixes: use_fallback crash, indentation bug, browser_delete fallback, CORS removal, heartbeat disable in native mode
 - [x] Archive legacy scripts and test files to archive/ directory
 - [x] PROJECT_OVERVIEW.md for auditor context
+- [x] Audit #2 before-release: graceful shutdown, browse-folders restriction, extension consolidation, copy verification, thread tracking, settings validation, CSRF token
 
 ## Completed (2026-03-19)
 
