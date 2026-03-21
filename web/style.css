@@ -156,6 +156,7 @@
   .browser-toolbar {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px;
     padding: 14px 32px;
     margin: 0 -32px 16px;
@@ -310,7 +311,7 @@
     font-size: 36px; font-weight: 900; letter-spacing: -0.5px;
     color: var(--accent); font-family: monospace;
   }
-  .nav-links { display: flex; gap: 4px; }
+  .nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
   .nav-link {
     padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
     color: var(--text); cursor: pointer; border: none; background: none;
