@@ -624,7 +624,7 @@
 
   /* ---- Scan progress ---- */
   .progress-center {
-    max-width: 600px; margin: 60px auto; text-align: center;
+    max-width: 900px; margin: 60px auto; text-align: center;
   }
   .progress-stage {
     font-size: 14px; color: var(--text-dim); font-family: monospace;
