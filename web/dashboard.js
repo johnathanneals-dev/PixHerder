@@ -498,14 +498,6 @@ function openBrowserFromDashboard(type) {
 }
 
 function initDashboard() {
-  // Show bookmark notice if not yet dismissed
-  var bmNotice = document.getElementById("bookmarkNotice");
-  if (localStorage.getItem("dupefinder_bookmarked")) {
-    bmNotice.style.display = "none";
-  } else {
-    bmNotice.style.display = "flex";
-  }
-
   // Load settings for later use
   api("GET", "/api/settings").then(function(s) {
     state.settings = s;

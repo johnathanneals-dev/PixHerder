@@ -98,33 +98,33 @@ class Api:
         t.start()
         return {"subscribed": True}
 
-    def subscribe_scan_progress(self):
+    def subscribe_scan_progress(self, params=None):
         return self._subscribe("scan", scan_progress, "_onScanProgress",
                                ("complete", "error", "cancelled", "idle"))
 
-    def subscribe_action_progress(self):
+    def subscribe_action_progress(self, params=None):
         return self._subscribe("action", action_progress,
                                "_onActionProgress",
                                ("complete", "error", "idle"))
 
-    def subscribe_oddball_progress(self):
+    def subscribe_oddball_progress(self, params=None):
         return self._subscribe("oddball", oddball_progress,
                                "_onOddballProgress",
                                ("complete", "error", "idle"))
 
-    def subscribe_staging_progress(self):
+    def subscribe_staging_progress(self, params=None):
         return self._subscribe("staging", staging_progress,
                                "_onStagingProgress",
                                ("complete", "error", "cancelled", "idle"))
 
-    def subscribe_syncback_progress(self):
+    def subscribe_syncback_progress(self, params=None):
         return self._subscribe("syncback", syncback_progress,
                                "_onSyncbackProgress",
                                ("complete", "error", "idle"))
 
     # ---- GET equivalents ----
 
-    def get_scans(self):
+    def get_scans(self, params=None):
         scans = []
         if SCANS_DIR.exists():
             for f in sorted(SCANS_DIR.glob("*.json"), reverse=True):
@@ -160,12 +160,12 @@ class Api:
                     continue
         return scans
 
-    def get_settings(self):
+    def get_settings(self, params=None):
         settings = load_settings()
         settings["default_pictures_path"] = default_pictures_path()
         return settings
 
-    def get_folders_status(self):
+    def get_folders_status(self, params=None):
         settings = load_settings()
 
         def _count(dirpath):
@@ -410,7 +410,7 @@ class Api:
             "resumed": bool(resume_data),
         }
 
-    def scan_cancel_op(self):
+    def scan_cancel_op(self, params=None):
         scan_cancel.set()
         return {"status": "cancelling"}
 
@@ -558,7 +558,7 @@ class Api:
         except Exception as e:
             return {"error": "Failed to delete: " + str(e)}
 
-    def clear_activity(self):
+    def clear_activity(self, params=None):
         try:
             with open(str(ACTIVITY_LOG), "w") as f:
                 f.truncate(0)
@@ -673,7 +673,7 @@ class Api:
             "staging_dir": staging_dir,
         }
 
-    def staging_cancel_op(self):
+    def staging_cancel_op(self, params=None):
         staging_cancel.set()
         return {"status": "cancelling"}
 
@@ -711,7 +711,7 @@ class Api:
         })
         return result
 
-    def staging_reset(self):
+    def staging_reset(self, params=None):
         staging_progress.update({
             "status": "idle",
             "staging_dir": "",
@@ -882,7 +882,7 @@ class Api:
         _log_activity("staging_recycle", {"moved": moved, "errors": errors_count})
         return {"status": "complete", "moved": moved, "errors": errors_count}
 
-    def dupes_purge(self):
+    def dupes_purge(self, params=None):
         settings = load_settings()
         dupes_dir = settings.get("move_destination",
                                  DEFAULTS["move_destination"])
@@ -892,7 +892,7 @@ class Api:
         _log_activity("dupes_purge", result)
         return {"status": "purged", **result}
 
-    def dupes_promote(self):
+    def dupes_promote(self, params=None):
         settings = load_settings()
         dupes_dir = settings.get("move_destination",
                                  DEFAULTS["move_destination"])
@@ -922,7 +922,7 @@ class Api:
         _log_activity("dupes_promote", {"moved": moved})
         return {"status": "promoted", "moved": moved, "errors": errors_count}
 
-    def consolidate(self):
+    def consolidate(self, params=None):
         settings = load_settings()
         dupes_dir = settings.get("move_destination",
                                  DEFAULTS["move_destination"])
@@ -1023,12 +1023,12 @@ class Api:
             return {"status": "opened"}
         return {"error": "Path not found"}
 
-    def open_recycle_bin(self):
+    def open_recycle_bin(self, params=None):
         import subprocess
         subprocess.Popen(["explorer", "shell:RecycleBinFolder"])
         return {"status": "opened"}
 
-    def app_shutdown(self):
+    def app_shutdown(self, params=None):
         """Close the pywebview window."""
         if self._window:
             self._window.destroy()

@@ -74,16 +74,6 @@
 
   <!-- Dashboard View -->
   <div class="view active" id="view-dashboard">
-    <div class="bookmark-notice" id="bookmarkNotice" style="display:none;">
-      <div class="bookmark-notice-text">
-        If multiple DupeFinder tabs appear after restarting your browser,
-        close the extras and bookmark this page. Your browser restores old
-        tabs from previous sessions -- a bookmark gives you a single,
-        reliable way to get back here.
-      </div>
-      <button class="btn btn-secondary btn-sm btn-bookmark" id="bookmarkBtn" onclick="bookmarkPage()">Bookmark This Page</button>
-      <button class="btn-dismiss" onclick="dismissBookmarkNotice()" title="Dismiss">&times;</button>
-    </div>
     <h1>DupeFinder</h1>
     <p class="subtitle">Find and clean up duplicate images on your computer.</p>
 
@@ -876,7 +866,7 @@
         <div class="form-group">
           <label class="form-label">Server port</label>
           <input class="form-input" type="number" id="setPort" value="8787">
-          <div class="form-hint">Requires restart to take effect. <a href="#" onclick="restartServer();return false;" style="color:var(--accent);">Restart now</a></div>
+          <div class="form-hint">Close and reopen DupeFinder for this to take effect.</div>
         </div>
       </div>
 
@@ -905,6 +895,7 @@
 <script src="/web/working.js"></script>
 <script src="/web/settings.js"></script>
 <script src="/web/oddball.js"></script>
+<script>_appInit();</script>
 
 <!-- Status Bar -->
 <div class="status-bar">
@@ -914,8 +905,6 @@
   </div>
   <div class="status-bar-right">
     <span id="statusBarInfo">DupeFinder</span>
-    <button class="btn-restart" onclick="restartServer()" title="Restart the server to apply setting changes or recover from errors">Restart</button>
-    <button class="btn-shutdown" onclick="shutdownServer()">Shut Down</button>
   </div>
 </div>
 

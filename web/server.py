@@ -41,10 +41,6 @@ from engine.staging import (
 )
 
 
-# ---- Session Token (browser-mode CSRF protection) ----
-import secrets
-_session_token = secrets.token_hex(16)
-_require_token = True  # Set to False in native mode
 
 
 # ---- Activity Log ----
@@ -81,53 +77,6 @@ def _read_activity(limit=50):
     if limit > 0:
         entries = entries[:limit]
     return entries
-
-
-# ---- Heartbeat / Auto-shutdown ----
-
-_last_heartbeat = time.time()
-_heartbeat_lock = threading.Lock()
-_shutdown_grace_seconds = 10
-
-
-def _touch_heartbeat():
-    global _last_heartbeat
-    with _heartbeat_lock:
-        _last_heartbeat = time.time()
-
-
-def _heartbeat_checker():
-    """Background thread: shuts down server if browser stops pinging."""
-    while True:
-        time.sleep(5)
-        with _heartbeat_lock:
-            elapsed = time.time() - _last_heartbeat
-
-        if elapsed > _shutdown_grace_seconds:
-            # Don't shut down if a scan, action, or staging is running
-            if scan_thread and scan_thread.is_alive():
-                _touch_heartbeat()  # keep alive during scans
-                continue
-            if action_thread and action_thread.is_alive():
-                _touch_heartbeat()
-                continue
-            if oddball_thread and oddball_thread.is_alive():
-                _touch_heartbeat()
-                continue
-            if staging_thread and staging_thread.is_alive():
-                _touch_heartbeat()
-                continue
-            if syncback_thread and syncback_thread.is_alive():
-                _touch_heartbeat()
-                continue
-
-            _log_activity("auto_shutdown", {
-                "reason": "No browser connection for "
-                          + str(int(elapsed)) + " seconds",
-            })
-            time.sleep(0.5)
-            if _server_instance:
-                _server_instance.shutdown()
 
 
 # ---- Shared state (accessed by handler and background threads) ----
@@ -855,8 +804,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_action_progress_sse()
         elif path == "/api/oddball/progress":
             self._handle_oddball_progress_sse()
-        elif path == "/api/heartbeat":
-            self._handle_heartbeat()
         elif path == "/api/folders/status":
             self._handle_folders_status()
         elif path == "/api/activity":
@@ -883,13 +830,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
     # ---- POST routes ----
 
     def do_POST(self):
-        # Check session token (browser-mode CSRF protection)
-        if _require_token:
-            token = self.headers.get("X-DupeFinder-Token", "")
-            if token != _session_token:
-                self.send_error_json("Invalid session token", 403)
-                return
-
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
@@ -911,10 +851,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_decisions_save()
         elif path == "/api/scans/delete":
             self._handle_delete_scan()
-        elif path == "/api/shutdown":
-            self._handle_shutdown()
-        elif path == "/api/restart":
-            self._handle_restart()
         elif path == "/api/activity/clear":
             self._handle_clear_activity()
         elif path == "/api/staging/check":
@@ -959,12 +895,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         try:
             with open(str(html_path), "r", encoding="utf-8") as f:
                 content = f.read()
-            # Inject session token for CSRF protection
-            if _require_token:
-                token_script = ('<script>window._dfToken="'
-                                + _session_token + '";</script>')
-                content = content.replace("</body>",
-                                          token_script + "</body>")
             body = content.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -1017,10 +947,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
         except Exception as e:
             self.send_error_json("Could not serve file: " + str(e), 500)
-
-    def _handle_heartbeat(self):
-        _touch_heartbeat()
-        self.send_json({"status": "ok"})
 
     def _handle_folders_status(self):
         settings = load_settings()
@@ -1590,37 +1516,6 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             self.send_json({"status": "deleted", "filename": filename})
         except Exception as e:
             self.send_error_json("Failed to delete: " + str(e), 500)
-
-    def _handle_shutdown(self):
-        _log_activity("shutdown", {"source": "user"})
-        self.send_json({"status": "shutting_down"})
-        # Cancel any running operations
-        scan_cancel.set()
-        action_cancel.set()
-        # Shut down the server in a separate thread so this response completes
-        def _shutdown():
-            time.sleep(0.5)
-            if _server_instance:
-                _server_instance.shutdown()
-        threading.Thread(target=_shutdown, daemon=True).start()
-
-    def _handle_restart(self):
-        _log_activity("restart", {"source": "user"})
-        self.send_json({"status": "restarting"})
-        scan_cancel.set()
-        action_cancel.set()
-        def _restart():
-            import subprocess
-            time.sleep(0.5)
-            # Spawn new process before shutting down
-            subprocess.Popen(
-                [sys.executable] + sys.argv,
-                cwd=str(ROOT),
-                creationflags=subprocess.CREATE_NO_WINDOW,
-            )
-            if _server_instance:
-                _server_instance.shutdown()
-        threading.Thread(target=_restart, daemon=True).start()
 
     def _handle_browser_delete(self):
         try:
@@ -2581,21 +2476,14 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
 _server_instance = None
 
 
-def create_server(port=8787, enable_heartbeat=True, require_token=True):
+def create_server(port=8787):
     """Create and return a ThreadingHTTPServer instance."""
-    global _server_instance, _require_token
-    _require_token = require_token
+    global _server_instance
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", port),
         DupeFinderHandler,
     )
     _server_instance = server
-
-    # Start heartbeat checker (browser mode only)
-    if enable_heartbeat:
-        _touch_heartbeat()
-        checker = threading.Thread(target=_heartbeat_checker, daemon=True)
-        checker.start()
 
     _log_activity("server_started", {"port": port})
 

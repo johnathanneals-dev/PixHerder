@@ -1,14 +1,3 @@
-// Browser compatibility check
-(function() {
-  var isOK = window.fetch && window.CSS && CSS.supports && CSS.supports("gap", "1px");
-  if (!isOK) {
-    var w = document.createElement("div");
-    w.style.cssText = "background:#b33;color:#fff;padding:12px 20px;text-align:center;font-family:sans-serif;font-size:14px;";
-    w.innerHTML = "Your browser may not fully support DupeFinder. For the best experience, please use a recent version of Chrome, Firefox, Edge, or Safari.";
-    document.body.insertBefore(w, document.body.firstChild);
-  }
-})();
-
 /* ==================================================================
    DupeFinder SPA - State, Router, API, Views
    ================================================================== */
@@ -22,6 +11,14 @@ var state = {
   currentReport: null,
   settings: {}
 };
+
+// Shared wizard state (declared here for load-order safety, wizard.js overwrites)
+var wizardState = wizardState || {
+  currentStep: 1, completedSteps: {}, stagingDir: null,
+  sourceDir: null, lastReport: null, dupesDir: null,
+  browserReturnTo: "wizard"
+};
+var _stagingSession = _stagingSession || null;
 
 // ---- Utilities ----
 function formatBytes(bytes) {
@@ -160,70 +157,6 @@ function deleteLightboxFile() {
       }).catch(function(err) {
         toast("Delete failed: " + err.message, "error");
       });
-    }
-  );
-}
-
-// ---- Bookmark ----
-function bookmarkPage() {
-  toast("Press Ctrl+D to bookmark this page");
-  localStorage.setItem("dupefinder_bookmarked", "1");
-  var btn = document.getElementById("bookmarkBtn");
-  btn.disabled = true;
-  btn.innerHTML = "&#10003; Bookmarked";
-}
-
-function dismissBookmarkNotice() {
-  localStorage.setItem("dupefinder_bookmarked", "1");
-  document.getElementById("bookmarkNotice").style.display = "none";
-}
-
-// ---- Shutdown ----
-function shutdownServer() {
-  showDialog(
-    "Shut Down Server",
-    "This will stop DupeFinder. You will need to relaunch it from the desktop shortcut.",
-    "Shut Down",
-    "btn-danger",
-    function() {
-      api("POST", "/api/shutdown").catch(function() {});
-      document.querySelector(".status-dot").style.background = "var(--danger)";
-      document.querySelector(".status-dot").style.animation = "none";
-      document.querySelector(".status-bar-left span:first-child").innerHTML =
-        '<span class="status-dot" style="background:var(--danger);animation:none"></span>Server stopped';
-      document.querySelector(".btn-shutdown").disabled = true;
-      document.querySelector(".btn-shutdown").textContent = "Stopped";
-    }
-  );
-}
-
-function restartServer() {
-  showDialog(
-    "Restart Server",
-    "This will restart DupeFinder. The page will reload automatically once the server is back up.",
-    "Restart",
-    "btn-secondary",
-    function() {
-      api("POST", "/api/restart").catch(function() {});
-      document.querySelector(".status-dot").style.background = "var(--warning)";
-      document.querySelector(".status-dot").style.animation = "none";
-      document.querySelector(".status-bar-left span:first-child").innerHTML =
-        '<span class="status-dot" style="background:var(--warning);animation:none"></span>Restarting...';
-      // Poll until server is back
-      var attempts = 0;
-      var poll = setInterval(function() {
-        attempts++;
-        api("GET", "/api/heartbeat").then(function() {
-          clearInterval(poll);
-          location.reload();
-        }).catch(function() {
-          if (attempts > 30) {
-            clearInterval(poll);
-            document.querySelector(".status-bar-left span:first-child").innerHTML =
-              '<span class="status-dot" style="background:var(--danger);animation:none"></span>Restart failed';
-          }
-        });
-      }, 1000);
     }
   );
 }
@@ -392,13 +325,6 @@ function _loadFolderPicker(path) {
     });
 }
 
-// ---- Heartbeat (browser mode only) ----
-if (!(window.pywebview && window.pywebview.api)) {
-  setInterval(function() {
-    fetch("/api/heartbeat").catch(function() {});
-  }, 5000);
-}
-
 // ---- API Helper ----
 // Bridge method map: "METHOD /api/path" -> bridge method name
 var _bridgeMap = {
@@ -437,10 +363,7 @@ var _bridgeMap = {
   "POST /api/browser/delete": "browser_delete",
   "POST /api/browser/delete-folder": "browser_delete_folder",
   "POST /api/browser/open-explorer": "open_explorer",
-  "POST /api/browser/open-recycle-bin": "open_recycle_bin",
-  "POST /api/shutdown": "app_shutdown",
-  "POST /api/restart": "app_shutdown",
-  "GET /api/heartbeat": null
+  "POST /api/browser/open-recycle-bin": "open_recycle_bin"
 };
 
 function _useBridge() {
@@ -467,12 +390,8 @@ function api(method, path, body) {
       return r;
     });
   }
-  // Fallback: HTTP fetch (browser mode)
+  // HTTP fetch (internal server for images + static files)
   var opts = { method: method, headers: {} };
-  // Include session token for CSRF protection
-  if (window._dfToken) {
-    opts.headers["X-DupeFinder-Token"] = window._dfToken;
-  }
   if (body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
@@ -683,6 +602,12 @@ function escAttr(str) {
 }
 
 /* ==================================================================
-   INIT
+   INIT — called from index.html after all scripts load
    ================================================================== */
-route();
+function _appInit() {
+  if (window.pywebview) {
+    window.addEventListener("pywebviewready", function() { route(); });
+  } else {
+    route();
+  }
+}

@@ -34,13 +34,7 @@ function saveSettings() {
   api("POST", "/api/settings", data).then(function(saved) {
     state.settings = saved;
     if (newPort !== oldPort) {
-      showDialog(
-        "Port Changed",
-        "The server port was changed from " + oldPort + " to " + newPort + ". Restart the server for this to take effect.",
-        "Restart Now",
-        "btn-primary",
-        function() { restartServer(); }
-      );
+      toast("Port changed. Close and reopen DupeFinder for this to take effect.");
     } else {
       toast("Settings saved");
     }

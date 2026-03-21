@@ -29,10 +29,6 @@ The server runs hidden in the background. The status bar at the bottom of the br
 3. Delete the desktop shortcut if you created one
 4. Optionally delete temp folders used for staging and dupes (found in your system temp directory)
 
-### Bookmarking
-
-The desktop shortcut opens a browser tab every time you launch DupeFinder. If you see multiple tabs after restarting your browser, close the extras. Bookmarking (Ctrl+D) is still handy for quick access without relaunching.
-
 ---
 
 ## Guided Cleanup Wizard
@@ -211,7 +207,7 @@ If you scan a synced folder (like OneDrive), DupeFinder will detect it and offer
 ## Activity Log
 
 Click the **Activity** tab to see a log of everything DupeFinder has done:
-- Server starts and shutdowns (including auto-shutdowns)
+- Server starts and shutdowns
 - Scans started, completed, cancelled, or errored
 - Staging operations
 - File move/delete actions
@@ -220,17 +216,9 @@ Use **Clear** to reset the log.
 
 ---
 
-## Auto-Shutdown
-
-DupeFinder automatically shuts down if no browser tab is connected for 10 seconds. This prevents orphaned server processes. The server stays alive during long-running operations (scans, staging, actions) regardless of browser connection.
-
-If the browser tab is accidentally closed, just reopen `http://127.0.0.1:8787` within 10 seconds. Or relaunch from the desktop shortcut.
-
----
-
 ## Resumable Scans
 
-If a scan is interrupted (cancelled, crashed, or auto-shutdown), DupeFinder saves a checkpoint with all hashes computed so far. Next time you scan the same folder, it offers to resume from where it left off, skipping already-hashed files.
+If a scan is interrupted (cancelled or crashed), DupeFinder saves a checkpoint with all hashes computed so far. Next time you scan the same folder, it offers to resume from where it left off, skipping already-hashed files.
 
 ---
 
@@ -302,7 +290,7 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | Browser doesn't open | The desktop shortcut should always open the browser. If not, navigate to `http://127.0.0.1:8787` manually |
 | Page is blank or says "Unable to connect" | The server may still be starting up. Wait a few seconds and refresh. If it persists, try `launch.bat` to check for errors |
 | "Address already in use" | Another instance is already running. Check your browser for an existing DupeFinder tab, or restart your computer to clear it |
-| Multiple tabs appear | Your browser restored old tabs from a previous session. Close the extras and bookmark the page (Ctrl+D) |
+| Window doesn't open | Check Task Manager for lingering python.exe processes and end them, then relaunch |
 | **Scanning** | |
 | Scan seems stuck at a percentage | The progress bar tracks multiple phases. During "Comparing images..." the bar may move slowly on large collections -- this is normal. You can cancel and try an exact-only scan first |
 | "Not enough images to compare" | The selected folder has fewer than 2 image files. Check the path and make sure "Include subfolders" is checked if your images are in subdirectories |
@@ -316,10 +304,9 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | **File Browser** | |
 | Error when clicking a folder | The folder may not exist or may be outside the allowed directories (staging and dupes folders only). Use the breadcrumb trail to navigate back |
 | Folder shows "This folder is empty" | The folder contains no image files. It may have subfolders (not shown) or non-image files |
-| **Server** | |
-| Server shuts down unexpectedly | DupeFinder auto-shuts down 10 seconds after you close the browser tab. Relaunch from the desktop shortcut |
-| Server seems unresponsive | Click **Restart** in the status bar at the bottom of the page. If the page is completely unresponsive, close the tab and relaunch from the shortcut |
-| Changed a setting but nothing happened | Most settings apply immediately. The server port requires a restart -- you will be prompted to restart when saving a port change |
+| **Application** | |
+| DupeFinder closes unexpectedly | Relaunch from the desktop shortcut. Check Task Manager for orphaned python.exe processes |
+| Changed a setting but nothing happened | Most settings apply immediately. The server port requires closing and reopening DupeFinder |
 | **Synced Folders** | |
 | Migration is slow | Copying thousands of images takes time. The first migration is the slowest; subsequent ones can reuse the existing copy |
 | System asks to "Keep" or "Delete" after finishing | Choose **Delete**. If you choose "Keep", the sync service will restore the files you just removed |

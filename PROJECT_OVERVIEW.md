@@ -22,8 +22,6 @@ Currently in active development and testing by the developer, with plans for bro
 
 The application runs as a pywebview native window (using the system's Edge WebView2 engine). A lightweight internal HTTP server handles image display, but all user interaction flows through a direct Python-to-JavaScript bridge -- no browser tab, no URL to remember, no orphaned tabs.
 
-A legacy browser mode is available via `python dupefinder_app.py --browser` for development and debugging purposes.
-
 ## What is the typical workflow?
 
 ### Guided Wizard (recommended for most users)
