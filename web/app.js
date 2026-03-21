@@ -654,10 +654,36 @@ function escAttr(str) {
 /* ==================================================================
    INIT — called from index.html after all scripts load
    ================================================================== */
+function _refreshFolderPaths() {
+  // Keep folder paths up-to-date for navigation from any view
+  api("GET", "/api/folders/status").then(function(data) {
+    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+      _dashFolderPaths.staging = data.staging.path;
+    } else {
+      _dashFolderPaths.staging = "";
+    }
+    if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
+      _dashFolderPaths.dupes = data.dupes.path;
+    } else {
+      _dashFolderPaths.dupes = "";
+    }
+    if (data.keepers && data.keepers.exists && data.keepers.file_count > 0) {
+      _dashFolderPaths.keepers = data.keepers.path;
+    } else {
+      _dashFolderPaths.keepers = "";
+    }
+    _updateNavStates();
+  }).catch(function() {});
+}
+
 function _appInit() {
   if (window.pywebview) {
-    window.addEventListener("pywebviewready", function() { route(); });
+    window.addEventListener("pywebviewready", function() {
+      _refreshFolderPaths();
+      route();
+    });
   } else {
+    _refreshFolderPaths();
     route();
   }
 }

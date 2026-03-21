@@ -5,7 +5,19 @@ var _lastScanContext = null; // Tracks which folder was being scanned
 
 function _returnToScanFolder() {
   if (_lastScanContext) {
-    openBrowserFromDashboard(_lastScanContext);
+    // Use the scan directory directly if dashFolderPaths isn't populated
+    var scanDir = document.getElementById("scanDir");
+    var path = scanDir ? scanDir.value : "";
+    if (path && _lastScanContext) {
+      browserState.rootPath = path;
+      browserState.type = _lastScanContext;
+      browserState.currentPath = path;
+      browserState.currentPage = 1;
+      browserState.returnTo = "dashboard";
+      navigate("browser");
+    } else {
+      openBrowserFromDashboard(_lastScanContext);
+    }
   } else {
     navigate("dashboard");
   }
