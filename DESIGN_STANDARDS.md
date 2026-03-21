@@ -279,7 +279,118 @@ When complete, the spinner is replaced with a result card:
 
 ## Navigation
 
+### Top Menu Bar
+
+- **Logo**: app name in `--accent` color, 36px, monospace, plain text (not a link)
+- **Nav links**: 13px, three states:
+  - **Active page**: `--accent` color with `--accent-bg` background
+  - **Clickable**: `--text` color (white)
+  - **Unavailable**: `opacity: 0.4`, `pointer-events: none`
+- **Order**: Dashboard first, then workflow steps in order, then utility links (Activity, Settings last)
+- **Wrapping**: `flex-wrap: wrap` — fills from left on narrow windows
+
+### In-App Navigation Rules
+
 - `navigate()` forces `route()` refresh when hash is unchanged (prevents stale views)
 - Stateful views redirect to dashboard on fresh page load (`_appNavigated` flag)
 - Dashboard always shows current folder counts on load
-- Finish nav link only visible when My Files has files
+- "Return to [folder]" buttons appear when navigating away from a folder context
+- All navigation uses buttons, not text links (except top menu)
+
+---
+
+## Layout & Responsiveness
+
+### Container Widths
+
+| Container | Max Width | Usage |
+|-----------|-----------|-------|
+| `.main` | 1400px | Page content wrapper |
+| `.progress-center` | 900px | Progress views, scan results (must fit 4 stat cards) |
+| `.card` (forms) | 640px | Scan config, settings forms |
+| `.dialog` | 440px (90% viewport) | Modal dialogs |
+
+### Responsive Breakpoints
+
+| Breakpoint | Changes |
+|------------|---------|
+| 1024px | Reduce padding, shrink buttons to 200px, smaller image grid |
+| 768px | Further reduce padding/sizes, wrap nav, smaller stat cards |
+| 480px | Minimum: 2-column image grid, compact buttons |
+
+### Flex Layout Rules
+
+- All horizontal button groups: `display:flex; gap:12px; flex-wrap:wrap`
+- Sort/filter controls: `margin-left:auto` to push right
+- Content fills from left when wrapping
+- `white-space: nowrap` on buttons to prevent text wrapping inside buttons
+
+---
+
+## Stat Cards
+
+- Grid: `repeat(auto-fill, minmax(180px, 1fr))`
+- Border: `1px solid var(--border-container)`
+- Background: `var(--surface)`
+- Number: 36px, monospace, `--accent` color
+- Label: 12px, uppercase, `--text-dim`, letter-spacing 0.5px
+- Padding: 20px
+- Must never be mistaken for buttons (dimmer border than interactive elements)
+
+---
+
+## App Window
+
+- **Border**: `2px solid var(--accent-dim)` — visible against dark desktop backgrounds
+- **Min size**: 900x600
+- **Default size**: 1200x800
+- **Title bar**: App name only (e.g., "DupeFinder")
+- **No console window**: Use `pythonw.exe` for launch
+- **Single instance**: Port binding check prevents duplicate launches
+
+---
+
+## Cancel Button Standard
+
+- Active during cancellable phases (hashing, comparing, copying)
+- **Greys out at point of no return** (saving results, writing manifests)
+- Uses `btn-danger` style when active
+- Stage field in progress data determines when to disable
+
+---
+
+## Error Messages
+
+- **Never show raw Python errors** to users (no Errno, no tracebacks)
+- Translate common errors to plain English:
+  - `FileNotFoundError` / `Errno 2` → "Could not save results. Check Windows Security settings."
+  - `PermissionError` → "Permission denied. Check folder access."
+  - `OSError` on port → "Port in use. Close other applications or change port in Settings."
+- Log technical details to activity.log for debugging
+- Error dialogs use `--danger` color for title
+
+---
+
+## Security Integration
+
+- **Pre-flight checks** in setup script: CFA write test, PowerShell availability, port availability
+- **Runtime CFA detection**: test write on startup, show dialog with whitelist instructions if blocked
+- **Graceful degradation**: if PowerShell blocked, files stay in place (never permanently deleted)
+- **User manual**: plain English security setup section with step-by-step instructions
+
+---
+
+## Cross-Application Consistency (Future Apps)
+
+When building new applications (video deduper, face finder, dashboard):
+
+1. **Use this same color palette** — all CSS variables defined above
+2. **Use this same dark theme** — `--bg` through `--surface-3` backgrounds
+3. **Use this same button system** — green=safe, red=destructive, amber=caution, dark=neutral
+4. **Use this same typography** — system fonts, monospace for technical data
+5. **Use this same disabled standard** — opacity 0.4 everywhere
+6. **Use this same dialog format** — cancel bottom-left, actions top-right
+7. **Use this same border system** — `--border-container` for non-interactive, `--text-dim` for interactive
+8. **Use this same nav pattern** — logo left, workflow links in order, utility links right
+9. **Use pywebview native window** — no browser, `pythonw.exe` launch, single instance
+10. **Use this same file security philosophy** — Recycle Bin, never permanent delete, log everything
