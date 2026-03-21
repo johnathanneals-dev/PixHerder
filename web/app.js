@@ -564,6 +564,10 @@ function route() {
     else if (step === 4) navView = "finish";
   } else if (view === "scan-config" || view === "scan-progress") {
     navView = "wizard-scan";
+  } else if (view === "browser") {
+    if (browserState.type === "staging") navView = "browser-staging";
+    else if (browserState.type === "dupes") navView = "browser-dupes";
+    else if (browserState.type === "keepers") navView = "browser-keepers";
   }
   var links = document.querySelectorAll(".nav-link");
   for (var i = 0; i < links.length; i++) {
