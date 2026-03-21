@@ -446,10 +446,12 @@ function _openRecycleBin() {
   }).catch(function() { toast("Could not open Recycle Bin", "error"); });
 }
 
+var _scanContext = null; // null = full options, "dupes" or "keepers" = focused rescan
+
 function _rescanFolder(type) {
   var path = _dashFolderPaths[type];
   if (!path) { toast("No folder to scan", "warning"); return; }
-  // Pre-fill the scan config with this folder path
+  _scanContext = type;
   document.getElementById("scanDir").value = path;
   navigate("scan-config");
 }

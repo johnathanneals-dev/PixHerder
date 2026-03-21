@@ -24,6 +24,32 @@ function fillScanDir(type) {
 }
 
 function initScanConfig() {
+  var ctx = typeof _scanContext !== "undefined" ? _scanContext : null;
+  var title = document.querySelector("#view-scan-config h1");
+  var subtitle = document.querySelector("#view-scan-config .subtitle");
+  var folderGroup = document.getElementById("scanFolderGroup");
+  var keepersSection = document.getElementById("scanKeepersSection");
+
+  // Context-aware layout
+  if (ctx === "dupes") {
+    title.textContent = "Scanning Removed Duplicates";
+    subtitle.textContent = "Review your removed duplicates with different scan settings.";
+    if (folderGroup) folderGroup.style.display = "none";
+    if (keepersSection) keepersSection.style.display = "none";
+  } else if (ctx === "keepers") {
+    title.textContent = "Scanning Verified Keepers";
+    subtitle.textContent = "Rescan your verified keepers to check for remaining duplicates.";
+    if (folderGroup) folderGroup.style.display = "none";
+    if (keepersSection) keepersSection.style.display = "none";
+  } else {
+    title.textContent = "Configure Scan";
+    subtitle.textContent = "Choose a folder and scanning options.";
+    if (folderGroup) folderGroup.style.display = "block";
+  }
+
+  // Reset context after applying (so menu link shows full options)
+  _scanContext = null;
+
   api("GET", "/api/settings").then(function(settings) {
     state.settings = settings;
     document.getElementById("scanThreshold").value = settings.threshold || 5;
@@ -44,7 +70,7 @@ function initScanConfig() {
     if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
       dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
       dBtn.disabled = false;
-      document.getElementById("scanKeepersSection").style.display = "block";
+      if (!ctx) document.getElementById("scanKeepersSection").style.display = "block";
     } else {
       dBtn.textContent = "Removed Duplicates (empty)";
       dBtn.disabled = true;
