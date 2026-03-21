@@ -128,6 +128,12 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] TODO.md persistent task tracker
 - [x] Independent audit completed (28 issues identified)
 
+## Future Vision (separate apps / major features)
+
+- [ ] Face detection/recognition in photos (may warrant separate app)
+- [ ] Duplicate video finder (separate app — different algorithms, larger files)
+- [ ] Unified dashboard app to manage all tools (DupeFinder, video deduper, face finder, etc.)
+
 ## Won't Do / Deferred
 
 - IE11/Edge Legacy support (document only, no polyfills)

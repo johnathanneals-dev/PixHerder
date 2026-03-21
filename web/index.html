@@ -94,6 +94,9 @@
         <div style="text-align:center;">
           <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled>My Files</button>
           <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;">No files</div>
+          <div id="dashRescanStagingBox" style="display:none;margin-top:8px;">
+            <button class="btn btn-primary btn-browse" id="dashRescanStagingBtn" onclick="_rescanFolder('staging')">Rescan My Files</button>
+          </div>
         </div>
         <div style="text-align:center;">
           <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled>Removed Duplicates</button>
@@ -114,8 +117,8 @@
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-lg" id="dashContinueBtn" onclick="_dashContinue()">Continue</button>
-          <button class="btn btn-secondary" onclick="_dashStagePicker()">Choose a different step</button>
+          <button class="btn btn-secondary" onclick="_dashStagePicker()">Access Wizard Steps</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>

@@ -31,7 +31,12 @@ function initScanConfig() {
   var keepersSection = document.getElementById("scanKeepersSection");
 
   // Context-aware layout
-  if (ctx === "dupes") {
+  if (ctx === "staging") {
+    title.textContent = "Scanning My Files";
+    subtitle.textContent = "Scan your files to find duplicates.";
+    if (folderGroup) folderGroup.style.display = "none";
+    if (keepersSection) keepersSection.style.display = "none";
+  } else if (ctx === "dupes") {
     title.textContent = "Scanning Removed Duplicates";
     subtitle.textContent = "Review your removed duplicates with different scan settings.";
     if (folderGroup) folderGroup.style.display = "none";

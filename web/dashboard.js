@@ -147,12 +147,14 @@ function _dashUpdateFolders() {
     }
 
     // Rescan boxes (positioned under their respective browse buttons)
+    var rescanStagingBox = document.getElementById("dashRescanStagingBox");
     var rescanDupesBox = document.getElementById("dashRescanBoxes");
     var rescanKeepersBox = document.getElementById("dashRescanKeepersBox");
     var rescanDupesBtn = document.getElementById("dashRescanDupesBtn");
     var rescanKeepersBtn = document.getElementById("dashRescanKeepersBtn");
     var rescanDupesHint = document.getElementById("dashRescanDupesHint");
     var rescanKeepersHint = document.getElementById("dashRescanKeepersHint");
+    rescanStagingBox.style.display = hasStaging ? "block" : "none";
     rescanDupesBox.style.display = hasDupes ? "block" : "none";
     rescanDupesBtn.disabled = !hasDupes;
     rescanDupesHint.textContent = hasDupes ? data.dupes.file_count.toLocaleString() + " files" : "No files";
