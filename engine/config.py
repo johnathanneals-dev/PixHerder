@@ -55,9 +55,11 @@ def default_pictures_path():
 
 def ensure_dirs():
     """Create scans/ and logs/ directories if they do not exist."""
-    os.makedirs(str(SCANS_DIR), exist_ok=True)
-    os.makedirs(str(LOGS_DIR), exist_ok=True)
-    os.makedirs(str(CHECKPOINTS_DIR), exist_ok=True)
+    for d in (SCANS_DIR, LOGS_DIR, CHECKPOINTS_DIR):
+        try:
+            os.makedirs(str(d), exist_ok=True)
+        except OSError:
+            pass  # CFA may block; _check_write_access() handles warning
 
 
 def load_settings():

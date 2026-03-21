@@ -422,6 +422,14 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         with open(str(result_path), "w") as f:
             json.dump(report, f, indent=2)
 
+        # Verify the file was written (CFA may silently block)
+        if not result_path.exists() or result_path.stat().st_size == 0:
+            raise OSError(
+                "Could not save scan results. If Windows Defender "
+                "Controlled Folder Access is enabled, please whitelist "
+                "the Python executable in Windows Security settings."
+            )
+
         # Scan succeeded -- delete checkpoint
         delete_checkpoint(ckpt_path)
 
@@ -479,9 +487,19 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
 
         import traceback
         tb = traceback.format_exc()
+        # User-friendly error message
+        err_msg = str(e)
+        if "Errno 2" in err_msg or "No such file" in err_msg:
+            err_msg = ("Could not save scan results. Windows Defender "
+                       "Controlled Folder Access may be blocking writes. "
+                       "Please whitelist the Python executable in "
+                       "Windows Security settings.")
+        elif "Permission" in err_msg or "Access" in err_msg:
+            err_msg = ("Permission denied. Check that DupeFinder has "
+                       "write access to its data folders.")
         scan_progress.update({
             "status": "error",
-            "message": "Scan failed: " + str(e),
+            "message": err_msg,
         })
         _log_activity("scan_error", {
             "directory": directory,

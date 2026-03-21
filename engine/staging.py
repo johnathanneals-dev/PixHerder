@@ -78,7 +78,15 @@ def start_staging(source_dir, staging_dir, extensions=None,
     if extensions is None:
         extensions = IMAGE_EXTENSIONS
 
-    os.makedirs(staging_dir, exist_ok=True)
+    try:
+        os.makedirs(staging_dir, exist_ok=True)
+    except OSError as e:
+        return {
+            "copied": 0, "skipped": 0, "failed": 0,
+            "errors": ["Could not create staging folder: " + str(e)
+                       + ". Check Windows Defender Controlled Folder Access."],
+            "staging_dir": staging_dir, "manifest_path": None,
+        }
 
     # Count total files first
     total_files, total_bytes = count_files_for_staging(source_dir, extensions)

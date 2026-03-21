@@ -20,7 +20,60 @@ PROJECT_ROOT = Path(__file__).parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from engine.config import load_settings, ensure_dirs
+from engine.config import load_settings, ensure_dirs, SCANS_DIR
+
+
+def _check_write_access():
+    """Test if the app can write to its data directories.
+
+    Controlled Folder Access (CFA) in Windows Defender silently blocks
+    writes with misleading FileNotFoundError. Detect this early and
+    warn the user to whitelist pythonw.exe.
+    """
+    import os
+    test_file = os.path.join(str(SCANS_DIR), "_write_test.tmp")
+    try:
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+    except (OSError, PermissionError):
+        # CFA or permissions blocking writes
+        python_exe = sys.executable
+        try:
+            import webview
+            webview.create_window(
+                "DupeFinder - Setup Required",
+                html=(
+                    '<html><body style="background:#1a1a22;color:#e8e8ed;'
+                    'font-family:sans-serif;padding:40px;text-align:center;">'
+                    '<h2 style="color:#f87171;">Write Access Blocked</h2>'
+                    '<p style="color:#7a7a8a;max-width:500px;margin:16px auto;">'
+                    'Windows Defender Controlled Folder Access is preventing '
+                    'DupeFinder from saving files.</p>'
+                    '<p style="color:#e8e8ed;max-width:500px;margin:16px auto;">'
+                    'To fix this:</p>'
+                    '<ol style="text-align:left;max-width:420px;margin:0 auto;'
+                    'color:#7a7a8a;line-height:2;">'
+                    '<li>Open <b style="color:#e8e8ed;">Windows Security</b></li>'
+                    '<li>Go to <b style="color:#e8e8ed;">Virus &amp; threat '
+                    'protection</b></li>'
+                    '<li>Click <b style="color:#e8e8ed;">Ransomware protection'
+                    '</b></li>'
+                    '<li>Click <b style="color:#e8e8ed;">Allow an app through '
+                    'Controlled Folder Access</b></li>'
+                    '<li>Add: <code style="background:#0a0a0c;padding:2px 8px;'
+                    'border-radius:4px;color:#6ee7b7;">'
+                    + python_exe.replace("\\", "\\\\")
+                    + '</code></li></ol>'
+                    '<p style="color:#7a7a8a;margin-top:24px;">Then restart '
+                    'DupeFinder.</p></body></html>'
+                ),
+                width=600, height=480,
+            )
+            webview.start()
+        except Exception:
+            pass
+        sys.exit(1)
 
 
 def main():
@@ -37,6 +90,9 @@ def main():
     ensure_dirs()
     settings = load_settings()
     port = args.port or settings.get("port", 8787)
+
+    # Check for Controlled Folder Access blocking writes
+    _check_write_access()
 
     # Single-instance check: if port is already in use, exit silently
     import socket
