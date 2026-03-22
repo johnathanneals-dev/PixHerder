@@ -95,6 +95,11 @@ function _dashHintClick() {
 }
 
 function _dashStepClick(step) {
+  // Don't allow Import when files are already in the system
+  if (step === 1 && (_dashFolderPaths.staging || _dashFolderPaths.dupes || _dashFolderPaths.keepers)) {
+    toast("Send your current files home before importing new ones", "warning");
+    return;
+  }
   if (step === 1) _navToWizardStep(1);
   else if (step === 2) _rescanFolder("staging");
   else if (step === 3) _navToReview();
