@@ -192,13 +192,14 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         total_found = len(image_paths)
 
         # Apply scan limit (chunked scanning)
-        if scan_limit and scan_limit > 0 and total_found > scan_limit:
+        scan_limit = int(scan_limit or 0)
+        if scan_limit > 0 and total_found > scan_limit:
             image_paths = image_paths[:scan_limit]
 
         total_images = len(image_paths)
 
         batch_msg = "Found " + str(total_images) + " images"
-        if scan_limit and scan_limit > 0 and total_found > scan_limit:
+        if scan_limit > 0 and total_found > scan_limit:
             batch_msg = ("Scanning batch: " + str(total_images) + " of "
                         + str(total_found) + " total images")
 

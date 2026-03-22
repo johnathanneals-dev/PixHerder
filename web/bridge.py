@@ -422,7 +422,8 @@ class Api:
 
         resume = params.get("resume", False)
         auto_recycle = params.get("auto_recycle", False)
-        scan_limit = params.get("scan_limit", 0)
+        scan_limit = int(params.get("scan_limit", 0) or 0)
+        logger.debug("Scan start: dir=%s, mode=%s, scan_limit=%s", directory, mode, scan_limit)
         resume_data = None
         if resume:
             _, resume_data = find_checkpoint(directory, mode)
