@@ -813,14 +813,23 @@ function _initTooltips() {
   tip.addEventListener("mouseleave", function() {
     tip.style.display = "none";
   });
+
+  // Handle clicks inside tooltip (for Learn more link)
+  tip.addEventListener("click", function(e) {
+    var link = e.target.closest(".tip-link");
+    if (link) {
+      e.preventDefault();
+      e.stopPropagation();
+      _tooltipHelp();
+    }
+  });
 }
 
 function _tooltipHelp() {
-  document.getElementById("tooltip").style.display = "none";
-  if (_tipHelpSection) {
-    // TODO: navigate to help section when built
-    toast("Help section coming soon: " + _tipHelpSection);
-  }
+  var section = _tipHelpSection;
+  var tip = document.getElementById("tooltip");
+  if (tip) tip.style.display = "none";
+  toast("Help section coming soon: " + (section || "general"));
 }
 
 function _appInit() {
