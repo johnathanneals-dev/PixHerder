@@ -441,6 +441,7 @@ function reviewMarkDelete() {
 }
 
 function reviewBulkMove() {
+  toast("Mark All Remaining clicked!");
   // Count only unreviewed groups
   var unreviewed = 0;
   for (var i = 0; i < state.filteredIndices.length; i++) {
