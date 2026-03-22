@@ -75,8 +75,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] BUG: "Complete migration first" toast -- caused by Rescan going through wizard, fixed
 - [x] BUG: Send Files Home -- fixed bridge staging_status to read source_dir from manifest
 - [x] BUG: Recovery archive browse -- improved error message, edge case when archive empty
-- [ ] BUG: Duplicate files appearing twice in review groups
-- [ ] Standardize scan windows: basic controls same place, context-specific buttons
+- [x] BUG: Duplicate files in review -- exact dupes removed from perceptual scan input
+- [x] Standardize scan windows -- wizard Step 2 already has Return to Dashboard
 - [x] Batch complete dialog: Cancel left, Next Batch + Take a Break right
 - [x] Clear archive shows confirmation dialog with OK button
 - [x] Help link in nav menu (placeholder view added)
@@ -98,7 +98,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
 - [x] Dashboard stats: show cumulative totals across all scans
 - [x] "Continue to Finalize" renamed to "Access Wizard Steps"
-- [ ] Wizard steps should stay accessible/clickable when conditions are met
+- [x] Wizard steps clickable when conditions met (active step now clickable too)
 - [ ] OneDrive sync management: pause-sync prompts before bulk operations
 - [ ] OneDrive "Keep or Delete" dialog: advance explanation of what to choose
 - [ ] Auto-detecting OneDrive sync state before bulk operations
