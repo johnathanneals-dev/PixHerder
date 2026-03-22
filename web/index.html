@@ -13,16 +13,16 @@
   <div class="topnav-left">
     <div class="logo">DupeFinder</div>
     <div class="nav-links" id="navLinks">
-      <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</button>
-      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)">Migrate</button>
-      <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)">Scan</button>
-      <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()">Review</button>
-      <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')">Finalize</button>
-      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')">My Files</button>
-      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')">Removed Duplicates</button>
-      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')">Verified Keepers</button>
-      <button class="nav-link" data-view="activity" onclick="navigate('activity')">Previous Scans</button>
-      <button class="nav-link" data-view="settings" onclick="navigate('settings')">Settings</button>
+      <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
+      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into DupeFinder">Migrate</button>
+      <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)" data-tip="Configure and start a scan">Scan</button>
+      <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()" data-tip="Review duplicate groups from last scan">Review</button>
+      <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')" data-tip="Finish up and send files home">Finalize</button>
+      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')" data-tip="Browse your imported files">My Files</button>
+      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Removed Duplicates</button>
+      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Verified Keepers</button>
+      <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Previous Scans</button>
+      <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure DupeFinder preferences">Settings</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -67,9 +67,9 @@
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="">
   <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
-    <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;">Move to Verified Keepers</button>
-    <button onclick="deleteLightboxFile()">Recycle This File</button>
-    <button onclick="closeLightbox()" style="background:rgba(80,80,80,0.85);">Back</button>
+    <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;" data-tip="Save this file as a confirmed keeper">Move to Verified Keepers</button>
+    <button onclick="deleteLightboxFile()" data-tip="Send this file to the Recycle Bin">Recycle This File</button>
+    <button onclick="closeLightbox()" style="background:rgba(80,80,80,0.85);" data-tip="Close the zoomed view">Back</button>
   </div>
 </div>
 
@@ -223,21 +223,21 @@
           <div style="display:flex;gap:8px;">
             <input class="form-input" type="text" id="wizSourceDir"
                    placeholder="C:\Users\YourName\OneDrive\Pictures" style="flex:1;">
-            <button class="btn btn-secondary" onclick="openFolderPicker('wizSourceDir')" style="white-space:nowrap;">Browse</button>
+            <button class="btn btn-secondary" onclick="openFolderPicker('wizSourceDir')" style="white-space:nowrap;" data-tip="Browse for a folder to import">Browse</button>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('onedrive')">OneDrive Pictures</button>
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('pictures')">Pictures</button>
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('desktop')">Desktop</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('onedrive')" data-tip="Auto-fill with your OneDrive Pictures folder">OneDrive Pictures</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('pictures')" data-tip="Auto-fill with your Pictures folder">Pictures</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('desktop')" data-tip="Auto-fill with your Desktop folder">Desktop</button>
           </div>
         </div>
         <div id="wizMigrateInfo" style="display:none;margin-bottom:16px;">
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizMigrateInfoText"></div>
         </div>
         <div id="wizMigrateActions">
-          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()">Begin Migration</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back to Dashboard</button>
+          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to DupeFinder for scanning">Begin Migration</button>
+          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Back to Dashboard</button>
         </div>
         <div id="wizMigrateProgress" style="display:none;margin-top:16px;">
           <div class="progress-container">
@@ -280,14 +280,15 @@
           <label class="form-label">Perceptual threshold</label>
           <div class="slider-container">
             <input type="range" id="wizThreshold" min="0" max="20" value="5"
-                   oninput="document.getElementById('wizThresholdVal').textContent=this.value">
+                   oninput="document.getElementById('wizThresholdVal').textContent=this.value"
+                   data-tip="How closely images must match to be duplicates">
             <span class="slider-value" id="wizThresholdVal">5</span>
           </div>
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
           <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Lower = stricter matching, fewer results, faster. Higher = looser matching, more results, slower.</div>
         </div>
         <div class="form-group">
-          <label><input type="checkbox" id="wizRecursive" checked> Include subfolders</label>
+          <label><input type="checkbox" id="wizRecursive" checked data-tip="Also scan images inside subfolders"> Include subfolders</label>
         </div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
           <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
@@ -295,8 +296,8 @@
           <strong style="color:var(--text);">Both</strong> runs exact first, then perceptual on remaining files.
         </div>
         <div id="wizScanActions">
-          <button class="btn btn-primary" onclick="wizardStartScan()">Start Scan</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Return to Dashboard</button>
+          <button class="btn btn-primary" onclick="wizardStartScan()" data-tip="Begin scanning for duplicates with these settings">Start Scan</button>
+          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Return to Dashboard</button>
           <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
         </div>
         <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
@@ -372,9 +373,9 @@
         </div>
         <h3>Next Steps</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <button class="btn btn-secondary" onclick="wizardGoToStep(2)">Rescan</button>
-          <button class="btn btn-primary btn-lg" onclick="navigate('finish')">Finished with Scanning</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')">Back to Dashboard</button>
+          <button class="btn btn-secondary" onclick="wizardGoToStep(2)" data-tip="Run another scan with different settings">Rescan</button>
+          <button class="btn btn-primary btn-lg" onclick="navigate('finish')" data-tip="Send your files home and clean up">Finished with Scanning</button>
+          <button class="btn btn-ghost" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
         </div>
       </div>
     </div>
@@ -383,14 +384,15 @@
   <!-- File Browser View -->
   <div class="view" id="view-browser">
     <div class="browser-toolbar">
-      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()">&larr; Back</button>
+      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back</button>
       <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
-      <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;">Scan for Duplicates</button>
-      <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;">Move All to Verified Keepers</button>
-      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;">Open in Explorer</button>
+      <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
+      <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;" data-tip="Move all files to Verified Keepers">Move All to Verified Keepers</button>
+      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;" data-tip="Open this folder in Windows File Explorer">Open in Explorer</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
         <select class="form-input" id="browserSort" onchange="browserRefresh()"
-                style="width:auto;padding:4px 8px;font-size:12px;">
+                style="width:auto;padding:4px 8px;font-size:12px;"
+                data-tip="Change the order files are displayed">
           <option value="name">Name</option>
           <option value="size">Size (largest)</option>
           <option value="date">Date (newest)</option>
@@ -438,7 +440,8 @@
         <label class="form-label">Perceptual threshold</label>
         <div class="slider-container">
           <input type="range" id="scanThreshold" min="0" max="20" value="5"
-                 oninput="document.getElementById('thresholdVal').textContent=this.value">
+                 oninput="document.getElementById('thresholdVal').textContent=this.value"
+                 data-tip="How closely images must match to be duplicates">
           <span class="slider-value" id="thresholdVal">5</span>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">How closely images must match. 0 = nearly identical, 5 = similar (default), 10+ = loosely similar (may flag false matches).</div>
@@ -447,14 +450,14 @@
 
       <div class="form-group">
         <label class="checkbox-label">
-          <input type="checkbox" id="scanRecursive" checked>
+          <input type="checkbox" id="scanRecursive" checked data-tip="Also scan images inside subfolders">
           Scan subdirectories (recursive)
         </label>
       </div>
 
       <div class="form-group" id="autoRecycleGroup">
         <label class="checkbox-label">
-          <input type="checkbox" id="scanAutoRecycle">
+          <input type="checkbox" id="scanAutoRecycle" data-tip="Auto-send exact duplicates to the Recycle Bin">
           Auto-recycle exact duplicates
         </label>
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Byte-for-byte identical files are automatically sent to the Recycle Bin. The largest file in each group is kept. Recoverable from the Recycle Bin if needed.</div>
@@ -462,7 +465,7 @@
 
       <div class="form-group">
         <label class="form-label">Scan batch size</label>
-        <select class="form-input" id="scanLimit" style="width:auto;">
+        <select class="form-input" id="scanLimit" style="width:auto;" data-tip="How many files to process at once">
           <option value="0">All files</option>
           <option value="500">500 files</option>
           <option value="1000">1,000 files</option>
@@ -479,9 +482,9 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button class="btn btn-primary btn-lg" onclick="startScan()">Start Scan</button>
-        <button class="btn btn-secondary" id="scanReturnFolderConfigBtn" onclick="_returnToScanFolder()" style="display:none;">Return to Folder</button>
-        <button class="btn btn-secondary" onclick="navigate('dashboard')">Return to Dashboard</button>
+        <button class="btn btn-primary btn-lg" onclick="startScan()" data-tip="Begin scanning for duplicates with these settings">Start Scan</button>
+        <button class="btn btn-secondary" id="scanReturnFolderConfigBtn" onclick="_returnToScanFolder()" style="display:none;" data-tip="Go back to the folder you were browsing">Return to Folder</button>
+        <button class="btn btn-secondary" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Return to Dashboard</button>
       </div>
     </div>
 
@@ -612,8 +615,8 @@
             or your cleanup will be undone.
           </div>
           <div style="display:flex;gap:8px;margin-top:16px;">
-            <button class="btn btn-ghost" onclick="navigate('dashboard')">Go Back</button>
-            <button class="btn btn-primary btn-lg" id="finishNowBtn" onclick="_finishConfirm()">Finish Now</button>
+            <button class="btn btn-ghost" onclick="navigate('dashboard')" data-tip="Return to the dashboard without finishing">Go Back</button>
+            <button class="btn btn-primary btn-lg" id="finishNowBtn" onclick="_finishConfirm()" data-tip="Send your files home and clean up" data-help="finishing">Finish Now</button>
           </div>
         </div>
       </div>
@@ -656,7 +659,7 @@
         <div class="card" style="text-align:left;">
           <h3 style="color:var(--accent);margin-bottom:12px;" id="workingCompleteTitle">Done</h3>
           <p style="color:var(--text-dim);margin-bottom:16px;" id="workingCompleteMsg"></p>
-          <button class="btn btn-primary" id="workingContinueBtn" onclick="_workingContinue()">Continue</button>
+          <button class="btn btn-primary" id="workingContinueBtn" onclick="_workingContinue()" data-tip="Return to the dashboard">Continue</button>
         </div>
       </div>
     </div>
@@ -712,13 +715,13 @@
         <h2 style="margin:0;" id="reviewTitle">Review Duplicates</h2>
       </div>
       <div class="review-nav">
-        <button class="btn btn-secondary btn-sm" id="reviewPrevBtn" onclick="reviewNav(-1)">Prev</button>
+        <button class="btn btn-secondary btn-sm" id="reviewPrevBtn" onclick="reviewNav(-1)" data-tip="Go to the previous duplicate group">Prev</button>
         <div class="review-counter">
           <input class="jump-input" id="reviewJumpInput" type="number" min="1"
                  onchange="reviewJumpTo(this.value)">
           / <span id="reviewTotalLabel">0</span>
         </div>
-        <button class="btn btn-secondary btn-sm" id="reviewNextBtn" onclick="reviewNav(1)">Next</button>
+        <button class="btn btn-secondary btn-sm" id="reviewNextBtn" onclick="reviewNav(1)" data-tip="Go to the next duplicate group">Next</button>
       </div>
     </div>
 
@@ -764,21 +767,21 @@
 
     <div class="action-bar">
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="reviewNav(-1)" style="min-width:60px;">&larr; Prev</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewNav(-1)" style="min-width:60px;" data-tip="Go to the previous duplicate group">&larr; Prev</button>
         <div class="action-info" id="reviewActionInfo">Reviewed: 0 / 0</div>
-        <button class="btn btn-secondary btn-sm" onclick="reviewNav(1)" style="min-width:60px;">Next &rarr;</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewNav(1)" style="min-width:60px;" data-tip="Go to the next duplicate group">Next &rarr;</button>
       </div>
       <div class="action-buttons">
-        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()">Keep This Group</button>
-        <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()">Mark as Duplicate</button>
-        <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()">Send to Recycle Bin</button>
+        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()" data-tip="Keep all files in this group as they are">Keep This Group</button>
+        <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()" data-tip="Mark the duplicate files for removal">Mark as Duplicate</button>
+        <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()" data-tip="Send duplicate files to the Recycle Bin">Send to Recycle Bin</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()">Mark All Remaining</button>
-        <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()">Keep All Remaining</button>
+        <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()" data-tip="Mark all unreviewed groups as duplicates">Mark All Remaining</button>
+        <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()" data-tip="Keep all unreviewed groups as they are">Keep All Remaining</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-primary btn-sm" onclick="goToActions()">Apply Decisions</button>
+        <button class="btn btn-primary btn-sm" onclick="goToActions()" data-tip="Execute your keep and remove decisions">Apply Decisions</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')">Exit</button>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')" data-tip="Leave the review and return to the dashboard">Exit</button>
       </div>
     </div>
   </div>
@@ -800,11 +803,11 @@
 
         <div class="form-group">
           <label class="form-label">Move destination folder</label>
-          <input class="form-input" type="text" id="actMoveDir" placeholder="Folder for duplicate files">
+          <input class="form-input" type="text" id="actMoveDir" placeholder="Folder for duplicate files" data-tip="Folder where duplicate files will be moved to">
         </div>
 
         <div style="display:flex;gap:12px;margin-top:16px;">
-          <button class="btn btn-primary" id="actExecuteBtn" onclick="executeActions()">Execute</button>
+          <button class="btn btn-primary" id="actExecuteBtn" onclick="executeActions()" data-tip="Move and recycle files based on your decisions">Execute</button>
           <button class="btn btn-secondary" onclick="navigate('review')">Back to Review</button>
         </div>
       </div>
@@ -894,11 +897,11 @@
     <p class="subtitle">Verbose logging captures detailed information about every operation. This may affect performance during scans and file operations. Log files older than 30 days are automatically deleted on startup.</p>
 
     <div style="margin-bottom:16px;display:flex;gap:8px;">
-      <button class="btn btn-secondary" onclick="_loadLogContent('debug')">Debug Log</button>
-      <button class="btn btn-secondary" onclick="_loadLogContent('error')">Error Log</button>
-      <button class="btn btn-secondary" onclick="_refreshLogs()">Refresh</button>
-      <button class="btn btn-danger btn-sm" onclick="_clearLogs()">Clear Logs</button>
-      <button class="btn btn-ghost" onclick="navigate('activity')">Back to Previous Scans</button>
+      <button class="btn btn-secondary" onclick="_loadLogContent('debug')" data-tip="View detailed operation logs">Debug Log</button>
+      <button class="btn btn-secondary" onclick="_loadLogContent('error')" data-tip="View error-only logs">Error Log</button>
+      <button class="btn btn-secondary" onclick="_refreshLogs()" data-tip="Reload the log content">Refresh</button>
+      <button class="btn btn-danger btn-sm" onclick="_clearLogs()" data-tip="Delete all log files">Clear Logs</button>
+      <button class="btn btn-ghost" onclick="navigate('activity')" data-tip="Return to the Previous Scans page">Back to Previous Scans</button>
     </div>
 
     <div class="card" style="max-width:none;max-height:70vh;overflow-y:auto;padding:0;">
@@ -980,7 +983,7 @@
                value=".jpg, .jpeg, .png, .gif, .bmp, .tiff, .tif, .webp, .heic, .heif">
       </div>
 
-      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;">Save Settings</button>
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;" data-tip="Save your settings">Save Settings</button>
     </div>
   </div>
 

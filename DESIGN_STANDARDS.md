@@ -367,6 +367,38 @@ The dashboard displays a horizontal progress stepper showing the 4 workflow stag
 
 ---
 
+## Tooltips
+
+Every interactive element should have a `data-tip` attribute with a short description (under 60 characters). Add `data-help="section-id"` for a clickable "Learn more" link.
+
+### Standard
+
+- **All buttons, stat cards, nav links, stepper steps** get tooltips
+- 0.5s hover delay before showing (prevents flickering)
+- Tooltip positions above or below based on viewport space
+- "Learn more" link appears when `data-help` is set
+- Tooltip stays visible while cursor is over it (allows clicking link)
+- Controlled by `show_tooltips` setting (independent of hints)
+- Dark theme styling: `--surface-2` background, `--accent-dim` border
+
+### Disabled/Locked Elements
+
+- Greyed-out elements still show tooltips (explains WHY they're disabled)
+- Use `cursor: not-allowed` for disabled elements (red circle icon)
+- Do NOT use `pointer-events: none` on elements that need tooltips
+
+### Adding Tooltips to New Elements
+
+```html
+<button data-tip="Short description" data-help="help-section">Label</button>
+```
+
+### Cross-App Standard
+
+All future applications should use the same tooltip system with the same 0.5s delay, same styling, and same `data-tip`/`data-help` pattern.
+
+---
+
 ## Cancel Button Standard
 
 - Active during cancellable phases (hashing, comparing, copying)
