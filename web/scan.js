@@ -131,7 +131,9 @@ function startScan() {
   var threshold = parseInt(document.getElementById("scanThreshold").value) || 5;
   var recursive = document.getElementById("scanRecursive").checked;
   var autoRecycle = document.getElementById("scanAutoRecycle").checked;
-  var scanLimit = parseInt(document.getElementById("scanLimit").value) || 0;
+  var scanLimitEl = document.getElementById("scanLimit");
+  var scanLimit = scanLimitEl ? parseInt(scanLimitEl.value) || 0 : 0;
+  console.log("SCAN: scanLimit element value=" + (scanLimitEl ? scanLimitEl.value : "NOT FOUND") + ", parsed=" + scanLimit);
 
   // Check if this is a OneDrive path
   api("POST", "/api/staging/check", { directory: dir }).then(function(result) {
