@@ -61,9 +61,6 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
 
   // Build hint
   var hintText = document.getElementById("dashHintText");
-  var hintBtn = document.getElementById("dashHintAction");
-
-  hintBtn.style.display = "none";
 
   if (hasStaging && !hasScans) {
     hintText.textContent = "Ready to scan. Use the scan buttons below to find duplicates in your files.";
