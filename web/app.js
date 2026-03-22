@@ -981,13 +981,25 @@ function _tooltipHelp() {
 
 function _checkPersistentLogging() {
   api("GET", "/api/settings").then(function(s) {
-    if (s.persistent_logging) {
-      api("POST", "/api/logs/enable").then(function() {
+    if (s && s.persistent_logging) {
+      return api("POST", "/api/logs/enable").then(function() {
         _updatePersistentLogBadge(true);
         _updateLoggingUI(true);
       });
     }
-  }).catch(function() {});
+  }).catch(function(err) {
+    // Retry after a short delay (bridge may not be ready)
+    setTimeout(function() {
+      api("GET", "/api/settings").then(function(s) {
+        if (s && s.persistent_logging) {
+          api("POST", "/api/logs/enable").then(function() {
+            _updatePersistentLogBadge(true);
+            _updateLoggingUI(true);
+          });
+        }
+      }).catch(function() {});
+    }, 1000);
+  });
 }
 
 function _appInit() {
