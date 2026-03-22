@@ -39,8 +39,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] #4 Batch PowerShell recycling -- single invocation for all files instead of per-file spawning
 - [ ] #5 Move defaults from temp to LOCALAPPDATA -- prevent Storage Sense from deleting staged files
 - [x] #7 Add view teardown to SPA router -- implemented in stale data fix (route() clears state on view change)
-- [ ] #8 Extract shared _check_allowed_path() helper in server.py (4 duplicated locations)
-- [ ] #9 Fix move counter -- increment after BOTH copy2 and os.remove succeed
+- [x] #8 Extract shared _is_allowed_path() helper in server.py (5 locations consolidated)
+- [x] #9 Fix move counter -- fixed verify_copy error handling (wrong variable names)
 - [x] #27 Auto-shutdown race -- removed (no auto-shutdown in native mode)
 - [x] #28 Server restart -- removed (no restart in native mode, close window to exit)
 
@@ -48,7 +48,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] #6 O(n^2) perceptual comparison -- addressed with LSH multi-band bucketing (20% speedup)
 - [ ] #13 Union-Find for perceptual clustering -- consistent groups regardless of file order
-- [ ] #10 Scanner follows symlinks -- use os.walk(followlinks=False)
+- [x] #10 Scanner follows symlinks -- fixed with os.walk(followlinks=False) + is_symlink checks
 - [ ] #14 Thread-safe progress dicts -- add threading.Lock per dict
 
 ## Audit Phase 4: Polish
@@ -56,13 +56,13 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] #11 Add /api/staging/reset endpoint (replaced fake restore hack in finish.js) -- done in Phase 1
 - [ ] #12 Better error reporting in Return/Reload 3-step API chain
 - [ ] #15 Accessibility -- ARIA labels, focus trapping, keyboard nav
-- [ ] #17 Fix duplicate style attributes in HTML (scanKeepersSection, finishKeepersRow)
+- [x] #17 Fix duplicate style attributes in HTML (scanKeepersSection, finishKeepersRow merged)
 - [ ] #18 Improve OneDrive detection (env var / registry instead of string check)
 - [ ] #19 Populate oddball errors list (currently dead code)
 - [ ] #20 Replace innerHTML += with insertAdjacentHTML in browser.js
 - [ ] #21 Add timeout to working view (60s fallback with escape button)
 - [ ] #22 Incremental checkpoint writes for large scans
-- [ ] #23 Dynamic port in status bar from settings
+- [x] #23 Dynamic port in status bar from settings
 
 ## Feature Backlog (from testing session)
 
