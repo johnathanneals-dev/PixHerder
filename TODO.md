@@ -66,7 +66,11 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ## Feature Backlog (from testing session)
 
-- [ ] Sticky browser toolbar: buttons stay at top when scrolling in folder view
+- [x] Sticky browser toolbar: buttons stay at top when scrolling in folder view (fixed: moved to nav bar row)
+- [ ] Persistent logging toggle (Ctrl+Shift+F5) needs badge visibility fix on restart
+- [ ] Debug mode toggle (Ctrl+Shift+F7) needs testing across restart cycles
+- [ ] Auto-move duplicates to Removed Duplicates option (scan moves dupes automatically, user reviews after)
+- [ ] Tooltips not appearing on Execute Actions view buttons
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Audit all navigation: ensure buttons everywhere except top menu text links
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
