@@ -6,6 +6,7 @@ Session-only toggle -- resets to off on restart.
 
 import logging
 import os
+import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -21,6 +22,9 @@ def setup_logging(enable=False):
     global _logging_enabled
 
     os.makedirs(str(_LOGS_DIR), exist_ok=True)
+
+    # Auto-delete logs older than 7 days
+    cleanup_old_logs()
 
     root = logging.getLogger()
 
@@ -78,3 +82,21 @@ def disable_logging():
 def is_logging_enabled():
     """Return whether verbose logging is currently active."""
     return _logging_enabled
+
+
+# Log retention: 7 days
+LOG_RETENTION_DAYS = 7
+
+
+def cleanup_old_logs():
+    """Delete log files older than LOG_RETENTION_DAYS."""
+    if not _LOGS_DIR.is_dir():
+        return
+    cutoff = time.time() - (LOG_RETENTION_DAYS * 86400)
+    for f in _LOGS_DIR.iterdir():
+        if f.is_file() and f.suffix == ".log":
+            try:
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+            except Exception:
+                pass
