@@ -84,19 +84,29 @@ def is_logging_enabled():
     return _logging_enabled
 
 
-# Log retention: 7 days
-LOG_RETENTION_DAYS = 7
+# Log retention: 30 days
+LOG_RETENTION_DAYS = 30
 
 
 def cleanup_old_logs():
-    """Delete log files older than LOG_RETENTION_DAYS."""
+    """Delete log files older than LOG_RETENTION_DAYS.
+    Also truncates activity.log if it exceeds 5 MB.
+    """
     if not _LOGS_DIR.is_dir():
         return
     cutoff = time.time() - (LOG_RETENTION_DAYS * 86400)
     for f in _LOGS_DIR.iterdir():
         if f.is_file() and f.suffix == ".log":
             try:
-                if f.stat().st_mtime < cutoff:
+                st = f.stat()
+                # Delete files older than retention period
+                if st.st_mtime < cutoff:
                     f.unlink()
+                # Truncate activity.log if over 5 MB (keep last 1000 lines)
+                elif f.name == "activity.log" and st.st_size > 5 * 1024 * 1024:
+                    with open(str(f), "r", encoding="utf-8", errors="replace") as fh:
+                        lines = fh.readlines()
+                    with open(str(f), "w", encoding="utf-8") as fh:
+                        fh.writelines(lines[-1000:])
             except Exception:
                 pass

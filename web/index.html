@@ -891,7 +891,7 @@
   <!-- Logs View -->
   <div class="view" id="view-logs">
     <h1>Debug Logs</h1>
-    <p class="subtitle">Verbose logging captures detailed information about every operation. This may affect performance during scans and file operations. Log files older than 7 days are automatically deleted on startup.</p>
+    <p class="subtitle">Verbose logging captures detailed information about every operation. This may affect performance during scans and file operations. Log files older than 30 days are automatically deleted on startup.</p>
 
     <div style="margin-bottom:16px;display:flex;gap:8px;">
       <button class="btn btn-secondary" onclick="_loadLogContent('debug')">Debug Log</button>
@@ -970,7 +970,7 @@
             <input type="checkbox" id="setEnableLogging" onchange="_toggleLogging(this.checked)">
             Enable verbose logging
           </label>
-          <div class="form-hint">Captures detailed debug information for troubleshooting. May affect performance during scans. Resets to off when DupeFinder is restarted. Log files older than 7 days are automatically deleted.</div>
+          <div class="form-hint">Captures detailed debug information for troubleshooting. May affect performance during scans. Resets to off when DupeFinder is restarted. Log files older than 30 days are automatically deleted.</div>
         </div>
       </div>
 
