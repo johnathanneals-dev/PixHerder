@@ -27,7 +27,7 @@ IMAGE_EXTENSIONS = {
 
 DEFAULTS = {
     "threshold": 5,
-    "move_destination": os.path.join(tempfile.gettempdir(), "DupeFinder_dupes"),
+    "move_destination": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Dupes"),
     "keep_strategy": "largest",
     "extensions": [
         ".jpg", ".jpeg", ".png", ".gif", ".bmp",
@@ -36,8 +36,8 @@ DEFAULTS = {
     "recursive": True,
     "port": 8787,
     "hash_size": 16,
-    "staging_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Staging"),
-    "keepers_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Keepers"),
+    "staging_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Staging"),
+    "keepers_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Keepers"),
     "onedrive_safe_mode": True,
     "scan_batch_size": 2000,
     "show_hints": True,

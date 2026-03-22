@@ -172,6 +172,8 @@ function _stagePickReview() {
       }
     }
     toast("No scan results with duplicates to review");
+  }).catch(function(err) {
+    toast("Could not load scan results: " + (err.message || "unknown error"), "error");
   });
 }
 
@@ -344,6 +346,8 @@ function rescueAndReview() {
         );
       }
     );
+  }).catch(function(err) {
+    toast("Rescue & Review failed: " + (err.message || "Could not check folder status"), "error");
   });
 }
 
@@ -364,6 +368,8 @@ function _rnrMerge() {
               "My Files now has " + cleanedCount.toLocaleString() + " files.";
             if (dupesCount > 0) msg += " Removed Duplicates has " + dupesCount.toLocaleString() + " remaining.";
             done("Merge Complete", msg);
+          }).catch(function() {
+            done("Merge Complete", r.files_moved.toLocaleString() + " files moved to My Files.");
           });
         } else {
           done("Merge Failed", r.error || "Unknown error");
@@ -408,6 +414,8 @@ function _rnrSyncAndRecycle() {
             }).catch(function(err) { done("Failed", err.message); });
           }).catch(function(err) { done("Failed", err.message); });
         }).catch(function(err) { done("Failed", err.message); });
+      }).catch(function(err) {
+        done("Failed", "Could not retrieve staging status: " + (err.message || "unknown error"));
       });
     },
     "wizard"

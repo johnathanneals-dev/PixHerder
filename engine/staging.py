@@ -23,7 +23,15 @@ from engine.config import SCANS_DIR
 def is_onedrive_path(directory):
     """Check if a path is inside a OneDrive-managed folder."""
     normed = os.path.normpath(directory).lower()
-    return "onedrive" in normed
+    # Check path contains onedrive
+    if "onedrive" in normed:
+        return True
+    # Check environment variables
+    for env_var in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
+        od_path = os.environ.get(env_var, "")
+        if od_path and normed.startswith(os.path.normpath(od_path).lower()):
+            return True
+    return False
 
 
 def get_staging_dir(source_dir, base_staging_dir=None):

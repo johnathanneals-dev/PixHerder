@@ -47,6 +47,8 @@ def verify_pairs(report_data, dupes_folder=None, progress_cb=None,
             continue
 
         keep_hash, err = perceptual_hash(keep_path)
+        if err:
+            errors.append({"path": keep_path, "error": err})
         if keep_hash is None:
             skipped += len(group.get("duplicates", []))
             checked += len(group.get("duplicates", []))
@@ -81,6 +83,8 @@ def verify_pairs(report_data, dupes_folder=None, progress_cb=None,
                 continue
 
             dupe_hash, err = perceptual_hash(actual_path)
+            if err:
+                errors.append({"path": actual_path, "error": err})
             if dupe_hash is None:
                 skipped += 1
                 if progress_cb:

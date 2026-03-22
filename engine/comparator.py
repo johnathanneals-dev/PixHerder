@@ -198,8 +198,27 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
         report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
         last_reported = 0
 
-        # Build adjacency from candidates
-        matches = defaultdict(list)  # idx -> [(idx, distance)]
+        # Union-Find for order-independent clustering
+        parent = list(range(n))
+        uf_rank = [0] * n
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def union(x, y):
+            px, py = find(x), find(y)
+            if px == py:
+                return
+            if uf_rank[px] < uf_rank[py]:
+                px, py = py, px
+            parent[py] = px
+            if uf_rank[px] == uf_rank[py]:
+                uf_rank[px] += 1
+
+        # Compare candidate pairs and union matches
         for i_idx, j_idx in candidate_pairs:
             if cancel_event and cancel_event.is_set():
                 cancelled = True
@@ -207,35 +226,27 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
 
             distance = int(hashes[i_idx][1] - hashes[j_idx][1])
             if distance <= threshold:
-                matches[i_idx].append((j_idx, distance))
-                matches[j_idx].append((i_idx, distance))
+                union(i_idx, j_idx)
 
             comparisons_done += 1
             if progress_cb and (comparisons_done - last_reported) >= report_interval:
                 progress_cb(comparisons_done, total_comparisons, "phash_compare")
                 last_reported = comparisons_done
 
-        # Cluster from adjacency
+        # Collect groups from Union-Find
         if not cancelled:
-            for i_idx in range(n):
-                if i_idx in used:
-                    continue
-                if not matches.get(i_idx):
-                    continue
+            group_map = defaultdict(list)
+            for i in range(n):
+                group_map[find(i)].append(i)
 
-                path_a = hashes[i_idx][0]
-                group = [path_a]
-                distances = {}
-                used.add(i_idx)
-
-                for j_idx, dist in matches[i_idx]:
-                    if j_idx not in used:
-                        group.append(hashes[j_idx][0])
-                        distances[str(hashes[j_idx][0])] = dist
-                        used.add(j_idx)
-
-                if len(group) > 1:
-                    groups.append({"paths": group, "distances": distances})
+            for root, members in group_map.items():
+                if len(members) > 1:
+                    paths = [hashes[m][0] for m in members]
+                    dists = {}
+                    for m in members[1:]:
+                        d = int(hashes[members[0]][1] - hashes[m][1])
+                        dists[str(hashes[m][0])] = d
+                    groups.append({"paths": paths, "distances": dists})
 
     else:
         # Small collection — brute force O(n^2) is fine
