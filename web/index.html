@@ -35,7 +35,7 @@
 
 </div>
 <!-- Browser toolbar row (visible only in folder browser view, sticky below nav) -->
-<div id="browserNavBar" style="display:none;padding:8px 32px;border-bottom:2px solid var(--accent-dim);align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);position:sticky;top:56px;z-index:99;">
+<div id="browserNavBar" style="display:none;padding:8px 32px;border-bottom:2px solid var(--accent-dim);align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);position:fixed;top:56px;left:0;right:0;z-index:99;">
   <button class="btn btn-ghost" id="browserBackBtn2" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back to Dashboard</button>
   <button class="btn btn-primary btn-sm" id="browserScanBtn2" onclick="scanFromBrowser()" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
   <button class="btn btn-primary btn-sm" id="browserPromoteBtn2" onclick="promoteToKeepers()" style="display:none;" data-tip="Move all files to Verified Keepers">Move All to Verified Keepers</button>
@@ -398,7 +398,7 @@
   </div>
 
   <!-- File Browser View -->
-  <div class="view" id="view-browser">
+  <div class="view" id="view-browser" style="padding-top:40px;">
     <div class="browser-breadcrumb" id="browserBreadcrumb" style="margin-bottom:12px;"></div>
     <div class="browser-grid" id="browserGrid"></div>
     <div id="browserSentinel" style="height:1px;"></div>
