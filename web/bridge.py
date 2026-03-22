@@ -333,12 +333,36 @@ class Api:
         total = len(files)
         start = (page - 1) * page_size
         end = start + page_size
+        page_files = files[start:end]
+        entries = []
+        for f in page_files:
+            entries.append({
+                "name": f["name"],
+                "path": f["path"],
+                "size": f["size"],
+                "modified": f["modified"],
+                "is_dir": False,
+            })
+        # Also include subdirectories at current level
+        if page == 1:
+            try:
+                for d in sorted(os.listdir(dirpath)):
+                    dpath = os.path.join(dirpath, d)
+                    if os.path.isdir(dpath) and not d.startswith("."):
+                        entries.insert(0, {
+                            "name": d,
+                            "path": dpath,
+                            "is_dir": True,
+                        })
+            except OSError:
+                pass
         return {
-            "files": files[start:end],
+            "entries": entries,
             "total": total,
+            "path": dirpath,
+            "has_more": end < total,
             "page": page,
             "page_size": page_size,
-            "total_pages": (total + page_size - 1) // page_size,
         }
 
     def browse_folders(self, params=None):
