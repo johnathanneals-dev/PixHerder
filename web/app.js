@@ -77,7 +77,8 @@ function showDialog(title, message, confirmText, confirmClass, onConfirm) {
   btn.textContent = confirmText || "Confirm";
   btn.className = "btn " + (confirmClass || "btn-danger");
   btn.style.display = "";
-  document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
+  var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (_cancelBtn) _cancelBtn.style.display = "";
   _dialogCallback = onConfirm;
   document.getElementById("dialogOverlay").classList.add("active");
 }
@@ -249,13 +250,15 @@ function showResumeDialog(title, detail, onResume, onFresh) {
   document.getElementById("resumeResumeBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
+    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (_cancelBtn) _cancelBtn.style.display = "";
     onResume();
   };
   document.getElementById("resumeFreshBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "";
+    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (_cancelBtn) _cancelBtn.style.display = "";
     onFresh();
   };
 }
