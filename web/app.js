@@ -749,6 +749,10 @@ document.addEventListener("keydown", function(e) {
     e.preventDefault();
     _togglePersistentLogging();
   }
+  if (e.ctrlKey && e.shiftKey && e.key === "F6") {
+    e.preventDefault();
+    navigate("logs");
+  }
 });
 
 function _togglePersistentLogging() {
