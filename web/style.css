@@ -362,7 +362,7 @@
   }
   .flow-step.completed .step-label { color: var(--text-dim); }
   .flow-step.current .step-label { color: var(--text); font-weight: 600; }
-  .flow-step.pending { opacity: 0.4; cursor: not-allowed; }
+  .flow-step.pending { cursor: not-allowed; }
   .flow-step.pending .step-label { color: var(--text-muted); }
   .flow-connector {
     width: 24px; height: 2px; background: var(--border); flex-shrink: 0;
