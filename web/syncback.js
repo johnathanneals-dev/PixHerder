@@ -58,9 +58,16 @@ function _doStartSyncback() {
 }
 
 function cleanupStaging() {
-  if (!_stagingSession) return;
   // Check if staging has files -- if empty, just remove the folder
   api("GET", "/api/folders/status").then(function(data) {
+    // Ensure staging session is set from folder status
+    if (!_stagingSession && data.staging && data.staging.path) {
+      _stagingSession = { staging_dir: data.staging.path };
+    }
+    if (!_stagingSession) {
+      toast("No workspace to remove", "warning");
+      return;
+    }
     var count = (data.staging && data.staging.file_count) || 0;
     if (count === 0) {
       api("POST", "/api/staging/cleanup", {
