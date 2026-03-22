@@ -490,7 +490,7 @@
       </div>
     </div>
 
-    <div class="card" style="max-width:640px;margin-top:24px;" id="scanKeepersSection" style="display:none;">
+    <div class="card" style="max-width:640px;margin-top:24px;display:none;" id="scanKeepersSection">
       <h3 style="margin-bottom:12px;">Rescan Removed Duplicates</h3>
       <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
         Scan your Removed Duplicates folder to find files that aren't actually duplicates.
@@ -602,7 +602,7 @@
               <span style="color:var(--accent);font-weight:bold;font-size:18px;" id="finishStagingCount">0</span>
               <span>cleaned files will be kept safe</span>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;" id="finishKeepersRow" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;display:none;" id="finishKeepersRow">
               <span style="color:var(--accent);font-weight:bold;font-size:18px;" id="finishKeepersCount">0</span>
               <span>verified keepers will be kept safe</span>
             </div>
@@ -1011,7 +1011,7 @@
 <div class="status-bar">
   <div class="status-bar-left">
     <span><span class="status-dot"></span>Server running</span>
-    <span>127.0.0.1:8787</span>
+    <span id="statusBarPort">127.0.0.1:8787</span>
   </div>
   <div class="status-bar-right">
     <span id="statusBarInfo">DupeFinder</span>

@@ -128,9 +128,10 @@ def move_files(groups, move_dir, keep_strategy="largest",
                 logger.debug("Copying %s -> %s", dupe_path, dest)
                 shutil.copy2(str(dupe_path), str(dest))
                 if not verify_copy(dupe_path, dest):
-                    errors += 1
-                    error_details.append(
-                        str(dupe_path) + ": copy verification failed")
+                    error_list.append({
+                        "path": dupe_path_str,
+                        "error": "copy verification failed",
+                    })
                     continue
                 # Clear read-only flag if set (common with OneDrive staged files)
                 if not os.access(str(dupe_path), os.W_OK):

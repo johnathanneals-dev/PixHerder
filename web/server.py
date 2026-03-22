@@ -712,6 +712,35 @@ def _find_staging_subfolder():
     return best_path
 
 
+def _is_allowed_path(filepath, include_active_staging=True):
+    """Check if filepath is within allowed directories (staging, dupes, keepers).
+
+    Uses os.path.realpath for consistent comparison across all callers.
+    Returns True if the path is inside an allowed directory.
+    """
+    settings = load_settings()
+    allowed = [
+        settings.get("staging_dir", DEFAULTS["staging_dir"]),
+        settings.get("move_destination", DEFAULTS["move_destination"]),
+        settings.get("keepers_dir", DEFAULTS.get("keepers_dir", "")),
+    ]
+    src = staging_progress.get("source_dir") or ""
+    if src:
+        allowed.append(src)
+    if include_active_staging:
+        active = _find_staging_subfolder()
+        if active:
+            allowed.append(active)
+            allowed.append(os.path.dirname(active))
+    resolved = []
+    for d in allowed:
+        if d and os.path.isdir(d):
+            resolved.append(os.path.realpath(d).lower())
+    real = os.path.realpath(filepath).lower()
+    return any(real.startswith(a + os.sep) or real.startswith(a + "/")
+               or real == a for a in resolved)
+
+
 def _update_staging_progress(current, total, bytes_copied, bytes_total, stage):
     """Callback for staging engine to report progress."""
     staging_progress["current"] = current
@@ -1230,24 +1259,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         filepath = os.path.normpath(filepath)
 
         # Validate path is within allowed directories (prevent traversal)
-        settings = load_settings()
-        allowed_dirs = [
-            settings.get("staging_dir", DEFAULTS["staging_dir"]),
-            settings.get("move_destination", DEFAULTS["move_destination"]),
-            settings.get("keepers_dir", DEFAULTS.get("keepers_dir", "")),
-        ]
-        src = staging_progress.get("source_dir") or ""
-        if src:
-            allowed_dirs.append(src)
-        # Also allow active staging subfolder (may differ from settings)
-        active = _find_staging_subfolder()
-        if active:
-            allowed_dirs.append(active)
-            allowed_dirs.append(os.path.dirname(active))
-        allowed_dirs = [os.path.normpath(d) for d in allowed_dirs if d]
-        if not any(filepath.startswith(d + os.sep) or filepath == d
-                   for d in allowed_dirs):
-            logger.warning("Image access denied: %s not in allowed: %s", filepath, allowed_dirs)
+        if not _is_allowed_path(filepath):
+            logger.warning("Image access denied: %s", filepath)
             self.send_error(403, "Access denied")
             return
 
@@ -1584,20 +1597,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Security: only allow deleting within staging or dupes directories
-        real = os.path.realpath(filepath).lower()
-        settings = load_settings()
-        allowed = []
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
-        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
-        if os.path.isdir(staging_base):
-            allowed.append(os.path.realpath(staging_base).lower())
-        if os.path.isdir(dupes_dir):
-            allowed.append(os.path.realpath(dupes_dir).lower())
-        if keepers_dir and os.path.isdir(keepers_dir):
-            allowed.append(os.path.realpath(keepers_dir).lower())
-        if not any(real.startswith(a) for a in allowed):
-            logger.warning("Access denied: %s not in allowed: %s", real, allowed)
+        if not _is_allowed_path(filepath, include_active_staging=False):
+            logger.warning("Browser delete access denied: %s", filepath)
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
 
@@ -1637,19 +1638,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Security: only allow opening staging or dupes directories
-        real = os.path.realpath(dirpath).lower()
-        settings = load_settings()
-        allowed = []
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
-        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
-        if os.path.isdir(staging_base):
-            allowed.append(os.path.realpath(staging_base).lower())
-        if os.path.isdir(dupes_dir):
-            allowed.append(os.path.realpath(dupes_dir).lower())
-        if keepers_dir and os.path.isdir(keepers_dir):
-            allowed.append(os.path.realpath(keepers_dir).lower())
-        if not any(real.startswith(a) for a in allowed):
+        if not _is_allowed_path(dirpath, include_active_staging=False):
             self.send_error_json("Access denied", 403)
             return
 
@@ -1741,23 +1730,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Security: only allow deleting within staging or dupes directories
-        real = os.path.realpath(dirpath).lower()
-        settings = load_settings()
-        allowed = []
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
-        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
-        if os.path.isdir(staging_base):
-            allowed.append(os.path.realpath(staging_base).lower())
-        if os.path.isdir(dupes_dir):
-            allowed.append(os.path.realpath(dupes_dir).lower())
-        if keepers_dir and os.path.isdir(keepers_dir):
-            allowed.append(os.path.realpath(keepers_dir).lower())
-
         # Must be inside an allowed dir but NOT the allowed dir itself
-        inside = any(real.startswith(a + os.sep) or real.startswith(a + "/")
-                     for a in allowed)
-        if not inside:
+        if not _is_allowed_path(dirpath, include_active_staging=False):
             self.send_error_json("Access denied: cannot delete this directory", 403)
             return
 
@@ -2185,27 +2159,8 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # Security: only allow browsing staging or dupes directories
-        real = os.path.realpath(dirpath).lower()
-        settings = load_settings()
-        allowed = []
-        staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-        dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
-        keepers_dir = settings.get("keepers_dir", DEFAULTS.get("keepers_dir", ""))
-        if os.path.isdir(staging_base):
-            allowed.append(os.path.realpath(staging_base).lower())
-        if os.path.isdir(dupes_dir):
-            allowed.append(os.path.realpath(dupes_dir).lower())
-        if keepers_dir and os.path.isdir(keepers_dir):
-            allowed.append(os.path.realpath(keepers_dir).lower())
-        # Also allow active staging subfolder (may differ from settings)
-        active = _find_staging_subfolder()
-        if active:
-            allowed.append(os.path.realpath(active).lower())
-            parent = os.path.dirname(active)
-            if parent:
-                allowed.append(os.path.realpath(parent).lower())
-        if not any(real.startswith(a) for a in allowed):
-            logger.warning("Access denied: %s not in allowed: %s", real, allowed)
+        if not _is_allowed_path(dirpath):
+            logger.warning("Browse access denied: %s", dirpath)
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
 

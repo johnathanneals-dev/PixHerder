@@ -26,18 +26,32 @@ def find_images(directory, recursive=True, extensions=None):
     exts = extensions or SUPPORTED_EXTENSIONS
     # Normalize extensions to lowercase with leading dot
     exts = {e.lower() if e.startswith(".") else "." + e.lower() for e in exts}
+    import os as _os
     directory = Path(directory)
     logger.debug("Discovering images in %s (recursive=%s)", directory, recursive)
-    pattern = "**/*" if recursive else "*"
-    try:
-        for filepath in directory.glob(pattern):
-            try:
-                if filepath.is_file() and filepath.suffix.lower() in exts:
-                    yield filepath
-            except (PermissionError, OSError):
-                continue
-    except (PermissionError, OSError):
-        pass
+    if recursive:
+        try:
+            for root, dirs, files in _os.walk(str(directory), followlinks=False):
+                for fname in files:
+                    try:
+                        fpath = Path(root) / fname
+                        if fpath.suffix.lower() in exts and not fpath.is_symlink():
+                            yield fpath
+                    except (PermissionError, OSError):
+                        continue
+        except (PermissionError, OSError):
+            pass
+    else:
+        try:
+            for filepath in directory.iterdir():
+                try:
+                    if (filepath.is_file() and not filepath.is_symlink()
+                            and filepath.suffix.lower() in exts):
+                        yield filepath
+                except (PermissionError, OSError):
+                    continue
+        except (PermissionError, OSError):
+            pass
 
 
 def count_images(directory, recursive=True, extensions=None):

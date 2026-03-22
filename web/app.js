@@ -1053,8 +1053,17 @@ function _checkPersistentLogging() {
   });
 }
 
+function _updateStatusBarPort() {
+  api("GET", "/api/settings").then(function(s) {
+    var port = s.port || 8787;
+    var el = document.getElementById("statusBarPort");
+    if (el) el.textContent = "127.0.0.1:" + port;
+  }).catch(function() {});
+}
+
 function _appInit() {
   _initTooltips();
+  _updateStatusBarPort();
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
       _refreshFolderPaths();
