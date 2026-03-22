@@ -37,6 +37,7 @@ DEFAULTS = {
     "keepers_dir": os.path.join(tempfile.gettempdir(), "DupeFinder_Keepers"),
     "onedrive_safe_mode": True,
     "scan_batch_size": 2000,
+    "show_hints": True,
 }
 
 

@@ -681,21 +681,28 @@ def _find_staging_subfolder():
         return mem_dir
 
     # 2. Fall back to disk: find subfolder with most files
+    # Check both settings path and common alternative locations
     settings = load_settings()
     staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
-    if not os.path.isdir(staging_base):
-        return ""
+    search_paths = [staging_base]
+    # Also check C:\Temp\DupeFinder_Staging (common alternative)
+    alt_base = os.path.join("C:\\Temp", "DupeFinder_Staging")
+    if alt_base != staging_base and os.path.isdir(alt_base):
+        search_paths.append(alt_base)
 
     best_path = ""
     best_count = 0
-    for d in os.listdir(staging_base):
-        candidate = os.path.join(staging_base, d)
-        if not os.path.isdir(candidate):
+    for base in search_paths:
+        if not os.path.isdir(base):
             continue
-        count = sum(1 for _, _, files in os.walk(candidate) for _ in files)
-        if count > best_count:
-            best_count = count
-            best_path = candidate
+        for d in os.listdir(base):
+            candidate = os.path.join(base, d)
+            if not os.path.isdir(candidate):
+                continue
+            count = sum(1 for _, _, files in os.walk(candidate) for _ in files)
+            if count > best_count:
+                best_count = count
+                best_path = candidate
 
     return best_path
 
