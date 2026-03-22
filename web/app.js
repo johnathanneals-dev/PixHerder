@@ -749,11 +749,41 @@ document.addEventListener("keydown", function(e) {
     e.preventDefault();
     _togglePersistentLogging();
   }
+  // Ctrl+Shift+F6: navigate to console (only from console/dashboard, not mid-operation)
   if (e.ctrlKey && e.shiftKey && e.key === "F6") {
     e.preventDefault();
-    navigate("logs");
+    var curView = parseHash().view;
+    if (curView === "logs") {
+      navigate("dashboard");
+    } else if (curView === "dashboard" || curView === "activity" || curView === "settings") {
+      navigate("logs");
+    } else {
+      toast("Navigate to Dashboard first", "warning");
+    }
+  }
+  // Ctrl+Shift+F7: toggle debug mode (pywebview devtools)
+  if (e.ctrlKey && e.shiftKey && e.key === "F7") {
+    e.preventDefault();
+    _toggleDebugMode();
   }
 });
+
+function _toggleDebugMode() {
+  api("GET", "/api/settings").then(function(settings) {
+    var current = settings.debug_mode || false;
+    var newVal = !current;
+    return api("POST", "/api/settings", Object.assign({}, settings, { debug_mode: newVal }));
+  }).then(function(saved) {
+    var enabled = saved.debug_mode;
+    var badge = document.getElementById("debugModeBadge");
+    if (badge) badge.style.display = enabled ? "inline" : "none";
+    if (enabled) {
+      toast("Debug mode enabled. Restart DupeFinder to see DevTools window.");
+    } else {
+      toast("Debug mode disabled. Takes effect on next restart.");
+    }
+  });
+}
 
 function _togglePersistentLogging() {
   api("GET", "/api/settings").then(function(settings) {
@@ -992,13 +1022,17 @@ function _tooltipHelp() {
 function _checkPersistentLogging() {
   api("GET", "/api/settings").then(function(s) {
     if (s && s.persistent_logging) {
-      return api("POST", "/api/logs/enable").then(function() {
+      api("POST", "/api/logs/enable").then(function() {
         _updatePersistentLogBadge(true);
         _updateLoggingUI(true);
       });
     }
-  }).catch(function(err) {
-    // Retry after a short delay (bridge may not be ready)
+    // Show debug mode badge if enabled
+    if (s && s.debug_mode) {
+      var badge = document.getElementById("debugModeBadge");
+      if (badge) badge.style.display = "inline";
+    }
+  }).catch(function() {
     setTimeout(function() {
       api("GET", "/api/settings").then(function(s) {
         if (s && s.persistent_logging) {
@@ -1006,6 +1040,10 @@ function _checkPersistentLogging() {
             _updatePersistentLogBadge(true);
             _updateLoggingUI(true);
           });
+        }
+        if (s && s.debug_mode) {
+          var badge = document.getElementById("debugModeBadge");
+          if (badge) badge.style.display = "inline";
         }
       }).catch(function() {});
     }, 1000);

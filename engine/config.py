@@ -43,6 +43,7 @@ DEFAULTS = {
     "show_hints": True,
     "show_tooltips": True,
     "persistent_logging": False,
+    "debug_mode": False,
 }
 
 

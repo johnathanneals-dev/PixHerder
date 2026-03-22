@@ -176,7 +176,10 @@ def _run_native_mode(port):
     window.events.closing += on_closing
 
     # Start the window (blocks until closed)
-    webview.start(debug=True)
+    # Check if debug mode is enabled in settings
+    _settings = load_settings()
+    _debug = _settings.get("debug_mode", False)
+    webview.start(debug=_debug)
 
     # Ensure clean exit after window closes
     server.shutdown()

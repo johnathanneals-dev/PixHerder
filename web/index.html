@@ -12,7 +12,8 @@
 <div class="topnav">
   <div class="topnav-left">
     <div class="logo">DupeFinder</div>
-    <span id="persistentLogBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 2s ease-in-out infinite;">Persistent logging enabled<br><span style="animation:slow-blink 3s ease-in-out infinite;">Console: Ctrl+Shift+F6</span></span>
+    <span id="persistentLogBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 2s ease-in-out infinite;">Persistent logging enabled</span>
+    <span id="debugModeBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 3s ease-in-out infinite;">Debug mode enabled</span>
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
       <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into DupeFinder">Migrate</button>
@@ -777,7 +778,7 @@
         <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()" data-tip="Mark the duplicate files for removal">Mark as Duplicate</button>
         <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()" data-tip="Send duplicate files to the Recycle Bin">Send to Recycle Bin</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="alert('BULK CLICKED'); reviewBulkMove()">Mark All Remaining</button>
+        <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()">Mark All Remaining</button>
         <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()" data-tip="Keep all unreviewed groups as they are">Keep All Remaining</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-primary btn-sm" onclick="goToActions()" data-tip="Execute your keep and remove decisions">Apply Decisions</button>
@@ -902,6 +903,7 @@
       <button class="btn btn-secondary" onclick="_loadLogContent('error')" data-tip="View error-only logs">Error Log</button>
       <button class="btn btn-secondary" onclick="_refreshLogs()" data-tip="Reload the log content">Refresh</button>
       <button class="btn btn-danger btn-sm" onclick="_clearLogs()" data-tip="Delete all log files">Clear Logs</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
       <button class="btn btn-ghost" onclick="navigate('activity')" data-tip="Return to the Previous Scans page">Back to Previous Scans</button>
     </div>
 
