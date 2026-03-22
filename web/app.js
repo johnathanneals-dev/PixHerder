@@ -762,9 +762,18 @@ function _initTooltips() {
 
       var html = '<div class="tip-text">' + text + '</div>';
       if (help) {
-        html += '<a class="tip-link" onclick="_tooltipHelp()">Learn more</a>';
+        html += '<a class="tip-link" id="tipLearnMore">Learn more</a>';
       }
       tip.innerHTML = html;
+
+      // Attach click handler to Learn more link
+      var learnMore = document.getElementById("tipLearnMore");
+      if (learnMore) {
+        learnMore.onclick = function(e) {
+          e.stopPropagation();
+          _tooltipHelp();
+        };
+      }
 
       // Position tooltip
       var rect = el.getBoundingClientRect();
