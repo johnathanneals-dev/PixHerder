@@ -90,7 +90,7 @@ function browserLoadPage(replace) {
     + "&page=" + browserState.currentPage
     + "&page_size=50&sort=" + sort;
 
-  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+  api("GET", url).then(function(data) {
     browserState.loading = false;
     document.getElementById("browserLoading").style.display = "none";
 
