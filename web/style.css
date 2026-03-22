@@ -399,8 +399,8 @@
     background: var(--surface-2); border: 1px solid var(--text-dim); color: var(--text);
   }
   .btn-secondary:hover:not(:disabled) { background: var(--border); }
-  .btn-ghost { background: none; color: var(--text); padding: 8px 12px; }
-  .btn-ghost:hover { color: var(--text); }
+  .btn-ghost { background: none; color: #e02020; padding: 10px 20px; border: 1px solid #e02020; font-size: 14px; }
+  .btn-ghost:hover { background: #e02020; color: #fff; }
   .btn-sm { padding: 6px 12px; font-size: 12px; }
   .btn-lg { padding: 14px 28px; font-size: 16px; }
   .btn-fixed { min-width: 160px; text-align: center; }
