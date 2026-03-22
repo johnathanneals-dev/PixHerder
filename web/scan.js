@@ -335,6 +335,7 @@ function showScanComplete(d) {
   document.getElementById("scanProgressPct").textContent = d.status === "complete" ? "Done" : d.status;
 
   if (d.status === "complete") {
+    _sessionScanCompleted = true;
     document.getElementById("scanCompleteTitle").textContent = "Scan Complete";
     document.getElementById("scanCompleteTitle").style.color = "var(--accent)";
   } else if (d.status === "cancelled") {

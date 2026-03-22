@@ -5,6 +5,7 @@ var _dashFolderPaths = { staging: "", dupes: "", keepers: "" };
 
 var _dashContinueTarget = "finish"; // default
 var _dashHintTarget = null;
+var _sessionScanCompleted = false; // set true when a scan completes in this session
 
 // ---- Flow Guidance ----
 
@@ -257,22 +258,10 @@ function _dashUpdateFolders() {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
 
-    // Flow guidance (check for recent scans matching current staging folder)
-    api("GET", "/api/scans").then(function(scans) {
-      var hasRelevantScans = false;
-      var stagingPath = (data.staging && data.staging.path) || "";
-      if (scans && scans.length > 0 && stagingPath) {
-        for (var i = 0; i < scans.length; i++) {
-          if (scans[i].directory && scans[i].directory === stagingPath) {
-            hasRelevantScans = true;
-            break;
-          }
-        }
-      }
-      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasRelevantScans);
-    }).catch(function() {
-      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, false);
-    });
+    // Flow guidance — use session flag to determine if a scan was done this session
+    // hasDupes also implies a scan was done (files moved to dupes folder)
+    var hasScans = _sessionScanCompleted || hasDupes;
+    _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans);
 
     // Scan buttons (positioned under their respective browse buttons)
     var rescanStagingBox = document.getElementById("dashRescanStagingBox");
