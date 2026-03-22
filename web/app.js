@@ -734,16 +734,40 @@ function selectRadio(el, name) {
    KEYBOARD SHORTCUTS
    ================================================================== */
 document.addEventListener("keydown", function(e) {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
+
+  // Escape: close dialog first, then lightbox
+  if (e.key === "Escape") {
+    if (document.getElementById("dialogOverlay").classList.contains("active")) {
+      closeDialog();
+    } else {
+      closeLightbox();
+    }
+    return;
+  }
+
   // Only in review view
   if (parseHash().view !== "review") return;
-  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
 
   if (e.key === "ArrowLeft") { e.preventDefault(); reviewNav(-1); }
   if (e.key === "ArrowRight") { e.preventDefault(); reviewNav(1); }
   if (e.key === "s" || e.key === "S") { e.preventDefault(); reviewMarkSkip(); }
   if (e.key === "m" || e.key === "M") { e.preventDefault(); reviewMarkMove(); }
   if (e.key === "d" || e.key === "D") { e.preventDefault(); reviewMarkDelete(); }
-  if (e.key === "Escape") closeLightbox();
+  if (e.key === "e" || e.key === "E") { e.preventDefault(); goToActions(); }
+  if (e.key === " ") {
+    e.preventDefault();
+    var lb = document.getElementById("lightbox");
+    if (lb.classList.contains("active")) {
+      closeLightbox();
+    } else if (state.filteredIndices && state.filteredIndices.length > 0) {
+      var realIdx = state.filteredIndices[state.currentGroupIndex];
+      var group = state.groups[realIdx];
+      if (group && group.keep) {
+        openLightbox(encodeURIComponent(group.keep));
+      }
+    }
+  }
 });
 
 // ---- Persistent Logging Toggle (Ctrl+Shift+F5) ----

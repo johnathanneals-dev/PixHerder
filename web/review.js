@@ -491,6 +491,35 @@ function reviewBulkMove() {
   );
 }
 
+function reviewBulkDelete() {
+  var unreviewed = 0;
+  for (var i = 0; i < state.filteredIndices.length; i++) {
+    if (!state.decisions[state.filteredIndices[i]]) unreviewed++;
+  }
+  if (unreviewed === 0) {
+    toast("All groups already reviewed");
+    return;
+  }
+  showDialog(
+    "Recycle All Remaining",
+    "Send duplicates from " + unreviewed + " unreviewed groups to the Recycle Bin? Your previous decisions will be kept.",
+    "Recycle Remaining", "btn-danger",
+    function() {
+      var marked = 0;
+      for (var i = 0; i < state.filteredIndices.length; i++) {
+        if (!state.decisions[state.filteredIndices[i]]) {
+          state.decisions[state.filteredIndices[i]] = "delete";
+          marked++;
+        }
+      }
+      renderReviewGroup();
+      updateReviewActionInfo();
+      _saveDecisionsNow();
+      toast("Marked " + marked + " groups for recycling");
+    }
+  );
+}
+
 function reviewBulkSkip() {
   var kept = 0;
   for (var i = 0; i < state.filteredIndices.length; i++) {

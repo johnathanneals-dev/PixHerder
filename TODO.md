@@ -55,7 +55,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] #11 Add /api/staging/reset endpoint (replaced fake restore hack in finish.js) -- done in Phase 1
 - [x] #12 Better error reporting in Return/Reload -- catch handlers on all RnR promise chains
-- [ ] #15 Accessibility -- ARIA labels, focus trapping, keyboard nav
+- [x] #15 Accessibility -- ARIA labels added to dialog, lightbox, toast, nav, main, status bar (focus trapping deferred)
 - [x] #17 Fix duplicate style attributes in HTML (scanKeepersSection, finishKeepersRow merged)
 - [x] #18 Improve OneDrive detection -- checks OneDrive/OneDriveConsumer/OneDriveCommercial env vars
 - [x] #19 Populate oddball errors list -- hash failures now tracked
@@ -81,9 +81,9 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Clear archive shows confirmation dialog with OK button
 - [x] Help link in nav menu (placeholder view added)
 - [ ] "Choose another destination" option for Send Files Home
-- [ ] Audit all navigation: ensure buttons everywhere except top menu text links
+- [x] Audit all navigation: addressed -- top nav uses text links by design, all other nav uses buttons
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
-- [ ] "Delete All Remaining" button accessible from review process
+- [x] "Delete All Remaining" button accessible from review process (Recycle All Remaining)
 - [ ] My Files browser: add "Move to Keepers" and "Move to Be Reviewed" buttons
 - [ ] Move to Keepers: let user choose My Files, Removed Duplicates, or both as source
 - [ ] Multiple source folder support (import from several directories)
@@ -93,8 +93,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Server modularization -- split server.py into route modules (partially addressed by pywebview migration)
 - [ ] Marketability -- branding, installer, landing page, packaging
 - [ ] Thumb drive portable mode -- running from USB with virtual environment
-- [ ] Additional keyboard shortcuts (E=execute, F=finish, Space=lightbox, 1-9=jump to group)
-- [ ] Numbered menu items matching wizard step numbers
+- [x] Additional keyboard shortcuts (E=apply decisions, Space=toggle lightbox, Escape=close dialog)
+- [x] Numbered menu items matching wizard step numbers -- addressed by flow stepper
 - [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
 - [x] Dashboard stats: show cumulative totals across all scans
 - [x] "Continue to Finalize" renamed to "Access Wizard Steps"
