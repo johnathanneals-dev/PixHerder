@@ -80,31 +80,44 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Batch complete dialog: Cancel left, Next Batch + Take a Break right
 - [x] Clear archive shows confirmation dialog with OK button
 - [x] Help link in nav menu (placeholder view added)
+### Current App Features (build next)
+
+- [ ] Auto-move duplicates option: scan identifies and moves dupes to Removed Duplicates automatically, user reviews after
 - [ ] "Choose another destination" option for Send Files Home
-- [x] Audit all navigation: addressed -- top nav uses text links by design, all other nav uses buttons
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
-- [x] "Delete All Remaining" button accessible from review process (Recycle All Remaining)
-- [ ] My Files browser: add "Move to Keepers" and "Move to Be Reviewed" buttons
-- [ ] Move to Keepers: let user choose My Files, Removed Duplicates, or both as source
+- [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in My Files browser
+- [ ] Move to Keepers source picker: choose My Files, Removed Duplicates, or both
 - [ ] Multiple source folder support (import from several directories)
-- [ ] Keepers folder workflow -- rescan Removed Duplicates, promote to Verified Keepers
-- [x] Batch/chunked scanning for large collections
-- [x] **pywebview migration** -- native window replaces browser (completed 2026-03-20)
-- [ ] Server modularization -- split server.py into route modules (partially addressed by pywebview migration)
+- [ ] Expert mode toggle (reduces dialog count for experienced users)
+
+### Code Quality
+
+- [ ] Server modularization -- split server.py into route modules
+
+### OneDrive Integration
+
+- [ ] OneDrive sync management: pause-sync prompts, "Keep or Delete" explanation, auto-detect sync state
+
+### Help System
+
+- [ ] Built-in #help view with anchored topics, full nav, "Back to where I was" (placeholder view exists)
+
+### Distribution
+
 - [ ] Marketability -- branding, installer, landing page, packaging
 - [ ] Thumb drive portable mode -- running from USB with virtual environment
-- [x] Additional keyboard shortcuts (E=apply decisions, Space=toggle lightbox, Escape=close dialog)
-- [x] Numbered menu items matching wizard step numbers -- addressed by flow stepper
-- [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
-- [x] Dashboard stats: show cumulative totals across all scans
+
+### Previously Completed
+
+- [x] Audit all navigation: top nav text links by design, all other nav uses buttons
+- [x] "Delete All Remaining" accessible from review (Recycle All Remaining button)
+- [x] Batch/chunked scanning for large collections
+- [x] pywebview migration -- native window replaces browser
+- [x] Additional keyboard shortcuts (E=apply, Space=lightbox, Escape=close)
+- [x] Numbered menu items -- addressed by flow stepper
+- [x] Dashboard stats: cumulative totals across all scans
 - [x] "Continue to Finalize" renamed to "Access Wizard Steps"
-- [x] Wizard steps clickable when conditions met (active step now clickable too)
-- [ ] OneDrive sync management: pause-sync prompts before bulk operations
-- [ ] OneDrive "Keep or Delete" dialog: advance explanation of what to choose
-- [ ] Auto-detecting OneDrive sync state before bulk operations
-- [ ] Built-in #help view with anchored topics replacing verbose UI text
-- [ ] Help section: full nav + "Back to where I was" button
-- [ ] Testing data tracking doc for consistency across test sessions
+- [x] Wizard steps clickable when conditions met
 
 ## Completed (2026-03-21)
 
