@@ -743,6 +743,40 @@ document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") closeLightbox();
 });
 
+// ---- Persistent Logging Toggle (Ctrl+Shift+F5) ----
+document.addEventListener("keydown", function(e) {
+  if (e.ctrlKey && e.shiftKey && e.key === "F5") {
+    e.preventDefault();
+    _togglePersistentLogging();
+  }
+});
+
+function _togglePersistentLogging() {
+  api("GET", "/api/settings").then(function(settings) {
+    var current = settings.persistent_logging || false;
+    var newVal = !current;
+    return api("POST", "/api/settings", Object.assign({}, settings, { persistent_logging: newVal }));
+  }).then(function(saved) {
+    var enabled = saved.persistent_logging;
+    if (enabled) {
+      api("POST", "/api/logs/enable").then(function() {
+        toast("Persistent logging enabled (Ctrl+Shift+F5 to disable)");
+        _updatePersistentLogBadge(true);
+      });
+    } else {
+      api("POST", "/api/logs/disable").then(function() {
+        toast("Persistent logging disabled");
+        _updatePersistentLogBadge(false);
+      });
+    }
+  });
+}
+
+function _updatePersistentLogBadge(enabled) {
+  var badge = document.getElementById("persistentLogBadge");
+  if (badge) badge.style.display = enabled ? "inline" : "none";
+}
+
 /* ==================================================================
    HTML ESCAPE HELPERS
    ================================================================== */
@@ -945,15 +979,28 @@ function _tooltipHelp() {
   toast("Help section coming soon: " + (section || "general"));
 }
 
+function _checkPersistentLogging() {
+  api("GET", "/api/settings").then(function(s) {
+    if (s.persistent_logging) {
+      api("POST", "/api/logs/enable").then(function() {
+        _updatePersistentLogBadge(true);
+        _updateLoggingUI(true);
+      });
+    }
+  }).catch(function() {});
+}
+
 function _appInit() {
   _initTooltips();
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
       _refreshFolderPaths();
+      _checkPersistentLogging();
       route();
     });
   } else {
     _refreshFolderPaths();
+    _checkPersistentLogging();
     route();
   }
 }

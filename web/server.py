@@ -1246,6 +1246,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         allowed_dirs = [os.path.normpath(d) for d in allowed_dirs if d]
         if not any(filepath.startswith(d + os.sep) or filepath == d
                    for d in allowed_dirs):
+            logger.warning("Image access denied: %s not in allowed: %s", filepath, allowed_dirs)
             self.send_error(403, "Access denied")
             return
 
@@ -1595,6 +1596,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         if keepers_dir and os.path.isdir(keepers_dir):
             allowed.append(os.path.realpath(keepers_dir).lower())
         if not any(real.startswith(a) for a in allowed):
+            logger.warning("Access denied: %s not in allowed: %s", real, allowed)
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
 
@@ -2202,6 +2204,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             if parent:
                 allowed.append(os.path.realpath(parent).lower())
         if not any(real.startswith(a) for a in allowed):
+            logger.warning("Access denied: %s not in allowed: %s", real, allowed)
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
 

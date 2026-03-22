@@ -304,6 +304,7 @@ class Api:
         norm_dir = os.path.normpath(dirpath)
         allowed_norms = [os.path.normpath(d) for d in allowed if d]
         if not any(norm_dir.startswith(a) for a in allowed_norms):
+            logger.warning("Browse access denied: %s not in %s", norm_dir, allowed_norms)
             return {"error": "Access denied", "files": [], "total": 0}
 
         files = []

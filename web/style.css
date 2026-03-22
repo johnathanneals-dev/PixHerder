@@ -716,6 +716,7 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes toast-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes slow-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
 
   /* ---- Responsive: narrow windows and high-DPI scaling ---- */
   @media (max-width: 1024px) {

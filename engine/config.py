@@ -42,6 +42,7 @@ DEFAULTS = {
     "scan_batch_size": 2000,
     "show_hints": True,
     "show_tooltips": True,
+    "persistent_logging": False,
 }
 
 
