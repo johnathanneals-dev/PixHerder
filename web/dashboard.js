@@ -641,10 +641,15 @@ function initDashboard() {
       }
       return;
     }
-    var latest = scans[0];
-    document.getElementById("dStatGroups").textContent = (latest.total_groups || 0).toLocaleString();
-    document.getElementById("dStatDupes").textContent = (latest.total_dupes || 0).toLocaleString();
-    document.getElementById("dStatSpace").textContent = formatBytes(latest.reclaimable_bytes || 0);
+    var totalGroups = 0, totalDupes = 0, totalSpace = 0;
+    for (var i = 0; i < scans.length; i++) {
+      totalGroups += scans[i].total_groups || 0;
+      totalDupes += scans[i].total_dupes || 0;
+      totalSpace += scans[i].reclaimable_bytes || 0;
+    }
+    document.getElementById("dStatGroups").textContent = totalGroups.toLocaleString();
+    document.getElementById("dStatDupes").textContent = totalDupes.toLocaleString();
+    document.getElementById("dStatSpace").textContent = formatBytes(totalSpace);
     statsBox.style.display = "grid";
   }).catch(function() {});
 }
@@ -731,8 +736,10 @@ function _clearRecoveryArchive() {
     "Clear Archive", "btn-danger",
     function() {
       api("POST", "/api/recovery/clear").then(function() {
-        toast("Recovery archive cleared");
-        _dashUpdateRecovery();
+        showDialog("Archive Cleared", "All recovery archive files have been removed.", "OK", "btn-primary", function() {
+          _dashUpdateRecovery();
+          _refreshFolderPaths();
+        });
       }).catch(function(err) {
         toast("Error: " + err.message, "error");
       });

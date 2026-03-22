@@ -697,7 +697,7 @@ function route() {
   }
 
   // On fresh page load, redirect stateful views to dashboard
-  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity") {
+  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity" && view !== "help") {
     navigate("dashboard");
     return;
   }

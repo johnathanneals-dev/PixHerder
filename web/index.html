@@ -24,6 +24,7 @@
       <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Removed Duplicates</button>
       <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Verified Keepers</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Previous Scans</button>
+      <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure DupeFinder preferences">Settings</button>
     </div>
   </div>
@@ -810,7 +811,7 @@
 
         <div style="display:flex;gap:12px;margin-top:16px;">
           <button class="btn btn-primary" id="actExecuteBtn" onclick="executeActions()" data-tip="Move and recycle files based on your decisions">Execute</button>
-          <button class="btn btn-secondary" onclick="navigate('review')">Back to Review</button>
+          <button class="btn btn-secondary" onclick="navigate('review')" data-tip="Return to the review screen to change decisions">Back to Review</button>
         </div>
       </div>
 
@@ -910,6 +911,13 @@
     <div class="card" style="max-width:none;max-height:70vh;overflow-y:auto;padding:0;">
       <pre id="logContent" style="padding:16px;margin:0;font-size:11px;font-family:monospace;color:var(--text-dim);white-space:pre-wrap;word-wrap:break-word;">Select a log to view.</pre>
     </div>
+  </div>
+
+  <!-- Help View -->
+  <div class="view" id="view-help">
+    <h1>Help</h1>
+    <p class="subtitle">Coming soon. In-app help topics and documentation.</p>
+    <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
   </div>
 
   <!-- Settings View -->
