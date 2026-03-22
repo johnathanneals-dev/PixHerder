@@ -13,16 +13,19 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   var guide = document.getElementById("dashFlowGuide");
   if (!guide) return;
 
-  // Check if hints are enabled in settings
   var hintsEnabled = !state.settings || state.settings.show_hints !== false;
 
   // Determine step states
   var hasFiles = hasStaging || hasDupes || hasKeepers;
-  if (!hasFiles || !hintsEnabled) {
+  if (!hasFiles) {
     guide.style.display = "none";
     return;
   }
   guide.style.display = "block";
+
+  // Hint box visibility controlled by setting, stepper always visible
+  var hintBox = document.getElementById("dashHint");
+  if (hintBox) hintBox.style.display = hintsEnabled ? "block" : "none";
 
   var steps = [
     { num: 1, label: "Import", state: "locked" }, // locked when files exist (can't import more)
