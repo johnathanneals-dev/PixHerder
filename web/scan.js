@@ -133,7 +133,6 @@ function startScan() {
   var autoRecycle = document.getElementById("scanAutoRecycle").checked;
   var scanLimitEl = document.getElementById("scanLimit");
   var scanLimit = scanLimitEl ? parseInt(scanLimitEl.value) || 0 : 0;
-  console.log("SCAN: scanLimit element value=" + (scanLimitEl ? scanLimitEl.value : "NOT FOUND") + ", parsed=" + scanLimit);
 
   // Check if this is a OneDrive path
   api("POST", "/api/staging/check", { directory: dir }).then(function(result) {
