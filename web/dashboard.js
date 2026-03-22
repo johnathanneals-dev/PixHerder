@@ -13,9 +13,12 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   var guide = document.getElementById("dashFlowGuide");
   if (!guide) return;
 
+  // Check if hints are enabled in settings
+  var hintsEnabled = !state.settings || state.settings.show_hints !== false;
+
   // Determine step states
   var hasFiles = hasStaging || hasDupes || hasKeepers;
-  if (!hasFiles) {
+  if (!hasFiles || !hintsEnabled) {
     guide.style.display = "none";
     return;
   }

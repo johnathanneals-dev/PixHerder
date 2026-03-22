@@ -10,6 +10,7 @@ function initSettings() {
     document.getElementById("setKeepStrategy").value = settings.keep_strategy || "largest";
     document.getElementById("setPort").value = settings.port || 8787;
     document.getElementById("setBatchSize").value = settings.scan_batch_size || 2000;
+    document.getElementById("setShowHints").checked = settings.show_hints !== false;
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
   });
@@ -28,6 +29,7 @@ function saveSettings() {
     keep_strategy: document.getElementById("setKeepStrategy").value,
     port: newPort,
     scan_batch_size: parseInt(document.getElementById("setBatchSize").value) || 2000,
+    show_hints: document.getElementById("setShowHints").checked,
     extensions: exts
   };
 
