@@ -83,6 +83,10 @@ def _read_activity(limit=50):
 
 
 # ---- Shared state (accessed by handler and background threads) ----
+# Progress dicts are read by the bridge polling thread and written by
+# background worker threads. Python's GIL prevents truly concurrent access,
+# and readers always copy via dict() before processing, so no explicit
+# locking is needed. The dict() copy pattern is the safety mechanism.
 
 scan_thread = None
 scan_cancel = threading.Event()

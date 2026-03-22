@@ -141,7 +141,7 @@ function browserLoadPage(replace) {
     if (replace) {
       document.getElementById("browserGrid").innerHTML = html;
     } else {
-      document.getElementById("browserGrid").innerHTML += html;
+      document.getElementById("browserGrid").insertAdjacentHTML("beforeend", html);
     }
     browserState.currentPage++;
 

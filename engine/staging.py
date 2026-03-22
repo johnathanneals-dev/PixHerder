@@ -461,6 +461,35 @@ def _recycle_file_powershell(filepath, archive_slot=None):
         raise RuntimeError(stderr or "PowerShell returned exit code " + str(result.returncode))
 
 
+def _recycle_files_batch_powershell(filepaths):
+    """Send multiple files to the Recycle Bin in a single PowerShell call."""
+    import subprocess
+    if not filepaths:
+        return {"recycled": 0, "errors": []}
+
+    # Build PowerShell script that recycles all files
+    ps_lines = ["Add-Type -AssemblyName Microsoft.VisualBasic"]
+    for fp in filepaths:
+        ps_path = str(fp).replace("'", "''")
+        ps_lines.append(
+            "[Microsoft.VisualBasic.FileIO.FileSystem]"
+            "::DeleteFile('" + ps_path + "', "
+            "'OnlyErrorDialogs', 'SendToRecycleBin')"
+        )
+
+    ps_script = "; ".join(ps_lines)
+    cmd = ('powershell -NoProfile -ExecutionPolicy Bypass -Command "'
+           + ps_script + '"')
+
+    result = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
+    # Can't easily tell which files failed in batch mode
+    if result.returncode != 0:
+        stderr = result.stderr.decode(errors="replace").strip()
+        return {"recycled": len(filepaths),
+                "errors": [stderr] if stderr else []}
+    return {"recycled": len(filepaths), "errors": []}
+
+
 def recycle_staging(staging_dir, progress_cb=None):
     """Send all files in staging directory to the Windows Recycle Bin.
 

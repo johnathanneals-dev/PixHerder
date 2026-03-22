@@ -27,7 +27,11 @@ def checkpoint_path(directory, mode):
 
 
 def save_checkpoint(ckpt_path, data):
-    """Atomically save checkpoint data to disk."""
+    """Atomically save checkpoint data to disk.
+
+    Uses write-to-temp + os.replace pattern for crash safety: if the
+    process dies mid-write, the previous checkpoint remains intact.
+    """
     logger.debug("Saving checkpoint to %s", ckpt_path)
     data["timestamp"] = datetime.now().isoformat()
     tmp_path = str(ckpt_path) + ".tmp"
