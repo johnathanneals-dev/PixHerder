@@ -107,12 +107,16 @@ function _dashStepClick(step) {
 }
 
 function _dashStartWizard() {
-  // If files already exist, skip to Step 2 (Scan)
-  if (_dashFolderPaths.staging) {
-    _navToWizardStep(2);
-  } else {
+  // Check folder state fresh to decide whether to skip Step 1
+  api("GET", "/api/folders/status").then(function(data) {
+    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+      _navToWizardStep(2);
+    } else {
+      navigate("wizard");
+    }
+  }).catch(function() {
     navigate("wizard");
-  }
+  });
 }
 
 function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
