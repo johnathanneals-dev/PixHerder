@@ -639,6 +639,7 @@
     display: none; position: fixed; inset: 0; z-index: 5000;
     background: rgba(0,0,0,0.95); align-items: center;
     justify-content: center; cursor: zoom-out;
+    border: 3px solid var(--accent-dim);
   }
   .lightbox.active { display: flex; }
   .lightbox img { max-width: 95vw; max-height: 95vh; object-fit: contain; }
