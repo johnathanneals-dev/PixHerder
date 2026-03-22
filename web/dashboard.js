@@ -257,10 +257,19 @@ function _dashUpdateFolders() {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
     }
 
-    // Flow guidance (check for scans to determine step)
+    // Flow guidance (check for recent scans matching current staging folder)
     api("GET", "/api/scans").then(function(scans) {
-      var hasScans = scans && scans.length > 0;
-      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans);
+      var hasRelevantScans = false;
+      var stagingPath = (data.staging && data.staging.path) || "";
+      if (scans && scans.length > 0 && stagingPath) {
+        for (var i = 0; i < scans.length; i++) {
+          if (scans[i].directory && scans[i].directory === stagingPath) {
+            hasRelevantScans = true;
+            break;
+          }
+        }
+      }
+      _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasRelevantScans);
     }).catch(function() {
       _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, false);
     });
