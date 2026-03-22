@@ -862,13 +862,20 @@
 
   <!-- Activity View -->
   <div class="view" id="view-activity">
-    <h1>Activity Log</h1>
-    <p class="subtitle">Recent events and operations.</p>
+    <h1>Previous Scans</h1>
+    <p class="subtitle">Scan history and activity log.</p>
+
+    <h2>Scan Results</h2>
+    <div class="scan-list" id="scanList" style="margin-bottom:32px;">
+      <div class="empty-state"><p>Loading...</p></div>
+    </div>
+
+    <h2>Activity Log</h2>
     <div style="margin-bottom:16px;">
       <button class="btn btn-secondary" onclick="loadActivity()">Refresh</button>
       <button class="btn btn-secondary" onclick="clearActivity()" style="margin-left:8px;">Clear Log</button>
     </div>
-    <div id="activityList" class="card" style="max-height:70vh;overflow-y:auto;padding:0;">
+    <div id="activityList" class="card" style="max-height:50vh;overflow-y:auto;padding:0;">
       <div style="padding:24px;color:var(--text-dim);">Loading...</div>
     </div>
   </div>

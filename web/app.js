@@ -261,7 +261,44 @@ function showResumeDialog(title, detail, onResume, onFresh) {
 }
 
 // ---- Activity Log ----
+function _loadScanList() {
+  var list = document.getElementById("scanList");
+  if (!list) return;
+  api("GET", "/api/scans").then(function(scans) {
+    if (!scans || scans.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>No scans yet.</p></div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < scans.length; i++) {
+      var s = scans[i];
+      var badge = s.source === "legacy"
+        ? '<span class="scan-badge scan-badge-legacy">legacy</span>'
+        : '<span class="scan-badge scan-badge-scan">scan</span>';
+      var meta = s.total_groups + " groups";
+      if (s.reclaimable_bytes) meta += " | " + formatBytes(s.reclaimable_bytes) + " reclaimable";
+      if (s.directory) meta += " | " + s.directory;
+      if (s.timestamp) meta += " | " + s.timestamp.substring(0, 19);
+      html += '<div class="scan-item">';
+      html += '<div class="scan-item-info">';
+      html += '<div class="scan-item-name">' + badge + " " + escHtml(s.filename) + '</div>';
+      html += '<div class="scan-item-meta">' + escHtml(meta) + '</div>';
+      html += '</div>';
+      html += '<div class="scan-item-actions">';
+      html += '<button class="btn btn-primary btn-sm" onclick="navigate(\'review\',{report:\'' + escAttr(s.filename) + '\'})">Review</button>';
+      if (s.source === "scan") {
+        html += '<button class="btn btn-secondary btn-sm" onclick="deleteScan(\'' + escAttr(s.filename) + '\')">Delete</button>';
+      }
+      html += '</div></div>';
+    }
+    list.innerHTML = html;
+  }).catch(function() {
+    list.innerHTML = '<div class="empty-state"><p>Could not load scans.</p></div>';
+  });
+}
+
 function loadActivity() {
+  _loadScanList();
   api("GET", "/api/activity?limit=100").then(function(data) {
     var el = document.getElementById("activityList");
     var entries = data.entries || [];

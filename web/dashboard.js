@@ -621,13 +621,10 @@ function initDashboard() {
   // Check recovery archive
   _dashUpdateRecovery();
 
+  // Update stats from most recent scan
   api("GET", "/api/scans").then(function(scans) {
-    var list = document.getElementById("scanList");
     var statsBox = document.getElementById("dashboardStats");
-
     if (!scans || scans.length === 0) {
-      list.innerHTML = '<div class="empty-state"><h3>No scans yet</h3><p>Click "Start New Scan" to find duplicates.</p></div>';
-      // Still show stats box if we have files (total count comes from folder status)
       var totalEl = document.getElementById("dStatTotal");
       if (totalEl && totalEl.textContent !== "0") {
         statsBox.style.display = "grid";
@@ -636,46 +633,12 @@ function initDashboard() {
       }
       return;
     }
-
-    // Stats from most recent scan
     var latest = scans[0];
-    var totalGroups = latest.total_groups || 0;
-    var totalDupes = latest.total_dupes || 0;
-    var totalSpace = latest.reclaimable_bytes || 0;
-    document.getElementById("dStatGroups").textContent = totalGroups.toLocaleString();
-    document.getElementById("dStatDupes").textContent = totalDupes.toLocaleString();
-    document.getElementById("dStatSpace").textContent = formatBytes(totalSpace);
+    document.getElementById("dStatGroups").textContent = (latest.total_groups || 0).toLocaleString();
+    document.getElementById("dStatDupes").textContent = (latest.total_dupes || 0).toLocaleString();
+    document.getElementById("dStatSpace").textContent = formatBytes(latest.reclaimable_bytes || 0);
     statsBox.style.display = "grid";
-
-    // Scan list
-    var html = "";
-    for (var i = 0; i < scans.length; i++) {
-      var s = scans[i];
-      var badge = s.source === "legacy"
-        ? '<span class="scan-badge scan-badge-legacy">legacy</span>'
-        : '<span class="scan-badge scan-badge-scan">scan</span>';
-      var meta = s.total_groups + " groups";
-      if (s.reclaimable_bytes) meta += " | " + formatBytes(s.reclaimable_bytes) + " reclaimable";
-      if (s.directory) meta += " | " + s.directory;
-      if (s.timestamp) meta += " | " + s.timestamp.substring(0, 19);
-
-      html += '<div class="scan-item">';
-      html += '<div class="scan-item-info">';
-      html += '<div class="scan-item-name">' + badge + " " + escHtml(s.filename) + '</div>';
-      html += '<div class="scan-item-meta">' + escHtml(meta) + '</div>';
-      html += '</div>';
-      html += '<div class="scan-item-actions">';
-      html += '<button class="btn btn-primary btn-sm" onclick="navigate(\'review\',{report:\'' + escAttr(s.filename) + '\'})">Review</button>';
-      if (s.source === "scan") {
-        html += '<button class="btn btn-secondary btn-sm" onclick="deleteScan(\'' + escAttr(s.filename) + '\')">Delete</button>';
-      }
-      html += '</div></div>';
-    }
-    list.innerHTML = html;
-  }).catch(function(err) {
-    document.getElementById("scanList").innerHTML =
-      '<div class="empty-state" style="color:var(--danger);">Error loading scans: ' + escHtml(String(err)) + '</div>';
-  });
+  }).catch(function() {});
 }
 
 function deleteScan(filename) {
