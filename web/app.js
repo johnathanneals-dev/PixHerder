@@ -965,6 +965,12 @@ function _initTooltips() {
     tip.style.display = "none";
   });
 
+  // Hide tooltip on any click (prevent blocking buttons)
+  document.addEventListener("click", function() {
+    tip.style.display = "none";
+    clearTimeout(_tipTimer);
+  }, true);
+
   // Handle clicks inside tooltip (for Learn more link)
   tip.addEventListener("click", function(e) {
     var link = e.target.closest(".tip-link");
