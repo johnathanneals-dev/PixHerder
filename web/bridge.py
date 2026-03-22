@@ -267,15 +267,26 @@ class Api:
         data = dict(staging_progress)
         if not data.get("staging_dir") and not data.get("source_dir"):
             # Try to recover from disk
-            settings = load_settings()
-            staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
             staging_sub = _find_staging_subfolder()
             if staging_sub:
                 data["staging_dir"] = staging_sub
                 data["status"] = "complete"
-                pics = default_pictures_path()
-                if pics:
-                    data["source_dir"] = pics
+                # Check manifests for source_dir
+                source = ""
+                scans_dir = Path(__file__).parent.parent / "scans"
+                if scans_dir.is_dir():
+                    for mf in scans_dir.glob("staging_manifest_*.json"):
+                        try:
+                            with open(str(mf), "r", encoding="utf-8") as f:
+                                manifest = json.load(f)
+                            if manifest.get("staging_dir") == staging_sub:
+                                source = manifest.get("source_dir", "")
+                                break
+                        except Exception:
+                            pass
+                if not source:
+                    source = default_pictures_path() or ""
+                data["source_dir"] = source
         return data
 
     def browse(self, params=None):

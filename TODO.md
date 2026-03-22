@@ -38,15 +38,15 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] #4 Batch PowerShell recycling -- single invocation for all files instead of per-file spawning
 - [ ] #5 Move defaults from temp to LOCALAPPDATA -- prevent Storage Sense from deleting staged files
-- [ ] #7 Add view teardown to SPA router -- close SSE/observers on view exit
+- [x] #7 Add view teardown to SPA router -- implemented in stale data fix (route() clears state on view change)
 - [ ] #8 Extract shared _check_allowed_path() helper in server.py (4 duplicated locations)
 - [ ] #9 Fix move counter -- increment after BOTH copy2 and os.remove succeed
-- [ ] #27 Auto-shutdown race -- suppress during long API calls
-- [ ] #28 Server restart os.execv() hangs -- need robust restart mechanism
+- [x] #27 Auto-shutdown race -- removed (no auto-shutdown in native mode)
+- [x] #28 Server restart -- removed (no restart in native mode, close window to exit)
 
 ## Audit Phase 3: Algorithmic (When Scaling)
 
-- [ ] #6 O(n^2) perceptual comparison -- BK-tree or bucket-by-prefix for 10K+ images
+- [x] #6 O(n^2) perceptual comparison -- addressed with LSH multi-band bucketing (20% speedup)
 - [ ] #13 Union-Find for perceptual clustering -- consistent groups regardless of file order
 - [ ] #10 Scanner follows symlinks -- use os.walk(followlinks=False)
 - [ ] #14 Thread-safe progress dicts -- add threading.Lock per dict
@@ -70,7 +70,16 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Persistent logging toggle (Ctrl+Shift+F5) needs badge visibility fix on restart
 - [ ] Debug mode toggle (Ctrl+Shift+F7) needs testing across restart cycles
 - [ ] Auto-move duplicates to Removed Duplicates option (scan moves dupes automatically, user reviews after)
-- [ ] Tooltips not appearing on Execute Actions view buttons
+- [ ] Tooltips not appearing on Execute Actions view or batch complete dialog
+- [ ] BUG: "Rescan" from scan results goes to wizard Step 2 instead of scan config
+- [ ] BUG: "Complete migration first" toast when scanning (wizard state not recovered)
+- [ ] BUG: Send Files Home fails "source directory not specified" (staging session not recovered)
+- [ ] BUG: Recovery archive browse fails "could not load recovery archive"
+- [ ] BUG: Duplicate files appearing twice in review groups
+- [ ] Standardize scan windows: basic controls same place, context-specific buttons
+- [ ] Batch complete dialog: Cancel far left, Next Batch below Take a Break
+- [ ] Clear archive should go to action complete view with clear confirmation
+- [ ] Help link in nav menu (for future help section)
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Audit all navigation: ensure buttons everywhere except top menu text links
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
@@ -88,7 +97,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Numbered menu items matching wizard step numbers
 - [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
 - [ ] Dashboard stats: show cumulative session totals instead of zeros
-- [ ] "Continue to Finalize" rename to "Access Wizard Steps"
+- [x] "Continue to Finalize" renamed to "Access Wizard Steps"
 - [ ] Wizard steps should stay accessible/clickable when conditions are met
 - [ ] OneDrive sync management: pause-sync prompts before bulk operations
 - [ ] OneDrive "Keep or Delete" dialog: advance explanation of what to choose

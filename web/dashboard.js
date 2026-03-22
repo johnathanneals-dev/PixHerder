@@ -696,8 +696,8 @@ function _showRecoveryFiles() {
     document.getElementById("dialogConfirmBtn").style.display = "none";
     document.getElementById("dialog").classList.add("active");
     document.getElementById("dialogOverlay").classList.add("active");
-  }).catch(function() {
-    toast("Could not load recovery archive", "error");
+  }).catch(function(err) {
+    toast("Could not load recovery archive: " + (err.message || "unknown error"), "error");
   });
 }
 
