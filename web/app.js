@@ -742,9 +742,14 @@ var _tipHelpSection = null;
 
 function _initTooltips() {
   var tip = document.getElementById("tooltip");
-  if (!tip) return;
+  if (!tip) {
+    // Create tooltip if not found in HTML
+    tip = document.createElement("div");
+    tip.id = "tooltip";
+    document.body.appendChild(tip);
+  }
 
-  document.body.addEventListener("mouseover", function(e) {
+  document.addEventListener("mouseover", function(e) {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
     if (state.settings && state.settings.show_hints === false) return;
@@ -782,7 +787,7 @@ function _initTooltips() {
     }, 500);
   });
 
-  document.body.addEventListener("mouseout", function(e) {
+  document.addEventListener("mouseout", function(e) {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
     clearTimeout(_tipTimer);
