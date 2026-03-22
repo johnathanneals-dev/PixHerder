@@ -5,6 +5,7 @@ Handles HTTP routing, SSE for progress, and serves the SPA.
 
 import http.server
 import json
+import logging
 import os
 import sys
 import threading
@@ -12,6 +13,8 @@ import time
 import urllib.parse
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Add project root to path so engine imports work
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -556,6 +559,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         elif "Permission" in err_msg or "Access" in err_msg:
             err_msg = ("Permission denied. Check that DupeFinder has "
                        "write access to its data folders.")
+        logger.error("Scan failed: %s", e)
         scan_progress.update({
             "status": "error",
             "message": err_msg,
@@ -2530,6 +2534,7 @@ def create_server(port=8787):
         DupeFinderHandler,
     )
     _server_instance = server
+    logger.info("Server started on port %d", port)
 
     _log_activity("server_started", {"port": port})
 

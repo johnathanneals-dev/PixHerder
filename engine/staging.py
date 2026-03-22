@@ -6,6 +6,7 @@ for interference-free scanning and deduplication.
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -13,6 +14,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 from engine.config import IMAGE_EXTENSIONS
+
+logger = logging.getLogger(__name__)
 
 from engine.config import SCANS_DIR
 
@@ -77,6 +80,10 @@ def start_staging(source_dir, staging_dir, extensions=None,
     """
     if extensions is None:
         extensions = IMAGE_EXTENSIONS
+
+    logger.info("Starting staging from %s to %s (%d files)",
+                source_dir, staging_dir,
+                count_files_for_staging(source_dir, extensions)[0])
 
     try:
         os.makedirs(staging_dir, exist_ok=True)
@@ -266,6 +273,7 @@ def _stage_with_python(source_dir, staging_dir, extensions,
                     pass
 
             try:
+                logger.debug("Copying %s", src)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
                 copied += 1
@@ -280,6 +288,8 @@ def _stage_with_python(source_dir, staging_dir, extensions,
             if progress_cb:
                 progress_cb(copied + skipped, total_files,
                             bytes_copied, total_bytes, "staging")
+
+    logger.info("Staging complete: %d copied, %d skipped, %d failed", copied, skipped, failed)
 
     manifest = _build_manifest(source_dir, staging_dir)
 
@@ -388,6 +398,7 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
                 _recycle_file_powershell(original_path)
                 deleted += 1
             except Exception as e:
+                logger.error("Recycle failed for %s: %s", original_path, e)
                 error_count += 1
                 errors.append(str(original_path) + ": recycle failed: " + str(e))
 

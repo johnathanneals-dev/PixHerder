@@ -6,10 +6,13 @@ starts, the oldest slot is purged. Archive is cleared on session finish.
 """
 
 import json
+import logging
 import os
 import shutil
 import tempfile
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 def _recovery_base():
@@ -53,6 +56,7 @@ def start_new_operation(operation_name="recycle"):
 
     # Use slot 2 if slot 1 exists, otherwise slot 1
     active_slot = 2 if os.path.isdir(_slot_path(1)) else 1
+    logger.info("Recovery: starting new operation slot %d (%s)", active_slot, operation_name)
     os.makedirs(_files_path(active_slot), exist_ok=True)
 
     # Write initial manifest
@@ -90,6 +94,7 @@ def archive_file(slot_num, filepath):
                 dest = os.path.join(files_dir, base + "_" + str(counter) + ext)
                 counter += 1
 
+        logger.debug("Recovery: archiving %s", filepath)
         shutil.copy2(filepath, dest)
 
         # Update manifest
@@ -242,6 +247,7 @@ def restore_file(archived_path, destination_dir):
         shutil.copy2(archived_path, dest)
         # Remove from archive after successful restore
         os.remove(archived_path)
+        logger.info("Recovery: restored %s to %s", archived_path, dest)
         return {"success": True, "destination": dest}
     except Exception as e:
         return {"success": False, "error": str(e)}

@@ -4,8 +4,11 @@ Provides MD5 (exact match) and perceptual (visual similarity) hashing.
 """
 
 import hashlib
+import logging
 from PIL import Image
 import imagehash
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_HASH_SIZE = 16
@@ -18,12 +21,14 @@ def md5_hash(filepath):
         Tuple of (hash_string_or_None, error_string_or_None).
     """
     try:
+        logger.debug("Computing MD5 for %s", filepath)
         h = hashlib.md5()
         with open(str(filepath), "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
         return (h.hexdigest(), None)
     except Exception as e:
+        logger.error("Hash error for %s: %s", filepath, e)
         return (None, str(e))
 
 
@@ -34,7 +39,9 @@ def perceptual_hash(filepath, hash_size=DEFAULT_HASH_SIZE):
         Tuple of (imagehash_object_or_None, error_string_or_None).
     """
     try:
+        logger.debug("Computing pHash for %s", filepath)
         with Image.open(str(filepath)) as img:
             return (imagehash.phash(img, hash_size=hash_size), None)
     except Exception as e:
+        logger.error("Hash error for %s: %s", filepath, e)
         return (None, str(e))

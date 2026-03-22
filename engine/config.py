@@ -4,9 +4,12 @@ Handles settings persistence, directory paths, and defaults.
 """
 
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -61,7 +64,7 @@ def ensure_dirs():
         try:
             os.makedirs(str(d), exist_ok=True)
         except OSError:
-            pass  # CFA may block; _check_write_access() handles warning
+            logger.warning("CFA may be blocking: %s", d)
 
 
 def load_settings():
@@ -73,6 +76,7 @@ def load_settings():
                 saved = json.load(f)
             if isinstance(saved, dict):
                 settings.update(saved)
+            logger.info("Settings loaded from %s", SETTINGS_PATH)
         except Exception:
             pass
     return settings
@@ -111,6 +115,7 @@ def save_settings(data):
 
     with open(str(SETTINGS_PATH), "w") as f:
         json.dump(settings, f, indent=2)
+    logger.info("Settings saved to %s", SETTINGS_PATH)
     return settings
 
 

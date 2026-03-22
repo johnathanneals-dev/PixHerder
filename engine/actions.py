@@ -5,6 +5,7 @@ Uses copy+delete instead of shutil.move for OneDrive compatibility.
 """
 
 import json
+import logging
 import os
 import stat
 import shutil
@@ -13,6 +14,8 @@ from pathlib import Path
 
 from engine.comparator import pick_original
 from engine.config import LOGS_DIR, verify_copy
+
+logger = logging.getLogger(__name__)
 
 
 def log_action(action_type, details):
@@ -53,6 +56,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
     """
     move_dir = Path(move_dir)
     os.makedirs(str(move_dir), exist_ok=True)
+    logger.info("Moving %d files to %s", len(groups), move_dir)
 
     moved = 0
     skipped = 0
@@ -121,6 +125,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
                     counter += 1
 
             try:
+                logger.debug("Copying %s -> %s", dupe_path, dest)
                 shutil.copy2(str(dupe_path), str(dest))
                 if not verify_copy(dupe_path, dest):
                     errors += 1
@@ -139,6 +144,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
                     "success": True,
                 })
             except Exception as e:
+                logger.error("Failed to move %s: %s", dupe_path_str, e)
                 error_list.append({
                     "path": dupe_path_str,
                     "error": str(e),
@@ -192,6 +198,7 @@ def delete_files(groups, keep_strategy="largest",
                     if str(p) != str(orig):
                         all_dupe_paths.add(os.path.normpath(str(p)))
     total = len(all_dupe_paths)
+    logger.info("Recycling %d files", total)
 
     current = 0
     processed_paths = set()
@@ -229,6 +236,7 @@ def delete_files(groups, keep_strategy="largest",
                 continue
 
             try:
+                logger.debug("Recycling %s", dupe_path_str)
                 # Clear read-only flag if set (common with OneDrive staged files)
                 if not os.access(dupe_path_str, os.W_OK):
                     os.chmod(dupe_path_str, stat.S_IWRITE | stat.S_IREAD)
@@ -242,6 +250,7 @@ def delete_files(groups, keep_strategy="largest",
                     "success": True,
                 })
             except Exception as e:
+                logger.error("Failed to recycle %s: %s", dupe_path_str, e)
                 error_list.append({
                     "path": dupe_path_str,
                     "error": str(e),

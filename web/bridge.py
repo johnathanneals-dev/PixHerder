@@ -5,6 +5,7 @@ Imports shared state and runner functions from server.py.
 """
 
 import json
+import logging
 import os
 import shutil
 import stat
@@ -12,6 +13,8 @@ import sys
 import threading
 import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -368,6 +371,7 @@ class Api:
     # ---- POST equivalents ----
 
     def scan_start(self, params=None):
+        logger.debug("Bridge call: scan_start(%s)", params)
         import web.server as srv
         if params is None:
             params = {}
@@ -427,6 +431,7 @@ class Api:
         return {"status": "cancelling"}
 
     def action_move(self, params=None):
+        logger.debug("Bridge call: action_move(%d groups)", len((params or {}).get("groups", [])))
         import web.server as srv
         if params is None:
             params = {}
@@ -454,6 +459,7 @@ class Api:
         return {"status": "started", "action": "move"}
 
     def action_delete(self, params=None):
+        logger.debug("Bridge call: action_delete(%d groups)", len((params or {}).get("groups", [])))
         import web.server as srv
         if params is None:
             params = {}
@@ -626,6 +632,7 @@ class Api:
         }
 
     def staging_start(self, params=None):
+        logger.debug("Bridge call: staging_start(%s)", params)
         import web.server as srv
         if params is None:
             params = {}
@@ -691,6 +698,7 @@ class Api:
         return {"status": "cancelling"}
 
     def staging_syncback(self, params=None):
+        logger.debug("Bridge call: staging_syncback(%s)", params)
         import web.server as srv
         if params is None:
             params = {}
@@ -1110,6 +1118,51 @@ class Api:
         result = clear_archive()
         _log_activity("recovery_cleared", {})
         return result
+
+    # ---- Logging ----
+
+    def logs_status(self, params=None):
+        from engine.logging_config import is_logging_enabled
+        return {"enabled": is_logging_enabled()}
+
+    def logs_enable(self, params=None):
+        from engine.logging_config import enable_logging
+        enable_logging()
+        return {"enabled": True}
+
+    def logs_disable(self, params=None):
+        from engine.logging_config import disable_logging
+        disable_logging()
+        return {"enabled": False}
+
+    def logs_read(self, params=None):
+        if params is None:
+            params = {}
+        log_type = params.get("type", "debug")
+        lines = int(params.get("lines", 200))
+        from engine.config import LOGS_DIR
+        log_file = LOGS_DIR / (log_type + ".log")
+        if not log_file.is_file():
+            return {"content": "", "lines": 0}
+        try:
+            with open(str(log_file), "r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+            tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            return {"content": "".join(tail), "lines": len(tail)}
+        except Exception as e:
+            return {"content": "Error reading log: " + str(e), "lines": 0}
+
+    def logs_clear(self, params=None):
+        from engine.config import LOGS_DIR
+        for name in ("debug.log", "error.log"):
+            p = LOGS_DIR / name
+            if p.is_file():
+                try:
+                    with open(str(p), "w") as f:
+                        f.write("")
+                except Exception:
+                    pass
+        return {"success": True}
 
     def app_shutdown(self, params=None):
         """Close the pywebview window."""

@@ -3,11 +3,14 @@ DupeFinder duplicate detection and grouping logic.
 Groups images by exact match (MD5) or visual similarity (pHash).
 """
 
+import logging
 import os
 from collections import defaultdict
 from pathlib import Path
 
 from engine.hasher import md5_hash, perceptual_hash
+
+logger = logging.getLogger(__name__)
 
 
 def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
@@ -29,6 +32,7 @@ def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
     hash_map = defaultdict(list)
     errors = []
     total = len(image_paths)
+    logger.info("Starting exact duplicate scan on %d images", total)
     cancelled = False
     computed_hashes = dict(precomputed_hashes or {})
     file_info = {}
@@ -63,6 +67,7 @@ def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
             checkpoint_cb(computed_hashes, file_info)
 
     groups = [v for v in hash_map.values() if len(v) > 1]
+    logger.info("Found %d exact duplicate groups", len(groups))
     return {
         "groups": groups,
         "errors": errors,
@@ -99,6 +104,7 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
     hashes = []
     errors = []
     total = len(image_paths)
+    logger.info("Starting perceptual scan: %d images, threshold=%d", total, threshold)
     cancelled = False
     computed_hashes = dict(precomputed_hashes or {})
     file_info = {}
@@ -186,6 +192,7 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
                             else:
                                 candidate_pairs.add((b, a))
 
+        logger.debug("LSH bucketing: %d candidate pairs from %d images", len(candidate_pairs), n)
         total_comparisons = len(candidate_pairs)
         comparisons_done = 0
         report_interval = max(500, total_comparisons // 100) if total_comparisons > 0 else 1
@@ -270,6 +277,8 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
 
             if len(group) > 1:
                 groups.append({"paths": group, "distances": distances})
+
+    logger.info("Found %d perceptual groups", len(groups))
 
     # Send final progress for comparison phase
     if progress_cb:

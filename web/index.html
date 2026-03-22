@@ -874,9 +874,29 @@
     <div style="margin-bottom:16px;">
       <button class="btn btn-secondary" onclick="loadActivity()">Refresh</button>
       <button class="btn btn-secondary" onclick="clearActivity()" style="margin-left:8px;">Clear Log</button>
+      <button class="btn btn-primary btn-sm" id="viewLogsBtn" onclick="navigate('logs')" style="float:right;" disabled>View Logs</button>
+      <span id="viewLogsHint" style="float:right;font-size:11px;color:var(--text-dim);margin-right:8px;line-height:30px;">Enable in Settings</span>
     </div>
     <div id="activityList" class="card" style="max-height:50vh;overflow-y:auto;padding:0;">
       <div style="padding:24px;color:var(--text-dim);">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Logs View -->
+  <div class="view" id="view-logs">
+    <h1>Debug Logs</h1>
+    <p class="subtitle">Verbose logging captures detailed information about every operation. This may affect performance during scans and file operations.</p>
+
+    <div style="margin-bottom:16px;display:flex;gap:8px;">
+      <button class="btn btn-secondary" onclick="_loadLogContent('debug')">Debug Log</button>
+      <button class="btn btn-secondary" onclick="_loadLogContent('error')">Error Log</button>
+      <button class="btn btn-secondary" onclick="_refreshLogs()">Refresh</button>
+      <button class="btn btn-danger btn-sm" onclick="_clearLogs()">Clear Logs</button>
+      <button class="btn btn-ghost" onclick="navigate('activity')">Back to Previous Scans</button>
+    </div>
+
+    <div class="card" style="max-width:none;max-height:70vh;overflow-y:auto;padding:0;">
+      <pre id="logContent" style="padding:16px;margin:0;font-size:11px;font-family:monospace;color:var(--text-dim);white-space:pre-wrap;word-wrap:break-word;">Select a log to view.</pre>
     </div>
   </div>
 
@@ -937,6 +957,14 @@
             Show tooltips on hover
           </label>
           <div class="form-hint">Display helpful descriptions when hovering over buttons and cards.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setEnableLogging" onchange="_toggleLogging(this.checked)">
+            Enable verbose logging
+          </label>
+          <div class="form-hint">Captures detailed debug information for troubleshooting. May affect performance during scans. Resets to off when DupeFinder is restarted.</div>
         </div>
       </div>
 

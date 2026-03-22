@@ -5,11 +5,14 @@ Saves and restores scan state so interrupted scans can be resumed.
 
 import hashlib
 import json
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
 
 from engine.config import CHECKPOINTS_DIR
+
+logger = logging.getLogger(__name__)
 
 
 def _stable_id(directory, mode):
@@ -25,6 +28,7 @@ def checkpoint_path(directory, mode):
 
 def save_checkpoint(ckpt_path, data):
     """Atomically save checkpoint data to disk."""
+    logger.debug("Saving checkpoint to %s", ckpt_path)
     data["timestamp"] = datetime.now().isoformat()
     tmp_path = str(ckpt_path) + ".tmp"
     try:
@@ -41,6 +45,7 @@ def save_checkpoint(ckpt_path, data):
 def load_checkpoint(ckpt_path):
     """Load checkpoint data. Returns dict or None if missing/corrupt."""
     try:
+        logger.debug("Loading checkpoint from %s", ckpt_path)
         with open(str(ckpt_path), "r", encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, dict):

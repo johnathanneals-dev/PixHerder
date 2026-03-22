@@ -299,6 +299,9 @@ function _loadScanList() {
 
 function loadActivity() {
   _loadScanList();
+  api("GET", "/api/logs/status").then(function(data) {
+    _updateLoggingUI(data.enabled);
+  }).catch(function() {});
   api("GET", "/api/activity?limit=100").then(function(data) {
     var el = document.getElementById("activityList");
     var entries = data.entries || [];
@@ -470,7 +473,12 @@ var _bridgeMap = {
   "GET /api/recovery/status": "recovery_status",
   "GET /api/recovery/list": "recovery_list",
   "POST /api/recovery/restore": "recovery_restore",
-  "POST /api/recovery/clear": "recovery_clear"
+  "POST /api/recovery/clear": "recovery_clear",
+  "GET /api/logs/status": "logs_status",
+  "POST /api/logs/enable": "logs_enable",
+  "POST /api/logs/disable": "logs_disable",
+  "POST /api/logs/read": "logs_read",
+  "POST /api/logs/clear": "logs_clear"
 };
 
 function _useBridge() {
@@ -703,6 +711,7 @@ function route() {
   else if (view === "finish") initFinish();
   else if (view === "working") initWorking();
   else if (view === "activity") loadActivity();
+  else if (view === "logs") initLogs();
   else if (view === "settings") initSettings();
 }
 
@@ -771,6 +780,71 @@ function _refreshFolderPaths() {
     }
     _updateNavStates();
   }).catch(function() {});
+}
+
+// ---- Logging ----
+var _currentLogType = "debug";
+
+function _toggleLogging(enable) {
+  if (enable) {
+    showDialog(
+      "Enable Verbose Logging",
+      "Verbose logging captures detailed debug information for every operation. This may slow down scans and file operations while enabled. Logging resets to off when DupeFinder is restarted.",
+      "Enable Logging", "btn-warning",
+      function() {
+        api("POST", "/api/logs/enable").then(function() {
+          toast("Verbose logging enabled");
+          _updateLoggingUI(true);
+        });
+      }
+    );
+    // If user cancels dialog, uncheck the box
+    var cb = document.getElementById("setEnableLogging");
+    if (cb) cb.checked = false;
+  } else {
+    api("POST", "/api/logs/disable").then(function() {
+      toast("Logging disabled");
+      _updateLoggingUI(false);
+    });
+  }
+}
+
+function _updateLoggingUI(enabled) {
+  var cb = document.getElementById("setEnableLogging");
+  if (cb) cb.checked = enabled;
+  var btn = document.getElementById("viewLogsBtn");
+  var hint = document.getElementById("viewLogsHint");
+  if (btn) btn.disabled = !enabled;
+  if (hint) hint.style.display = enabled ? "none" : "inline";
+}
+
+function initLogs() {
+  _loadLogContent(_currentLogType);
+}
+
+function _loadLogContent(type) {
+  _currentLogType = type;
+  var pre = document.getElementById("logContent");
+  pre.textContent = "Loading...";
+  api("POST", "/api/logs/read", { type: type, lines: 500 }).then(function(data) {
+    pre.textContent = data.content || "(empty)";
+    pre.scrollTop = pre.scrollHeight;
+  }).catch(function(err) {
+    pre.textContent = "Error: " + err.message;
+  });
+}
+
+function _refreshLogs() {
+  _loadLogContent(_currentLogType);
+}
+
+function _clearLogs() {
+  showDialog("Clear Logs", "Delete all debug and error log files?", "Clear", "btn-danger", function() {
+    api("POST", "/api/logs/clear").then(function() {
+      toast("Logs cleared");
+      _loadLogContent(_currentLogType);
+    });
+  });
 }
 
 // ---- Tooltips ----

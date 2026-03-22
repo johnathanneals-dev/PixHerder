@@ -15,6 +15,10 @@ function initSettings() {
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
   });
+  // Check logging status (session-only, not in saved settings)
+  api("GET", "/api/logs/status").then(function(data) {
+    _updateLoggingUI(data.enabled);
+  }).catch(function() {});
 }
 
 function saveSettings() {

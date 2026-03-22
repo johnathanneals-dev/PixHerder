@@ -88,6 +88,10 @@ def main():
 
     # Setup
     ensure_dirs()
+
+    from engine.logging_config import setup_logging
+    setup_logging()
+
     settings = load_settings()
     port = args.port or settings.get("port", 8787)
 
