@@ -176,7 +176,7 @@ def _run_native_mode(port):
     window.events.closing += on_closing
 
     # Start the window (blocks until closed)
-    webview.start(debug=False)
+    webview.start(debug=True)
 
     # Ensure clean exit after window closes
     server.shutdown()
