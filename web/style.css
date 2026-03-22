@@ -163,8 +163,8 @@
     border-bottom: 2px solid var(--accent-dim);
     flex-wrap: wrap;
     position: sticky;
-    top: 0;
-    background: var(--surface);
+    top: 56px;
+    background: var(--bg);
     z-index: 50;
   }
   .browser-breadcrumb {
