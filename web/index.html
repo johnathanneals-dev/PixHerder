@@ -32,6 +32,21 @@
     <span><kbd>M</kbd> mark</span>
     <span><kbd>D</kbd> recycle</span>
   </div>
+  <!-- Browser toolbar row (visible only in folder browser view) -->
+  <div id="browserNavBar" style="display:none;padding:8px 32px;border-top:1px solid var(--border);display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-ghost" id="browserBackBtn2" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back to Dashboard</button>
+    <button class="btn btn-primary btn-sm" id="browserScanBtn2" onclick="scanFromBrowser()" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
+    <button class="btn btn-primary btn-sm" id="browserPromoteBtn2" onclick="promoteToKeepers()" style="display:none;" data-tip="Move all files to Verified Keepers">Move All to Verified Keepers</button>
+    <button class="btn btn-secondary btn-sm" onclick="openInExplorer()" data-tip="Open this folder in Windows File Explorer">Open in Explorer</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <select class="form-input" id="browserSort2" onchange="browserRefresh()" style="width:auto;padding:4px 8px;font-size:12px;" data-tip="Change the order files are displayed">
+        <option value="name">Name</option>
+        <option value="size">Size (largest)</option>
+        <option value="date">Date (newest)</option>
+      </select>
+      <span id="browserCount2" style="font-size:12px;color:var(--text-dim);font-family:monospace;white-space:nowrap;"></span>
+    </div>
+  </div>
 </div>
 
 <!-- Toast container -->
@@ -382,29 +397,11 @@
   </div>
 
   <!-- File Browser View -->
-  <div class="view" id="view-browser" style="display:none;height:calc(100vh - 90px);overflow:hidden;flex-direction:column;">
-    <div class="browser-toolbar" style="flex-shrink:0;">
-      <button class="btn btn-ghost" id="browserBackBtn" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back</button>
-      <div class="browser-breadcrumb" id="browserBreadcrumb"></div>
-      <button class="btn btn-primary" id="browserScanBtn" onclick="scanFromBrowser()" style="font-size:12px;padding:4px 12px;" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
-      <button class="btn btn-primary" id="browserPromoteBtn" onclick="promoteToKeepers()" style="font-size:12px;padding:4px 12px;display:none;" data-tip="Move all files to Verified Keepers">Move All to Verified Keepers</button>
-      <button class="btn btn-secondary" onclick="openInExplorer()" style="font-size:12px;padding:4px 12px;" data-tip="Open this folder in Windows File Explorer">Open in Explorer</button>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
-        <select class="form-input" id="browserSort" onchange="browserRefresh()"
-                style="width:auto;padding:4px 8px;font-size:12px;"
-                data-tip="Change the order files are displayed">
-          <option value="name">Name</option>
-          <option value="size">Size (largest)</option>
-          <option value="date">Date (newest)</option>
-        </select>
-        <span id="browserCount" style="font-size:12px;color:var(--text-dim);font-family:monospace;white-space:nowrap;"></span>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;">
-      <div class="browser-grid" id="browserGrid"></div>
-      <div id="browserSentinel" style="height:1px;"></div>
-      <div class="browser-loading" id="browserLoading" style="display:none;">Loading more...</div>
-    </div>
+  <div class="view" id="view-browser">
+    <div class="browser-breadcrumb" id="browserBreadcrumb" style="margin-bottom:12px;"></div>
+    <div class="browser-grid" id="browserGrid"></div>
+    <div id="browserSentinel" style="height:1px;"></div>
+    <div class="browser-loading" id="browserLoading" style="display:none;">Loading more...</div>
   </div>
 
   <!-- Scan Configuration View -->

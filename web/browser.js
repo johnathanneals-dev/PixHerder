@@ -45,12 +45,16 @@ function initBrowser() {
 }
 
 function _initBrowserContent() {
+  // Show the nav bar browser row
+  var navBar = document.getElementById("browserNavBar");
+  if (navBar) navBar.style.display = "flex";
+
   var backLabel = browserState.returnTo === "dashboard" ? "Back to Dashboard" : "Back to Finalize";
-  document.getElementById("browserBackBtn").innerHTML = "&larr; " + backLabel;
-  // Show scan button for both staging and dupes folders
-  document.getElementById("browserScanBtn").style.display = "";
+  var backBtn = document.getElementById("browserBackBtn2");
+  if (backBtn) backBtn.innerHTML = "&larr; " + backLabel;
+
   // Show promote button only when browsing dupes
-  var promoteBtn = document.getElementById("browserPromoteBtn");
+  var promoteBtn = document.getElementById("browserPromoteBtn2");
   if (promoteBtn) promoteBtn.style.display = (browserState.type === "dupes") ? "" : "none";
   browserState.currentPage = 1;
   document.getElementById("browserGrid").innerHTML = "";
@@ -85,7 +89,7 @@ function _initBrowserContent() {
 function browserLoadPage(replace) {
   browserState.loading = true;
   document.getElementById("browserLoading").style.display = "block";
-  var sort = document.getElementById("browserSort").value || "name";
+  var sort = document.getElementById("browserSort2").value || "name";
   var url = "/api/browse?path=" + encodeURIComponent(browserState.currentPath)
     + "&page=" + browserState.currentPage
     + "&page_size=50&sort=" + sort;
@@ -104,7 +108,7 @@ function browserLoadPage(replace) {
 
     // Update breadcrumb
     buildBreadcrumb(data.path);
-    document.getElementById("browserCount").textContent =
+    document.getElementById("browserCount2").textContent =
       data.total + " items";
 
     // Render items
@@ -258,7 +262,7 @@ function deleteFolderItem(path) {
               break;
             }
           }
-          var countEl = document.getElementById("browserCount");
+          var countEl = document.getElementById("browserCount2");
           var match = (countEl.textContent || "").match(/(\d+)/);
           if (match) countEl.textContent = (parseInt(match[1]) - 1) + " items";
           toast("Folder deleted");

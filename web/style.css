@@ -321,7 +321,6 @@
   .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
   .view { display: none; }
   .view.active { display: block; }
-  #view-browser.active { display: flex; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   /* ---- Common elements ---- */

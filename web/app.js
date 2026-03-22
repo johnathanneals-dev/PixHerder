@@ -130,7 +130,7 @@ function moveLightboxToKeepers() {
               break;
             }
           }
-          var countEl = document.getElementById("browserCount");
+          var countEl = document.getElementById("browserCount2");
           var match = (countEl.textContent || "").match(/(\d+)/);
           if (match) {
             var newCount = parseInt(match[1]) - 1;
@@ -177,7 +177,7 @@ function deleteLightboxFile() {
                 break;
               }
             }
-            var countEl = document.getElementById("browserCount");
+            var countEl = document.getElementById("browserCount2");
             var match = (countEl.textContent || "").match(/(\d+)/);
             if (match) {
               var newCount = parseInt(match[1]) - 1;
@@ -647,6 +647,8 @@ function route() {
   }
   if (prevView === "browser" && view !== "browser") {
     browserState.currentPage = 1;
+    var navBar = document.getElementById("browserNavBar");
+    if (navBar) navBar.style.display = "none";
   }
   if (prevView === "settings" && view !== "settings") {
     // Issue 33: invalidate cached settings so next use fetches fresh
