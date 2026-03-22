@@ -323,7 +323,7 @@
 
   /* ---- Main container ---- */
   .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
-  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view { display: none; }
   .view.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
