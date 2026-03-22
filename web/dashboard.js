@@ -21,7 +21,7 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   guide.style.display = "block";
 
   var steps = [
-    { num: 1, label: "Import", state: "completed" }, // always done if files exist
+    { num: 1, label: "Import", state: "locked" }, // locked when files exist (can't import more)
     { num: 2, label: "Scan", state: hasScans ? "completed" : (hasStaging ? "current" : "pending") },
     { num: 3, label: "Review", state: hasDupes ? (hasScans ? "current" : "completed") : "pending" },
     { num: 4, label: "Finish", state: (!hasStaging && !hasDupes && hasKeepers) ? "current" : "pending" }
@@ -43,7 +43,7 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   var html = "";
   for (var i = 0; i < steps.length; i++) {
     var s = steps[i];
-    var numContent = s.state === "completed" ? "&#10003;" : s.num;
+    var numContent = (s.state === "completed" || s.state === "locked") ? "&#10003;" : s.num;
     html += '<div class="flow-step ' + s.state + '" onclick="_dashStepClick(' + s.num + ')">';
     html += '<span class="step-num">' + numContent + '</span>';
     html += '<span class="step-label">' + s.label + '</span>';
