@@ -356,7 +356,7 @@
   .flow-step.current .step-num {
     border-color: var(--accent); color: var(--accent);
   }
-  .flow-step.locked { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .flow-step.locked { opacity: 0.4; cursor: not-allowed; }
   .flow-step.locked .step-num {
     background: var(--text-dim); border-color: var(--text-dim); color: #0a0a0c;
   }
