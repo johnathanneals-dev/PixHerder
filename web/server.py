@@ -334,6 +334,16 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                     "type": "exact",
                 })
 
+        # Remove exact duplicates from image_paths for perceptual scan
+        # to prevent the same files appearing in both exact and perceptual groups
+        if exact_groups_data:
+            exact_dupe_paths = set()
+            for g in exact_groups_data:
+                for d in g["duplicates"]:
+                    exact_dupe_paths.add(os.path.normpath(d))
+            image_paths = [p for p in image_paths
+                           if os.path.normpath(str(p)) not in exact_dupe_paths]
+
         # Auto-recycle exact duplicates if enabled
         auto_recycled = 0
         if auto_recycle and exact_groups_data:

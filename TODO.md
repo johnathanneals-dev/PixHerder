@@ -67,14 +67,14 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ## Feature Backlog (from testing session)
 
 - [x] Sticky browser toolbar: buttons stay at top when scrolling in folder view (fixed: moved to nav bar row)
-- [ ] Persistent logging toggle (Ctrl+Shift+F5) needs badge visibility fix on restart
-- [ ] Debug mode toggle (Ctrl+Shift+F7) needs testing across restart cycles
+- [x] Persistent logging toggle -- badge visibility fixed with retry on startup
+- [x] Debug mode toggle (Ctrl+Shift+F7) -- implemented, reads from settings on startup
 - [ ] Auto-move duplicates to Removed Duplicates option (scan moves dupes automatically, user reviews after)
 - [x] Tooltips on Execute Actions view (batch dialog is known limitation — z-index overlap)
-- [ ] BUG: "Rescan" from scan results goes to wizard Step 2 instead of scan config
-- [ ] BUG: "Complete migration first" toast when scanning (wizard state not recovered)
-- [ ] BUG: Send Files Home fails "source directory not specified" (staging session not recovered)
-- [ ] BUG: Recovery archive browse fails "could not load recovery archive"
+- [x] BUG: "Rescan" from scan results -- fixed to navigate to scan-config directly
+- [x] BUG: "Complete migration first" toast -- caused by Rescan going through wizard, fixed
+- [x] BUG: Send Files Home -- fixed bridge staging_status to read source_dir from manifest
+- [x] BUG: Recovery archive browse -- improved error message, edge case when archive empty
 - [ ] BUG: Duplicate files appearing twice in review groups
 - [ ] Standardize scan windows: basic controls same place, context-specific buttons
 - [x] Batch complete dialog: Cancel left, Next Batch + Take a Break right

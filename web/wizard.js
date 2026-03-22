@@ -145,8 +145,11 @@ function updateStepper() {
         steps[i].onclick = function() { wizardGoToStep(n); };
       })(stepNum);
     } else if (stepNum === wizardState.currentStep) {
-      steps[i].classList.add("active");
+      steps[i].classList.add("active", "clickable");
       document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
+      (function(n) {
+        steps[i].onclick = function() { wizardGoToStep(n); };
+      })(stepNum);
     } else {
       document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
       // Allow clicking steps up to current
