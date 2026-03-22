@@ -44,16 +44,16 @@ function initFinish() {
 
 function _finishConfirm() {
   var msg = "";
-  if (_finishCounts.staging > 0) {
-    msg += _finishCounts.staging.toLocaleString() + " files from My Files will be returned to their original folder. ";
-  }
-  if (_finishCounts.keepers > 0) {
-    msg += _finishCounts.keepers.toLocaleString() + " Verified Keepers will also be returned. ";
+  if (_finishCounts.staging > 0 || _finishCounts.keepers > 0) {
+    var homeCount = _finishCounts.staging + _finishCounts.keepers;
+    msg += homeCount.toLocaleString() + " files from My Files";
+    if (_finishCounts.keepers > 0) msg += " and Verified Keepers";
+    msg += " will be placed back in their original folder. ";
   }
   if (_finishCounts.dupes > 0) {
-    msg += _finishCounts.dupes.toLocaleString() + " duplicates will be removed (recoverable from Recycle Bin, if needed). ";
+    msg += _finishCounts.dupes.toLocaleString() + " files in Removed Duplicates will be sent to the Recycle Bin. ";
   }
-  msg += "Your originals are never deleted. Continue?";
+  msg += "The recovery archive will also be cleared.";
   showDialog("Confirm Finish", msg, "Yes, Finish", "btn-primary", function() {
     _executeFinish();
   });
@@ -128,6 +128,9 @@ function _finishPhase3(restoreResult, recycleResult) {
     if (_stagingSession) {
       api("POST", "/api/staging/reset").catch(function() {});
     }
+
+    // Clear recovery archive on finish
+    api("POST", "/api/recovery/clear").catch(function() {});
 
     // Show completion
     _stagingSession = null;

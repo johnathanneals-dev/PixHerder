@@ -561,8 +561,9 @@ function _updateNavStates() {
   var review = document.getElementById("navReview");
   var finalize = document.getElementById("navFinalize");
 
-  // Migrate: always available (wizard handles skip-to-step-2 when files exist)
-  migrate.classList.remove("disabled");
+  // Migrate: disabled when files are in the system (must finish current session first)
+  var hasAnyFiles = !!(_dashFolderPaths.staging || _dashFolderPaths.dupes || _dashFolderPaths.keepers);
+  migrate.classList.toggle("disabled", hasAnyFiles);
 
   // Scan: available if staging session exists (files migrated)
   var hasStagingSession = !!(wizardState.stagingDir || (_stagingSession && _stagingSession.staging_dir));
