@@ -752,7 +752,7 @@ function _initTooltips() {
   document.addEventListener("mouseover", function(e) {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
-    if (state.settings && state.settings.show_hints === false) return;
+    if (state.settings && state.settings.show_tooltips === false) return;
 
     clearTimeout(_tipTimer);
     _tipTimer = setTimeout(function() {

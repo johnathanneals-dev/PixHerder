@@ -38,6 +38,7 @@ DEFAULTS = {
     "onedrive_safe_mode": True,
     "scan_batch_size": 2000,
     "show_hints": True,
+    "show_tooltips": True,
 }
 
 
