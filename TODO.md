@@ -70,16 +70,16 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Persistent logging toggle (Ctrl+Shift+F5) needs badge visibility fix on restart
 - [ ] Debug mode toggle (Ctrl+Shift+F7) needs testing across restart cycles
 - [ ] Auto-move duplicates to Removed Duplicates option (scan moves dupes automatically, user reviews after)
-- [ ] Tooltips not appearing on Execute Actions view or batch complete dialog
+- [x] Tooltips on Execute Actions view (batch dialog is known limitation — z-index overlap)
 - [ ] BUG: "Rescan" from scan results goes to wizard Step 2 instead of scan config
 - [ ] BUG: "Complete migration first" toast when scanning (wizard state not recovered)
 - [ ] BUG: Send Files Home fails "source directory not specified" (staging session not recovered)
 - [ ] BUG: Recovery archive browse fails "could not load recovery archive"
 - [ ] BUG: Duplicate files appearing twice in review groups
 - [ ] Standardize scan windows: basic controls same place, context-specific buttons
-- [ ] Batch complete dialog: Cancel far left, Next Batch below Take a Break
-- [ ] Clear archive should go to action complete view with clear confirmation
-- [ ] Help link in nav menu (for future help section)
+- [x] Batch complete dialog: Cancel left, Next Batch + Take a Break right
+- [x] Clear archive shows confirmation dialog with OK button
+- [x] Help link in nav menu (placeholder view added)
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Audit all navigation: ensure buttons everywhere except top menu text links
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
@@ -96,7 +96,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Additional keyboard shortcuts (E=execute, F=finish, Space=lightbox, 1-9=jump to group)
 - [ ] Numbered menu items matching wizard step numbers
 - [ ] File Safety / Expert mode toggle (reduces dialog count for experienced users)
-- [ ] Dashboard stats: show cumulative session totals instead of zeros
+- [x] Dashboard stats: show cumulative totals across all scans
 - [x] "Continue to Finalize" renamed to "Access Wizard Steps"
 - [ ] Wizard steps should stay accessible/clickable when conditions are met
 - [ ] OneDrive sync management: pause-sync prompts before bulk operations
