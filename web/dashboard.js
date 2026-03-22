@@ -95,9 +95,9 @@ function _dashHintClick() {
 }
 
 function _dashStepClick(step) {
-  // Don't allow Import when files are already in the system
-  if (step === 1 && (_dashFolderPaths.staging || _dashFolderPaths.dupes || _dashFolderPaths.keepers)) {
-    toast("Send your current files home before importing new ones", "warning");
+  // Skip to Step 2 when files already exist in the system
+  if (step === 1 && _dashFolderPaths.staging) {
+    _navToWizardStep(2);
     return;
   }
   if (step === 1) _navToWizardStep(1);
@@ -261,12 +261,17 @@ function _dashUpdateFolders() {
     if (rescanKeepersBox) rescanKeepersBox.style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
     if (rescanKeepersBtn) rescanKeepersBtn.disabled = !hasKeepers;
 
-    // Disable Start Guided Cleanup when files are already in the system
+    // Start Guided Cleanup: skip to Step 2 when files already exist
     var wizBtn = document.getElementById("dashWizardBtn");
     if (wizBtn) {
-      var hasAnyFiles = hasStaging || hasDupes || hasKeepers;
-      wizBtn.disabled = hasAnyFiles;
-      wizBtn.title = hasAnyFiles ? "Send your current files home before importing new ones" : "";
+      wizBtn.disabled = false;
+      if (hasStaging) {
+        wizBtn.textContent = "Continue Guided Cleanup";
+        wizBtn.onclick = function() { _navToWizardStep(2); };
+      } else {
+        wizBtn.textContent = "Start Guided Cleanup";
+        wizBtn.onclick = function() { navigate("wizard"); };
+      }
     }
 
     // Update nav states
