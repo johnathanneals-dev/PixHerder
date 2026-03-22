@@ -110,7 +110,10 @@ function _dashStartWizard() {
   // Check folder state fresh to decide whether to skip Step 1
   api("GET", "/api/folders/status").then(function(data) {
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-      _navToWizardStep(2);
+      // Files exist — go straight to scan config instead of wizard Step 1
+      _scanContext = "staging";
+      document.getElementById("scanDir").value = data.staging.path;
+      navigate("scan-config");
     } else {
       navigate("wizard");
     }
