@@ -791,13 +791,13 @@ function _initTooltips() {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
     clearTimeout(_tipTimer);
-    // Small delay before hiding to allow clicking the link
+    // Delay before hiding to allow moving cursor to tooltip for clicking
     setTimeout(function() {
       var tip = document.getElementById("tooltip");
       if (tip && !tip.matches(":hover")) {
         tip.style.display = "none";
       }
-    }, 200);
+    }, 400);
   });
 
   // Also hide when leaving the tooltip itself

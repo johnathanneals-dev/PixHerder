@@ -87,15 +87,15 @@
       </div>
     </div>
     <div class="card-grid" id="dashboardStats" style="display:none;">
-      <div class="stat-card" data-tip="Total number of files across all folders in the system"><div class="num" id="dStatTotal">0</div><div class="label">Total Files</div></div>
-      <div class="stat-card" data-tip="Sets of matching files found by the scanner"><div class="num" id="dStatGroups">0</div><div class="label">Duplicate Groups</div></div>
-      <div class="stat-card" data-tip="Individual files identified as duplicates"><div class="num" id="dStatDupes">0</div><div class="label">Duplicate Files</div></div>
-      <div class="stat-card" data-tip="Disk space that can be freed by removing duplicates"><div class="num" id="dStatSpace">0</div><div class="label">Reclaimable</div></div>
+      <div class="stat-card" data-tip="Total number of files across all folders in the system" data-help="stats"><div class="num" id="dStatTotal">0</div><div class="label">Total Files</div></div>
+      <div class="stat-card" data-tip="Sets of matching files found by the scanner" data-help="scanning"><div class="num" id="dStatGroups">0</div><div class="label">Duplicate Groups</div></div>
+      <div class="stat-card" data-tip="Individual files identified as duplicates" data-help="scanning"><div class="num" id="dStatDupes">0</div><div class="label">Duplicate Files</div></div>
+      <div class="stat-card" data-tip="Disk space that can be freed by removing duplicates" data-help="scanning"><div class="num" id="dStatSpace">0</div><div class="label">Reclaimable</div></div>
     </div>
 
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
-      <button class="btn btn-primary btn-lg" id="dashWizardBtn" onclick="_dashStartWizard()" data-tip="Step-by-step wizard to find and remove duplicates">Start Guided Cleanup</button>
-      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard">Direct Scan</button>
+      <button class="btn btn-primary btn-lg" id="dashWizardBtn" onclick="_dashStartWizard()" data-tip="Step-by-step wizard to find and remove duplicates" data-help="wizard">Start Guided Cleanup</button>
+      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard" data-help="scanning">Direct Scan</button>
     </div>
 
     <div id="dashFolders" style="display:none;margin-bottom:32px;">
