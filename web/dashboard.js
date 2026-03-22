@@ -60,34 +60,20 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   var hintText = document.getElementById("dashHintText");
   var hintBtn = document.getElementById("dashHintAction");
 
+  hintBtn.style.display = "none";
+
   if (hasStaging && !hasScans) {
-    hintText.textContent = "Ready to scan. Find duplicates in your files.";
-    hintBtn.textContent = "Scan My Files";
-    hintBtn.style.display = "inline-flex";
-    _dashHintTarget = function() { _rescanFolder("staging"); };
+    hintText.textContent = "Ready to scan. Use the scan buttons below to find duplicates in your files.";
   } else if (hasScans && hasDupes) {
     hintText.textContent = "Duplicates found. Review them to decide what to keep.";
-    hintBtn.textContent = "Review";
-    hintBtn.style.display = "inline-flex";
-    _dashHintTarget = function() { _navToReview(); };
   } else if (hasStaging && !hasDupes && hasScans) {
     hintText.textContent = "Scan complete. Try a different threshold, or send files home if you're satisfied.";
-    hintBtn.textContent = "Send Files Home";
-    hintBtn.style.display = "inline-flex";
-    _dashHintTarget = function() { sendFilesHome(); };
   } else if (!hasStaging && hasDupes) {
     hintText.textContent = "Review your removed duplicates, or send your files home to finish.";
-    hintBtn.style.display = "none";
-    _dashHintTarget = null;
   } else if (!hasStaging && !hasDupes && hasKeepers) {
     hintText.textContent = "Your files are ready. Send them home to finish up.";
-    hintBtn.textContent = "Send Files Home";
-    hintBtn.style.display = "inline-flex";
-    _dashHintTarget = function() { sendFilesHome(); };
   } else {
-    hintText.textContent = "Use the scan buttons above, or access wizard steps for more options.";
-    hintBtn.style.display = "none";
-    _dashHintTarget = null;
+    hintText.textContent = "Use the scan buttons below, or access wizard steps for more options.";
   }
 }
 
