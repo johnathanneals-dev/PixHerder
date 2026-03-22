@@ -485,23 +485,23 @@ function reviewBulkSkip() {
 }
 
 function updateReviewActionInfo() {
-  var reviewed = 0, moves = 0, deletes = 0, moveBytes = 0, deleteBytes = 0;
+  var reviewed = 0, moveFiles = 0, deleteFiles = 0, moveBytes = 0, deleteBytes = 0;
   for (var k in state.decisions) {
     reviewed++;
+    var g = state.groups[parseInt(k)];
+    var fileCount = g ? (g.duplicates ? g.duplicates.length : (g.files ? g.files - 1 : 0)) : 0;
     if (state.decisions[k] === "move") {
-      moves++;
-      var g = state.groups[parseInt(k)];
+      moveFiles += fileCount;
       if (g) moveBytes += (g.reclaimable_bytes || 0);
     }
     if (state.decisions[k] === "delete") {
-      deletes++;
-      var g = state.groups[parseInt(k)];
+      deleteFiles += fileCount;
       if (g) deleteBytes += (g.reclaimable_bytes || 0);
     }
   }
   document.getElementById("reviewActionInfo").textContent =
     "Reviewed: " + reviewed + " / " + state.groups.length +
-    " | Move: " + moves + " | Recycle: " + deletes +
+    " | Move: " + moveFiles + " files | Recycle: " + deleteFiles + " files" +
     " | Space: " + formatBytes(moveBytes + deleteBytes);
 }
 
