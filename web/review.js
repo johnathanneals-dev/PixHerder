@@ -446,7 +446,6 @@ function reviewBulkMove() {
   for (var i = 0; i < state.filteredIndices.length; i++) {
     if (!state.decisions[state.filteredIndices[i]]) unreviewed++;
   }
-  toast("Unreviewed: " + unreviewed + " of " + state.filteredIndices.length);
   if (unreviewed === 0) {
     toast("All groups already reviewed");
     return;
