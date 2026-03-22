@@ -1238,6 +1238,11 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         src = staging_progress.get("source_dir") or ""
         if src:
             allowed_dirs.append(src)
+        # Also allow active staging subfolder (may differ from settings)
+        active = _find_staging_subfolder()
+        if active:
+            allowed_dirs.append(active)
+            allowed_dirs.append(os.path.dirname(active))
         allowed_dirs = [os.path.normpath(d) for d in allowed_dirs if d]
         if not any(filepath.startswith(d + os.sep) or filepath == d
                    for d in allowed_dirs):
