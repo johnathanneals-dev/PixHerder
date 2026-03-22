@@ -95,6 +95,9 @@ function initScanConfig() {
     document.getElementById("scanThreshold").value = settings.threshold || 5;
     document.getElementById("thresholdVal").textContent = settings.threshold || 5;
     document.getElementById("scanRecursive").checked = settings.recursive !== false;
+    // Set scan limit dropdown default
+    var limitEl = document.getElementById("scanLimit");
+    if (limitEl) limitEl.value = "2000";
   });
   // Update quick-fill buttons with file counts
   api("GET", "/api/folders/status").then(function(data) {
