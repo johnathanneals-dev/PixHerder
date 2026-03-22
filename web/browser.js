@@ -45,9 +45,14 @@ function initBrowser() {
 }
 
 function _initBrowserContent() {
-  // Show the nav bar browser row
+  // Show the nav bar browser row, position below the top nav
   var navBar = document.getElementById("browserNavBar");
-  if (navBar) navBar.style.display = "flex";
+  if (navBar) {
+    navBar.style.display = "flex";
+    // Dynamically set top to match actual nav height
+    var topNav = document.querySelector(".topnav");
+    if (topNav) navBar.style.top = topNav.offsetHeight + "px";
+  }
 
   var backLabel = browserState.returnTo === "dashboard" ? "Back to Dashboard" : "Back to Finalize";
   var backBtn = document.getElementById("browserBackBtn2");
