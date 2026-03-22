@@ -106,6 +106,15 @@ function _dashStepClick(step) {
   else if (step === 4) navigate("finish");
 }
 
+function _dashStartWizard() {
+  // If files already exist, skip to Step 2 (Scan)
+  if (_dashFolderPaths.staging) {
+    _navToWizardStep(2);
+  } else {
+    navigate("wizard");
+  }
+}
+
 function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
   var hint = document.getElementById("dashContinueHint");
   if (!hint) return;
@@ -261,17 +270,10 @@ function _dashUpdateFolders() {
     if (rescanKeepersBox) rescanKeepersBox.style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
     if (rescanKeepersBtn) rescanKeepersBtn.disabled = !hasKeepers;
 
-    // Start Guided Cleanup: skip to Step 2 when files already exist
+    // Update wizard button label based on state
     var wizBtn = document.getElementById("dashWizardBtn");
     if (wizBtn) {
-      wizBtn.disabled = false;
-      if (hasStaging) {
-        wizBtn.textContent = "Continue Guided Cleanup";
-        wizBtn.onclick = function() { _navToWizardStep(2); };
-      } else {
-        wizBtn.textContent = "Start Guided Cleanup";
-        wizBtn.onclick = function() { navigate("wizard"); };
-      }
+      wizBtn.textContent = hasStaging ? "Continue Guided Cleanup" : "Start Guided Cleanup";
     }
 
     // Update nav states
