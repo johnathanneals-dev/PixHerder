@@ -2189,6 +2189,13 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             allowed.append(os.path.realpath(dupes_dir).lower())
         if keepers_dir and os.path.isdir(keepers_dir):
             allowed.append(os.path.realpath(keepers_dir).lower())
+        # Also allow active staging subfolder (may differ from settings)
+        active = _find_staging_subfolder()
+        if active:
+            allowed.append(os.path.realpath(active).lower())
+            parent = os.path.dirname(active)
+            if parent:
+                allowed.append(os.path.realpath(parent).lower())
         if not any(real.startswith(a) for a in allowed):
             self.send_error_json("Access denied: path outside allowed directories", 403)
             return
