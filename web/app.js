@@ -736,7 +736,81 @@ function _refreshFolderPaths() {
   }).catch(function() {});
 }
 
+// ---- Tooltips ----
+var _tipTimer = null;
+var _tipHelpSection = null;
+
+function _initTooltips() {
+  var tip = document.getElementById("tooltip");
+  if (!tip) return;
+
+  document.body.addEventListener("mouseover", function(e) {
+    var el = e.target.closest("[data-tip]");
+    if (!el) return;
+    if (state.settings && state.settings.show_hints === false) return;
+
+    clearTimeout(_tipTimer);
+    _tipTimer = setTimeout(function() {
+      var text = el.getAttribute("data-tip");
+      var help = el.getAttribute("data-help");
+      _tipHelpSection = help;
+
+      var html = '<div class="tip-text">' + text + '</div>';
+      if (help) {
+        html += '<a class="tip-link" onclick="_tooltipHelp()">Learn more</a>';
+      }
+      tip.innerHTML = html;
+
+      // Position tooltip
+      var rect = el.getBoundingClientRect();
+      var tipW = 280;
+      var left = rect.left + (rect.width / 2) - (tipW / 2);
+      if (left < 8) left = 8;
+      if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
+
+      tip.style.left = left + "px";
+      tip.style.maxWidth = tipW + "px";
+
+      // Show above or below based on space
+      tip.style.display = "block";
+      var tipH = tip.offsetHeight;
+      if (rect.top > tipH + 12) {
+        tip.style.top = (rect.top - tipH - 8) + "px";
+      } else {
+        tip.style.top = (rect.bottom + 8) + "px";
+      }
+    }, 500);
+  });
+
+  document.body.addEventListener("mouseout", function(e) {
+    var el = e.target.closest("[data-tip]");
+    if (!el) return;
+    clearTimeout(_tipTimer);
+    // Small delay before hiding to allow clicking the link
+    setTimeout(function() {
+      var tip = document.getElementById("tooltip");
+      if (tip && !tip.matches(":hover")) {
+        tip.style.display = "none";
+      }
+    }, 200);
+  });
+
+  // Also hide when leaving the tooltip itself
+  tip.addEventListener("mouseleave", function() {
+    tip.style.display = "none";
+  });
+}
+
+function _tooltipHelp() {
+  document.getElementById("tooltip").style.display = "none";
+  if (_tipHelpSection) {
+    // TODO: navigate to help section when built
+    toast("Help section coming soon: " + _tipHelpSection);
+  }
+}
+
 function _appInit() {
+  _initTooltips();
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
       _refreshFolderPaths();
