@@ -220,7 +220,7 @@ function _checkResumeAndStart(dir, mode, threshold, recursive, autoRecycle, scan
       }
     })
     .catch(function() {
-      _doStartScan(dir, mode, threshold, recursive, false, autoRecycle);
+      _doStartScan(dir, mode, threshold, recursive, false, autoRecycle, scanLimit);
     });
 }
 
