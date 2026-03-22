@@ -296,6 +296,11 @@ class Api:
             settings.get("move_destination", DEFAULTS["move_destination"]),
             settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
         ]
+        # Also allow the active staging subfolder (may differ from settings)
+        active_staging = _find_staging_subfolder()
+        if active_staging:
+            allowed.append(os.path.dirname(active_staging))
+            allowed.append(active_staging)
         norm_dir = os.path.normpath(dirpath)
         allowed_norms = [os.path.normpath(d) for d in allowed if d]
         if not any(norm_dir.startswith(a) for a in allowed_norms):
