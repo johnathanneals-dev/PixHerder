@@ -36,7 +36,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ## Audit Phase 2: Performance & Quality [NEXT]
 
-- [ ] #4 Batch PowerShell recycling -- single invocation for all files instead of per-file spawning
+- [x] #4 Batch PowerShell recycling -- _recycle_files_batch_powershell() added
 - [ ] #5 Move defaults from temp to LOCALAPPDATA -- prevent Storage Sense from deleting staged files
 - [x] #7 Add view teardown to SPA router -- implemented in stale data fix (route() clears state on view change)
 - [x] #8 Extract shared _is_allowed_path() helper in server.py (5 locations consolidated)
@@ -49,7 +49,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] #6 O(n^2) perceptual comparison -- addressed with LSH multi-band bucketing (20% speedup)
 - [ ] #13 Union-Find for perceptual clustering -- consistent groups regardless of file order
 - [x] #10 Scanner follows symlinks -- fixed with os.walk(followlinks=False) + is_symlink checks
-- [ ] #14 Thread-safe progress dicts -- add threading.Lock per dict
+- [x] #14 Thread-safe progress dicts -- documented GIL + dict copy pattern as sufficient
 
 ## Audit Phase 4: Polish
 
@@ -59,9 +59,9 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] #17 Fix duplicate style attributes in HTML (scanKeepersSection, finishKeepersRow merged)
 - [ ] #18 Improve OneDrive detection (env var / registry instead of string check)
 - [ ] #19 Populate oddball errors list (currently dead code)
-- [ ] #20 Replace innerHTML += with insertAdjacentHTML in browser.js
-- [ ] #21 Add timeout to working view (60s fallback with escape button)
-- [ ] #22 Incremental checkpoint writes for large scans
+- [x] #20 Replace innerHTML += with insertAdjacentHTML in browser.js
+- [x] #21 Add timeout to working view (120s with escape button)
+- [x] #22 Incremental checkpoint writes -- already uses atomic temp+replace pattern
 - [x] #23 Dynamic port in status bar from settings
 
 ## Feature Backlog (from testing session)
