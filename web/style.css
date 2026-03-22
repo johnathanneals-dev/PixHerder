@@ -162,10 +162,6 @@
     margin: 0 0 16px;
     border-bottom: 2px solid var(--accent-dim);
     flex-wrap: wrap;
-    position: sticky;
-    top: 56px;
-    background: var(--bg);
-    z-index: 50;
   }
   .browser-breadcrumb {
     display: flex;
@@ -325,6 +321,7 @@
   .main { max-width: 1400px; margin: 0 auto; padding: 32px; }
   .view { display: none; }
   .view.active { display: block; }
+  #view-browser.active { display: flex; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   /* ---- Common elements ---- */
