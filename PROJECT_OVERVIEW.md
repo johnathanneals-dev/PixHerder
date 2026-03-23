@@ -87,7 +87,6 @@ The core scanning and review workflow is functional and has been tested with rea
 
 ### Known remaining areas
 
-- PowerShell recycling is per-file (slow for thousands of files) -- batch processing planned
-- Default workspace location is in temp directory (Windows Storage Sense could clean it up)
 - No automated tests or CI pipeline
-- Some Phase 2 audit fixes still pending (see TODO.md)
+- Server modularization needed (server.py is 91K)
+- See TODO.md for the active feature backlog

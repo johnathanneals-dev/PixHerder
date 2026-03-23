@@ -10,51 +10,44 @@ var wizardState = {
 };
 
 function initWizard() {
-  // If RnR already set up the wizard state, validate directory exists (Issue 27)
-  if (wizardState.completedSteps[1] && wizardState.stagingDir) {
-    // Quick check - will be validated properly by the async path below
-    _wizardDetermineStep();
-  }
+  // Single source of truth: derive wizard state from filesystem
+  getAppState().then(function(appState) {
+    var s = appState.folders.staging;
+    var session = appState.session;
 
-  // Load settings first — also detect existing staging session
-  // so restart/refresh lands on the right step
-  api("GET", "/api/settings").then(function(s) {
-    wizardState.dupesDir = s.move_destination || "";
-    var defaultSource = s.default_pictures_path || "";
-    document.getElementById("wizSourceDir").value = wizardState.sourceDir || defaultSource;
+    // Load settings for dupes dir
+    api("GET", "/api/settings").then(function(settings) {
+      wizardState.dupesDir = settings.move_destination || "";
+    }).catch(function() {});
 
-    // Check for existing staging session (in-memory first, then on-disk manifest)
-    return api("GET", "/api/staging/status").then(function(d) {
-      if (d.status === "complete" && d.staging_dir) {
-        wizardState.stagingDir = d.staging_dir;
-        wizardState.sourceDir = d.source_dir;
-        wizardState.completedSteps[1] = true;
-        document.getElementById("wizSourceDir").value = d.source_dir || defaultSource;
-        _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
-        return _wizardCheckScans();
-      }
-      // Check on-disk manifest via staging/check
-      var src = document.getElementById("wizSourceDir").value;
-      return api("POST", "/api/staging/check", { directory: src }).then(function(result) {
-        if (result.existing_session && result.existing_session.staging_dir) {
-          wizardState.stagingDir = result.existing_session.staging_dir;
-          wizardState.sourceDir = src;
-          wizardState.completedSteps[1] = true;
-          _stagingSession = { source_dir: src, staging_dir: result.existing_session.staging_dir };
-          return _wizardCheckScans();
+    document.getElementById("wizSourceDir").value = wizardState.sourceDir || "";
+
+    // Step 1: Do we have files in staging with a known source?
+    if (session.active && s.count > 0) {
+      wizardState.stagingDir = session.staging_dir;
+      wizardState.sourceDir = session.source_dir;
+      wizardState.completedSteps[1] = true;
+      document.getElementById("wizSourceDir").value = session.source_dir || "";
+      _stagingSession = { source_dir: session.source_dir, staging_dir: session.staging_dir };
+
+      // Step 2: Do we have scans for this staging dir?
+      for (var i = 0; i < appState.scans.length; i++) {
+        if (appState.scans[i].directory === session.staging_dir && appState.scans[i].total_groups > 0) {
+          wizardState.lastReport = appState.scans[i].filename;
+          wizardState.completedSteps[2] = true;
+          break;
         }
-        // Last resort: check if staging folder has files (e.g. from Rescue & Review)
-        return api("GET", "/api/folders/status").then(function(fs) {
-          if (fs.staging && fs.staging.exists && fs.staging.file_count > 0) {
-            wizardState.stagingDir = fs.staging.path;
-            wizardState.completedSteps[1] = true;
-            return _wizardCheckScans();
-          }
-          _wizardDetermineStep();
-        });
-      });
-    });
-  }).catch(function() { _wizardDetermineStep(); });
+      }
+    } else if (s.exists && s.count > 0) {
+      // Staging has files but no manifest (e.g. from Rescue & Review)
+      wizardState.stagingDir = s.path;
+      wizardState.completedSteps[1] = true;
+    }
+
+    _wizardDetermineStep();
+  }).catch(function() {
+    _wizardDetermineStep();
+  });
 }
 
 function _wizardCheckScans() {
@@ -180,6 +173,13 @@ function wizardStartMigration() {
   if (!dir) { toast("Please enter a source folder", "error"); return; }
 
   wizardState.sourceDir = dir;
+  // Check OneDrive before starting migration
+  checkOneDriveBeforeOperation(dir, "migration", function() {
+    _doWizardMigration(dir);
+  });
+}
+
+function _doWizardMigration(dir) {
   document.getElementById("wizMigrateBtn").disabled = true;
   document.getElementById("wizMigrateProgress").style.display = "block";
   document.getElementById("wizMigrateInfo").style.display = "none";
@@ -199,6 +199,13 @@ function wizardStartMigration() {
       if (d.status === "complete") {
         window._onStagingProgress = null;
         document.getElementById("wizMigrateProgress").style.display = "none";
+        // If no files were migrated, go back to dashboard
+        if (d.total === 0 || d.current === 0) {
+          document.getElementById("wizMigrateBtn").disabled = false;
+          toast("No image files found in that folder.", "warning");
+          navigate("dashboard");
+          return;
+        }
         document.getElementById("wizMigrateComplete").style.display = "block";
         document.getElementById("wizMigrateCompleteMsg").textContent = d.message || "Migration complete";
         wizardState.stagingDir = d.staging_dir || wizardState.stagingDir;

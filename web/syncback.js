@@ -74,8 +74,7 @@ function cleanupStaging() {
         staging_dir: _stagingSession.staging_dir
       }).then(function() {
         toast("Staging folder cleaned up");
-        _stagingSession = null;
-        _refreshFolderPaths();
+        resetAppState();
         navigate("dashboard");
       });
       return;
@@ -124,7 +123,7 @@ function _executeRecycleStaging() {
         staging_dir: _stagingSession.staging_dir
       }).then(function(r) {
         if (r.status === "recycled") {
-          _stagingSession = null;
+          resetAppState();
           var msg = r.files_recycled.toLocaleString() + " files sent to the Recycle Bin.";
           if (r.errors > 0) msg += " " + r.errors + " files could not be removed.";
           done("Recycle Complete", msg);

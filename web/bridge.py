@@ -32,8 +32,8 @@ from engine.checkpoint import (
     checkpoint_path, find_checkpoint, delete_checkpoint,
 )
 from engine.staging import (
-    is_onedrive_path, get_staging_dir, count_files_for_staging,
-    cleanup_staging, recycle_staging,
+    is_onedrive_path, is_onedrive_running, get_staging_dir,
+    count_files_for_staging, cleanup_staging, recycle_staging,
 )
 
 # Import shared state and runners from server module
@@ -44,6 +44,7 @@ from web.server import (
     staging_cancel, syncback_cancel,
     _log_activity, _read_activity, _find_staging_subfolder,
     _run_scan, _run_action, _run_oddball, _run_staging, _run_syncback,
+    _reset_all_progress,
 )
 
 # Thread references (mirrors server.py globals)
@@ -264,7 +265,97 @@ class Api:
                 return {"decisions": []}
         return {"decisions": []}
 
-    def staging_status(self):
+    def app_state(self, params=None):
+        """Single source of truth: derive complete app state from filesystem.
+        No in-memory caches -- everything checked fresh."""
+        settings = load_settings()
+        image_exts = IMAGE_EXTS
+
+        def _count(dirpath):
+            if not dirpath or not os.path.isdir(dirpath):
+                return {"exists": False, "path": dirpath or "", "count": 0}
+            count = 0
+            for root, dirs, files in os.walk(dirpath):
+                for f in files:
+                    if os.path.splitext(f)[1].lower() in image_exts:
+                        count += 1
+            return {"exists": True, "path": dirpath, "count": count}
+
+        # Folders -- derived from filesystem
+        staging_path = _find_staging_subfolder()
+        dupes_path = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_path = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+
+        staging = _count(staging_path)
+        dupes = _count(dupes_path)
+        keepers = _count(keepers_path)
+
+        # Session -- derived from manifest files on disk
+        source_dir = ""
+        if staging_path:
+            scans_dir = Path(__file__).parent.parent / "scans"
+            if scans_dir.is_dir():
+                for mf in scans_dir.glob("staging_manifest_*.json"):
+                    try:
+                        with open(str(mf), "r", encoding="utf-8") as f:
+                            manifest = json.load(f)
+                        if manifest.get("staging_dir") == staging_path:
+                            source_dir = manifest.get("source_dir", "")
+                            break
+                    except Exception:
+                        pass
+
+        has_session = bool(staging_path and staging["count"] > 0 and source_dir)
+
+        # Scans -- derived from scan result files on disk
+        scans = []
+        scans_dir_path = Path(__file__).parent.parent / "scans"
+        if scans_dir_path.is_dir():
+            for f in sorted(scans_dir_path.glob("scan_*.json"), reverse=True):
+                try:
+                    with open(str(f), "r") as fh:
+                        data = json.load(fh)
+                    meta = data.get("metadata", {})
+                    exact_count = len(data.get("exact_groups", []))
+                    perceptual_count = len(data.get("perceptual_groups", []))
+                    scans.append({
+                        "filename": f.name,
+                        "directory": meta.get("directory", ""),
+                        "mode": meta.get("mode", ""),
+                        "total_groups": exact_count + perceptual_count,
+                    })
+                except Exception:
+                    pass
+
+        # Recovery archive
+        try:
+            from engine.recovery import get_archive_status
+            recovery = get_archive_status()
+        except Exception:
+            recovery = {"has_files": False}
+
+        return {
+            "folders": {
+                "staging": staging,
+                "dupes": dupes,
+                "keepers": keepers,
+            },
+            "session": {
+                "source_dir": source_dir,
+                "staging_dir": staging_path or "",
+                "active": has_session,
+            },
+            "scans": scans,
+            "has_scans": len(scans) > 0,
+            "recovery": recovery,
+        }
+
+    def reset_state(self, params=None):
+        """Clear all in-memory state. Called after cleanup operations."""
+        _reset_all_progress()
+        return {"status": "reset"}
+
+    def staging_status(self, params=None):
         data = dict(staging_progress)
         if not data.get("staging_dir") and not data.get("source_dir"):
             # Try to recover from disk
@@ -399,16 +490,19 @@ class Api:
             return {"folders": [], "error": "Access denied"}
         try:
             folders = []
-            for entry in os.scandir(dirpath):
-                if entry.is_dir():
-                    folders.append({
-                        "name": entry.name,
-                        "path": entry.path,
-                    })
-            folders.sort(key=lambda x: x["name"].lower())
-            return {"folders": folders}
+            for entry in sorted(os.listdir(dirpath)):
+                full = os.path.join(dirpath, entry)
+                if os.path.isdir(full) and not entry.startswith("."):
+                    folders.append(entry)
+        except PermissionError:
+            pass
         except Exception as e:
             return {"folders": [], "error": str(e)}
+
+        parent = os.path.dirname(dirpath)
+        if parent == dirpath:
+            parent = ""
+        return {"path": dirpath, "parent": parent, "folders": folders}
 
     # ---- POST equivalents ----
 
@@ -626,6 +720,20 @@ class Api:
             return {"status": "cleared"}
         except Exception as e:
             return {"error": "Failed to clear log: " + str(e)}
+
+    def onedrive_status(self, params=None):
+        """Check if OneDrive is running and if a path is OneDrive-managed."""
+        if params is None:
+            params = {}
+        directory = params.get("directory", "")
+        running = is_onedrive_running()
+        is_od = is_onedrive_path(directory) if directory else False
+        settings = load_settings()
+        return {
+            "running": running,
+            "is_onedrive": is_od,
+            "show_prompts": settings.get("show_onedrive_prompts", True),
+        }
 
     def staging_check(self, params=None):
         if params is None:
@@ -897,7 +1005,7 @@ class Api:
             "copied": copied, "skipped": skipped, "errors": errors,
             "full_restore": full_restore,
         })
-        return {"copied": copied, "skipped": skipped, "errors": errors}
+        return {"success": True, "copied": copied, "skipped": skipped, "errors": errors}
 
     def staging_recycle(self, params=None):
         """Rescue & Review: move dupes back into staging."""

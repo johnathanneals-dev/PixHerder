@@ -39,6 +39,7 @@ DEFAULTS = {
     "staging_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Staging"),
     "keepers_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Keepers"),
     "onedrive_safe_mode": True,
+    "show_onedrive_prompts": True,
     "scan_batch_size": 2000,
     "show_hints": True,
     "show_tooltips": True,

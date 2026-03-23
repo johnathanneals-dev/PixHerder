@@ -34,6 +34,19 @@ def is_onedrive_path(directory):
     return False
 
 
+def is_onedrive_running():
+    """Check if the OneDrive process is currently running."""
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq OneDrive.exe", "/NH"],
+            capture_output=True, text=True, timeout=5
+        )
+        return "OneDrive.exe" in result.stdout
+    except Exception:
+        logger.debug("Could not check OneDrive process status")
+        return False
+
+
 def get_staging_dir(source_dir, base_staging_dir=None):
     """Return a deterministic staging subdirectory for a source path."""
     if base_staging_dir is None:

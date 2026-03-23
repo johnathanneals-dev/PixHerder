@@ -1,6 +1,7 @@
 // ---- Finish Flow ----
 var _finishSSE = null;
 var _finishCounts = { staging: 0, dupes: 0, keepers: 0 };
+var _finishSourceDir = "";
 
 function initFinish() {
   document.getElementById("finishSummary").style.display = "block";
@@ -9,57 +10,80 @@ function initFinish() {
   document.getElementById("finishTitle").textContent = "Finishing Up";
   document.getElementById("finishSubtitle").textContent = "Review what will happen, then confirm.";
 
-  // Always refresh staging session from server to avoid stale data (Issue 21)
-  var p = api("GET", "/api/staging/status").then(function(d) {
-    if (d.staging_dir && d.source_dir) {
-      _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
-    } else if (!_stagingSession) {
+  // Single source of truth: derive state from filesystem
+  getAppState().then(function(appState) {
+    var session = appState.session;
+    if (session.active) {
+      _stagingSession = { source_dir: session.source_dir, staging_dir: session.staging_dir };
+    } else {
       _stagingSession = null;
     }
-  }).catch(function() {});
 
-  p.then(function() {
-    // Always fetch fresh counts (Issue 20, 22)
-    return api("GET", "/api/folders/status").then(function(data) {
-      _finishCounts.staging = (data.staging && data.staging.file_count) || 0;
-      _finishCounts.dupes = (data.dupes && data.dupes.file_count) || 0;
-      _finishCounts.keepers = (data.keepers && data.keepers.file_count) || 0;
-      document.getElementById("finishStagingCount").textContent = _finishCounts.staging.toLocaleString();
-      document.getElementById("finishDupesCount").textContent = _finishCounts.dupes.toLocaleString();
-      document.getElementById("finishKeepersCount").textContent = _finishCounts.keepers.toLocaleString();
-      document.getElementById("finishKeepersRow").style.display = _finishCounts.keepers > 0 ? "flex" : "none";
+    _finishCounts.staging = appState.folders.staging.count || 0;
+    _finishCounts.dupes = appState.folders.dupes.count || 0;
+    _finishCounts.keepers = appState.folders.keepers.count || 0;
+    document.getElementById("finishStagingCount").textContent = _finishCounts.staging.toLocaleString();
+    document.getElementById("finishDupesCount").textContent = _finishCounts.dupes.toLocaleString();
+    document.getElementById("finishKeepersCount").textContent = _finishCounts.keepers.toLocaleString();
+    document.getElementById("finishKeepersRow").style.display = _finishCounts.keepers > 0 ? "flex" : "none";
 
-      // Disable finish if no staging session
-      var btn = document.getElementById("finishNowBtn");
-      if (!_stagingSession) {
-        btn.disabled = true;
-        btn.textContent = "No staging session found";
-      } else {
-        btn.disabled = false;
-        btn.textContent = "Finish Now";
-      }
-    });
+    var btn = document.getElementById("finishNowBtn");
+    if (!_stagingSession) {
+      btn.disabled = true;
+      btn.textContent = "No staging session found";
+    } else {
+      btn.disabled = false;
+      btn.textContent = "Finish Now";
+    }
   });
 }
 
 function _finishConfirm() {
-  var msg = "";
-  if (_finishCounts.staging > 0 || _finishCounts.keepers > 0) {
-    var homeCount = _finishCounts.staging + _finishCounts.keepers;
-    msg += homeCount.toLocaleString() + " files from Staging";
-    if (_finishCounts.keepers > 0) msg += " and Keepers";
-    msg += " will be placed back in their original folder. ";
-  }
-  if (_finishCounts.dupes > 0) {
-    msg += _finishCounts.dupes.toLocaleString() + " files in Recovery will be sent to the Recycle Bin. ";
-  }
-  msg += "The recovery archive will also be cleared.";
-  showDialog("Confirm Finish", msg, "Yes, Finish", "btn-primary", function() {
-    _executeFinish();
+  var sourceDir = _stagingSession ? _stagingSession.source_dir : "";
+  // Build finish confirmation with embedded OneDrive warning
+  api("POST", "/api/onedrive/status", { directory: sourceDir }).then(function(od) {
+    var isOd = od && od.is_onedrive && od.running && od.show_prompts;
+    _showFinishConfirmDialog(isOd);
+  }).catch(function() {
+    _showFinishConfirmDialog(false);
   });
 }
 
+function _showFinishConfirmDialog(showOneDriveWarning) {
+  document.getElementById("dialogTitle").textContent = "Confirm Finish";
+  var html = '<div style="margin-bottom:14px;">';
+  if (_finishCounts.staging > 0 || _finishCounts.keepers > 0) {
+    var homeCount = _finishCounts.staging + _finishCounts.keepers;
+    html += homeCount.toLocaleString() + " files from Staging";
+    if (_finishCounts.keepers > 0) html += " and Keepers";
+    html += " will be placed back in their original folder. ";
+  }
+  if (_finishCounts.dupes > 0) {
+    html += _finishCounts.dupes.toLocaleString() + " files in Recovery will be sent to the Recycle Bin. ";
+  }
+  html += "The recovery archive will also be cleared.</div>";
+  if (showOneDriveWarning) {
+    html += '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">' +
+      '<div style="font-weight:600;color:var(--warning);margin-bottom:4px;">OneDrive is running</div>' +
+      '<div style="font-size:13px;color:var(--text);line-height:1.5;">' +
+        'For best results, pause OneDrive syncing first. ' +
+        '<a href="#" onclick="event.preventDefault(); closeDialog(); _showOneDriveHowToPause(function() { _showFinishConfirmDialog(true); })" ' +
+          'style="color:var(--accent);text-decoration:underline;">How to pause</a>' +
+      '</div>' +
+    '</div>';
+  }
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+    '<button class="btn btn-primary" onclick="closeDialog(); _executeFinish()" data-tip="Send files home and recycle duplicates">Yes, Finish</button>' +
+    '</div>';
+  document.getElementById("dialogMessage").innerHTML = html;
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (ghostBtn) ghostBtn.style.display = "";
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
 function _executeFinish() {
+  _finishSourceDir = _stagingSession ? _stagingSession.source_dir : "";
   document.getElementById("finishSummary").style.display = "none";
   document.getElementById("finishProgress").style.display = "block";
   document.getElementById("finishTitle").textContent = "Finishing Up...";
@@ -132,14 +156,14 @@ function _finishPhase3(restoreResult, recycleResult) {
     // Clear recovery archive on finish
     api("POST", "/api/recovery/clear").catch(function() {});
 
-    // Show completion
-    _stagingSession = null;
-    _refreshFolderPaths();
+    // Show completion -- clear all stale state
+    resetAppState();
     document.getElementById("finishProgress").style.display = "none";
     document.getElementById("finishComplete").style.display = "block";
     document.getElementById("finishTitle").textContent = "All Done!";
     document.getElementById("finishSubtitle").textContent = "";
 
+    var restoredCount = (restoreResult && restoreResult.copied) || _finishCounts.staging || 0;
     var summary = "";
     if (restoreResult && restoreResult.copied > 0) {
       summary += restoreResult.copied.toLocaleString() + " files returned to their original folder<br>";
@@ -151,22 +175,26 @@ function _finishPhase3(restoreResult, recycleResult) {
     }
     summary += "Local workspace cleaned up.";
     document.getElementById("finishCompleteSummary").innerHTML = summary;
+
+    // Show OneDrive explainer if files went back to OneDrive
+    if (restoredCount > 0 && _finishSourceDir) {
+      api("POST", "/api/onedrive/status", { directory: _finishSourceDir }).then(function(od) {
+        if (od.is_onedrive && od.show_prompts) {
+          showOneDriveRestoreExplainer(restoredCount);
+        }
+      }).catch(function() {});
+    }
   }); // end Promise.all
 }
 
 function _finishSendHome() {
-  // Single confirmation (lighter than dashboard double-confirm)
   var total = _finishCounts.staging + _finishCounts.dupes + _finishCounts.keepers;
   if (total === 0) {
     toast("No files to send home");
     return;
   }
-  showDialog(
-    "Send Files Home",
-    "All " + total.toLocaleString() + " files will be returned to their original folder. Continue?",
-    "Send Home", "btn-primary",
-    function() { _confirmSendHome(); }
-  );
+  // Reuse dashboard's combined dialog (OneDrive warning + confirmation in one)
+  _sendHomeConfirmDialog(total);
 }
 
 function _finishError(msg) {

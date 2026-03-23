@@ -245,7 +245,7 @@
           <label class="form-label">Source folder</label>
           <div style="display:flex;gap:8px;">
             <input class="form-input" type="text" id="wizSourceDir"
-                   placeholder="C:\Users\YourName\OneDrive\Pictures" style="flex:1;">
+                   placeholder="Browse or use a button below to select a folder" style="flex:1;">
             <button class="btn btn-secondary" onclick="openFolderPicker('wizSourceDir')" style="white-space:nowrap;" data-tip="Browse for a folder to import">Browse</button>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
@@ -986,6 +986,14 @@
             Show tooltips on hover
           </label>
           <div class="form-hint">Display helpful descriptions when hovering over buttons and cards.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setShowOneDrivePrompts" checked data-tip="Show reminders to pause OneDrive sync before file operations">
+            Show OneDrive sync reminders
+          </label>
+          <div class="form-hint">When enabled, PixHerder will check if OneDrive is running and suggest pausing sync before importing or sending files home. Recommended for OneDrive users.</div>
         </div>
 
         <div class="form-group">

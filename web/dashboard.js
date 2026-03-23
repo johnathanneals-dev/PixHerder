@@ -444,21 +444,47 @@ function sendFilesHome() {
         toast("No files to send home");
         return;
       }
-      showDialog(
-        "Send Files Home",
-        "Send " + totalCount.toLocaleString() + " files back to their original folder?",
-        "Continue", "btn-primary",
-        function() {
-          showDialog(
-            "Confirm",
-            "All files will be returned and Staging will be cleaned up. Continue?",
-            "Send Home", "btn-primary",
-            function() { _confirmSendHome(); }
-          );
-        }
-      );
+      // Single confirmation with embedded OneDrive warning if applicable
+      _sendHomeConfirmDialog(totalCount);
     });
+  }).catch(function(err) {
+    toast("Send Files Home error: " + (err.message || err), "error");
   });
+}
+
+function _sendHomeConfirmDialog(totalCount) {
+  // Check OneDrive status and build a single combined confirmation dialog
+  var sourceDir = _stagingSession ? _stagingSession.source_dir : "";
+  api("POST", "/api/onedrive/status", { directory: sourceDir }).then(function(od) {
+    var isOd = od && od.is_onedrive && od.running && od.show_prompts;
+    _showSendHomeDialog(totalCount, isOd);
+  }).catch(function() {
+    _showSendHomeDialog(totalCount, false);
+  });
+}
+
+function _showSendHomeDialog(totalCount, showOneDriveWarning) {
+  document.getElementById("dialogTitle").textContent = "Send Files Home";
+  var html = '<div style="margin-bottom:16px;">Send <strong>' + totalCount.toLocaleString() +
+    '</strong> files back to their original folder? Staging will be cleaned up.</div>';
+  if (showOneDriveWarning) {
+    html += '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">' +
+      '<div style="font-weight:600;color:var(--warning);margin-bottom:4px;">OneDrive is running</div>' +
+      '<div style="font-size:13px;color:var(--text);line-height:1.5;">' +
+        'For best results, pause OneDrive syncing first. ' +
+        '<a href="#" onclick="event.preventDefault(); closeDialog(); _showOneDriveHowToPause(function() { _showSendHomeDialog(' + totalCount + ', true); })" ' +
+          'style="color:var(--accent);text-decoration:underline;">How to pause</a>' +
+      '</div>' +
+    '</div>';
+  }
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+    '<button class="btn btn-primary" onclick="closeDialog(); _confirmSendHome()" data-tip="Return all files to their original folder">Send Home</button>' +
+    '</div>';
+  document.getElementById("dialogMessage").innerHTML = html;
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (ghostBtn) ghostBtn.style.display = "";
+  document.getElementById("dialogOverlay").classList.add("active");
 }
 
 function _confirmSendHome() {
@@ -466,6 +492,7 @@ function _confirmSendHome() {
     toast("No staging session found", "error");
     return;
   }
+  var sourceDir = _stagingSession.source_dir;
   closeDialog();
   startWorkingView(
     "Sending Files Home",
@@ -477,8 +504,19 @@ function _confirmSendHome() {
         full_restore: true
       }).then(function(r) {
         if (r.success) {
-          _stagingSession = null;
-          done("All Files Sent Home", r.copied.toLocaleString() + " files returned to their original folder.");
+          var fileCount = r.copied || 0;
+          resetAppState();
+          // Show OneDrive explainer if files went back to a OneDrive folder
+          api("POST", "/api/onedrive/status", { directory: sourceDir }).then(function(od) {
+            if (od.is_onedrive && od.show_prompts) {
+              done("All Files Sent Home", fileCount.toLocaleString() + " files returned to their original folder.");
+              showOneDriveRestoreExplainer(fileCount);
+            } else {
+              done("All Files Sent Home", fileCount.toLocaleString() + " files returned to their original folder.");
+            }
+          }).catch(function() {
+            done("All Files Sent Home", fileCount.toLocaleString() + " files returned to their original folder.");
+          });
         } else {
           done("Restore Failed", r.error || "Unknown error");
         }

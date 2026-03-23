@@ -384,11 +384,22 @@ If your browser is too old, a red warning banner will appear at the top of the p
 ## Important Notes
 
 ### Synced Folders (OneDrive, etc.)
-The Guided Cleanup wizard handles synced folders automatically by making a working copy. If you use Advanced Scan on a synced folder directly:
-- **Pause sync** first (right-click tray icon > Pause syncing)
+PixHerder automatically detects when you are working with OneDrive folders. When OneDrive is running, PixHerder will remind you to pause syncing before importing files or sending them home. This prevents file locking and unexpected behavior.
+
+**How to pause OneDrive sync:**
+
+1. Look for the OneDrive cloud icon in your system tray (bottom-right, near the clock)
+2. Click the icon, then click the gear icon (Settings)
+3. Select "Pause syncing" and choose 2 hours or more
+4. Resume syncing when you are done
+
+**After sending files home:** OneDrive may show a "Keep or Delete" dialog when it notices the changes. Choose **Keep** to preserve the files you just sorted. You can disable these reminders in Settings (Show OneDrive sync reminders).
+
+If you use Direct Scan on a synced folder:
+
+- Pause sync first
 - Run your operations
 - Resume sync afterward
-- If your system asks to "Keep" or "Delete" files, choose **Delete** (or they'll be restored)
 
 ### File Safety
 

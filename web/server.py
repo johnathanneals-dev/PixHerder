@@ -148,6 +148,30 @@ syncback_progress = {
 }
 
 
+def _reset_all_progress():
+    """Clear all in-memory progress dicts to prevent stale state."""
+    scan_progress.update({
+        "status": "idle", "stage": "", "current": 0, "total": 0,
+        "elapsed": 0, "errors": 0, "message": "", "result_file": None,
+    })
+    action_progress.update({
+        "status": "idle", "current": 0, "total": 0, "result": None,
+    })
+    oddball_progress.update({
+        "status": "idle", "current": 0, "total": 0, "result": None,
+    })
+    staging_progress.update({
+        "status": "idle", "current": 0, "total": 0,
+        "bytes_copied": 0, "bytes_total": 0, "copied": 0,
+        "skipped": 0, "failed": 0, "message": "",
+        "staging_dir": None, "source_dir": None, "manifest_path": None,
+    })
+    syncback_progress.update({
+        "status": "idle", "current": 0, "total": 0,
+        "deleted": 0, "errors": 0, "message": "",
+    })
+
+
 def _update_scan_progress(current, total, stage):
     """Callback for scan engine to report progress."""
     scan_progress["current"] = current
@@ -987,6 +1011,8 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/browse-folders":
             dirpath = params.get("path", [""])[0]
             self._handle_browse_folders(dirpath)
+        elif path == "/api/app/state":
+            self._handle_app_state()
         else:
             self.send_error(404)
 
@@ -1016,6 +1042,11 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
             self._handle_delete_scan()
         elif path == "/api/activity/clear":
             self._handle_clear_activity()
+        elif path == "/api/app/reset":
+            _reset_all_progress()
+            self.send_json({"status": "reset"})
+        elif path == "/api/onedrive/status":
+            self._handle_onedrive_status()
         elif path == "/api/staging/check":
             self._handle_staging_check()
         elif path == "/api/staging/start":
@@ -1112,6 +1143,82 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body)
         except Exception as e:
             self.send_error_json("Could not serve file: " + str(e), 500)
+
+    def _handle_app_state(self):
+        """Single source of truth: derive complete app state from filesystem."""
+        settings = load_settings()
+        image_exts = IMAGE_EXTENSIONS
+
+        def _count(dirpath):
+            if not dirpath or not os.path.isdir(dirpath):
+                return {"exists": False, "path": dirpath or "", "count": 0}
+            count = 0
+            for root, dirs, files in os.walk(dirpath):
+                for f in files:
+                    if os.path.splitext(f)[1].lower() in image_exts:
+                        count += 1
+            return {"exists": True, "path": dirpath, "count": count}
+
+        staging_path = _find_staging_subfolder()
+        dupes_path = settings.get("move_destination", DEFAULTS["move_destination"])
+        keepers_path = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+
+        staging = _count(staging_path)
+        dupes = _count(dupes_path)
+        keepers = _count(keepers_path)
+
+        # Session from manifest
+        source_dir = ""
+        if staging_path and SCANS_DIR.is_dir():
+            for mf in SCANS_DIR.glob("staging_manifest_*.json"):
+                try:
+                    with open(str(mf), "r", encoding="utf-8") as f:
+                        manifest = json.load(f)
+                    if manifest.get("staging_dir") == staging_path:
+                        source_dir = manifest.get("source_dir", "")
+                        break
+                except Exception:
+                    pass
+
+        has_session = bool(staging_path and staging["count"] > 0 and source_dir)
+
+        # Scans
+        scans = []
+        if SCANS_DIR.is_dir():
+            for f in sorted(SCANS_DIR.glob("scan_*.json"), reverse=True):
+                try:
+                    with open(str(f), "r") as fh:
+                        data = json.load(fh)
+                    meta = data.get("metadata", {})
+                    exact_count = len(data.get("exact_groups", []))
+                    perceptual_count = len(data.get("perceptual_groups", []))
+                    scans.append({
+                        "filename": f.name,
+                        "directory": meta.get("directory", ""),
+                        "mode": meta.get("mode", ""),
+                        "total_groups": exact_count + perceptual_count,
+                    })
+                except Exception:
+                    pass
+
+        # Recovery
+        try:
+            from engine.recovery import get_archive_status
+            recovery = get_archive_status()
+        except Exception:
+            recovery = {"has_files": False}
+
+        self.send_json({
+            "folders": {"staging": staging, "dupes": dupes, "keepers": keepers},
+            "session": {
+                "source_dir": source_dir,
+                "staging_dir": staging_path or "",
+                "active": has_session,
+            },
+            "scans": scans,
+            "has_scans": len(scans) > 0,
+            "recovery": recovery,
+        })
 
     def _handle_folders_status(self):
         settings = load_settings()
@@ -2254,6 +2361,22 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
             "page_size": page_size,
             "has_more": end < total,
         })
+
+    def _handle_onedrive_status(self):
+        try:
+            body = self.read_json_body()
+            directory = body.get("directory", "") if body else ""
+            from engine.staging import is_onedrive_running
+            running = is_onedrive_running()
+            is_od = is_onedrive_path(directory) if directory else False
+            settings = load_settings()
+            self.send_json({
+                "running": running,
+                "is_onedrive": is_od,
+                "show_prompts": settings.get("show_onedrive_prompts", True),
+            })
+        except Exception as e:
+            self.send_json({"error": str(e)}, 500)
 
     def _handle_staging_check(self):
         try:

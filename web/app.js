@@ -80,6 +80,11 @@ function toast(message, type) {
 // ---- Confirm Dialog ----
 var _dialogCallback = null;
 function showDialog(title, message, confirmText, confirmClass, onConfirm) {
+  // Capture original dialog-actions HTML on first call for restoration
+  if (!_dialogActionsOriginal) {
+    var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+    if (actionsDiv) _dialogActionsOriginal = actionsDiv.innerHTML;
+  }
   document.getElementById("dialogTitle").textContent = title;
   document.getElementById("dialogMessage").textContent = message;
   var btn = document.getElementById("dialogConfirmBtn");
@@ -91,14 +96,161 @@ function showDialog(title, message, confirmText, confirmClass, onConfirm) {
   _dialogCallback = onConfirm;
   document.getElementById("dialogOverlay").classList.add("active");
 }
+var _dialogActionsOriginal = "";
 function closeDialog() {
   document.getElementById("dialogOverlay").classList.remove("active");
   _dialogCallback = null;
+  // Restore standard dialog-actions if they were replaced by custom dialogs
+  var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+  if (actionsDiv && _dialogActionsOriginal && actionsDiv.innerHTML !== _dialogActionsOriginal) {
+    actionsDiv.innerHTML = _dialogActionsOriginal;
+  }
 }
 function dialogConfirmAction() {
   var cb = _dialogCallback;
   closeDialog();
   if (cb) cb();
+}
+
+// ---- OneDrive Sync Prompts ----
+
+/**
+ * Check OneDrive status and show pause-sync prompt if needed.
+ * Calls onContinue() when the user is ready to proceed (either after
+ * acknowledging the prompt or if prompts are disabled/OneDrive not running).
+ * @param {string} sourceDir - The directory being operated on
+ * @param {string} operation - "migration" | "restore" | "finish"
+ * @param {function} onContinue - Called when user is ready to proceed
+ */
+function checkOneDriveBeforeOperation(sourceDir, operation, onContinue) {
+  try {
+    api("POST", "/api/onedrive/status", { directory: sourceDir }).then(function(od) {
+      if (!od || !od.is_onedrive || !od.running || !od.show_prompts) {
+        onContinue();
+        return;
+      }
+      try {
+        _showOneDrivePauseDialog(operation, onContinue);
+      } catch (e) {
+        toast("OneDrive dialog error: " + e.message, "error");
+        onContinue();
+      }
+    }).catch(function(err) {
+      // If check fails, don't block the user
+      onContinue();
+    });
+  } catch (e) {
+    onContinue();
+  }
+}
+
+function _showOneDrivePauseDialog(operation, onContinue) {
+  // Capture original dialog-actions HTML for restoration
+  if (!_dialogActionsOriginal) {
+    var ad = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+    if (ad) _dialogActionsOriginal = ad.innerHTML;
+  }
+  var title = "Pause OneDrive Sync";
+  var opLabel = operation === "migration" ? "importing files"
+    : operation === "finish" ? "finishing up"
+    : "sending files home";
+
+  document.getElementById("dialogTitle").textContent = title;
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="margin-bottom:16px;">OneDrive is running and may interfere with ' + opLabel + '. ' +
+    'For best results, pause syncing first.</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+      '<button class="btn btn-secondary" onclick="closeDialog(); _showOneDriveHowToPause(function() { (' + _escCb(onContinue) + ')(); })"' +
+        ' data-tip="Step-by-step instructions to pause OneDrive">How to Pause</button>' +
+      '<button class="btn btn-primary" onclick="closeDialog(); (' + _escCb(onContinue) + ')()"' +
+        ' data-tip="Continue after pausing OneDrive sync">I\'ve Paused It</button>' +
+    '</div>' +
+    '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;">' +
+      '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;">' +
+        '<span style="color:#fff;font-weight:600;">How to Pause</span> shows step-by-step instructions.<br>' +
+        '<span style="color:#fff;font-weight:600;">I\'ve Paused It</span> continues with ' + opLabel + '.' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-top:14px;">' +
+      '<button class="btn btn-ghost" onclick="closeDialog(); (' + _escCb(onContinue) + ')()"' +
+        ' style="font-size:12px;">Continue without pausing</button>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (ghostBtn) ghostBtn.style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
+// Store callbacks for use in inline onclick handlers
+var _oneDriveCbStore = {};
+var _oneDriveCbId = 0;
+function _escCb(fn) {
+  var id = "_odCb" + (++_oneDriveCbId);
+  _oneDriveCbStore[id] = fn;
+  return "_oneDriveCbStore['" + id + "']";
+}
+
+function _showOneDriveHowToPause(onContinue) {
+  document.getElementById("dialogTitle").textContent = "How to Pause OneDrive";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="font-size:14px;line-height:1.8;color:var(--text);">' +
+      '<ol style="margin:0;padding-left:20px;">' +
+        '<li>Look for the <strong>OneDrive cloud icon</strong> in your system tray (bottom-right of your taskbar, near the clock).</li>' +
+        '<li>Click the icon to open the OneDrive menu.</li>' +
+        '<li>Click the <strong>gear icon</strong> (Settings).</li>' +
+        '<li>Select <strong>"Pause syncing"</strong> and choose <strong>2 hours</strong> or more.</li>' +
+        '<li>The icon will show a pause symbol when syncing is paused.</li>' +
+      '</ol>' +
+    '</div>' +
+    '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);line-height:1.6;">' +
+      'You can resume syncing anytime by clicking the OneDrive icon and selecting <strong style="color:#fff;">Resume syncing</strong>. ' +
+      'PixHerder will remind you when your operation is done.' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (cancelBtn) cancelBtn.style.display = "none";
+  var cbRef = _escCb(onContinue);
+  var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+  actionsDiv.innerHTML =
+    '<button class="btn btn-ghost" onclick="closeDialog()" style="margin-right:auto;">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="closeDialog(); (' + cbRef + ')()" data-tip="Continue with the operation">I\'ve Paused It</button>';
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
+/**
+ * Show an informational dialog after restoring files to OneDrive,
+ * explaining the "Keep or Delete" dialog they may see.
+ * @param {number} fileCount - Number of files restored
+ * @param {function} onDismiss - Called when user closes the dialog
+ */
+function showOneDriveRestoreExplainer(fileCount, onDismiss) {
+  if (!_dialogActionsOriginal) {
+    var ad = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+    if (ad) _dialogActionsOriginal = ad.innerHTML;
+  }
+  document.getElementById("dialogTitle").textContent = "Files Sent Home";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="margin-bottom:16px;">' +
+      '<strong>' + fileCount.toLocaleString() + '</strong> files have been returned to your original folder.' +
+    '</div>' +
+    '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">' +
+      '<div style="font-weight:600;color:var(--warning);margin-bottom:6px;">OneDrive may ask you about these files</div>' +
+      '<div style="font-size:13px;color:var(--text);line-height:1.6;">' +
+        'When OneDrive notices the changes, it may show a <strong>"Keep or Delete"</strong> prompt. ' +
+        'If you see this:<br><br>' +
+        '<strong style="color:var(--accent);">Choose "Keep"</strong> to keep your sorted files in place. ' +
+        'This preserves all the work you just did.<br><br>' +
+        'If you had OneDrive sync paused, you can resume it now.' +
+      '</div>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (cancelBtn) cancelBtn.style.display = "none";
+  var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
+  var cbRef = onDismiss ? _escCb(onDismiss) : null;
+  actionsDiv.innerHTML =
+    '<button class="btn btn-primary" onclick="closeDialog();' + (cbRef ? ' (' + cbRef + ')();' : '') + '" data-tip="Close this message">Got It</button>';
+  document.getElementById("dialogOverlay").classList.add("active");
 }
 
 // ---- Lightbox ----
@@ -462,6 +614,8 @@ function _loadFolderPicker(path) {
 // ---- API Helper ----
 // Bridge method map: "METHOD /api/path" -> bridge method name
 var _bridgeMap = {
+  "GET /api/app/state": "app_state",
+  "POST /api/app/reset": "reset_state",
   "GET /api/scans": "get_scans",
   "GET /api/settings": "get_settings",
   "GET /api/folders/status": "get_folders_status",
@@ -482,6 +636,7 @@ var _bridgeMap = {
   "POST /api/decisions/save": "decisions_save",
   "POST /api/scans/delete": "scans_delete",
   "POST /api/activity/clear": "clear_activity",
+  "POST /api/onedrive/status": "onedrive_status",
   "POST /api/staging/check": "staging_check",
   "POST /api/staging/start": "staging_start",
   "POST /api/staging/cancel": "staging_cancel_op",
@@ -898,23 +1053,42 @@ function escAttr(str) {
 /* ==================================================================
    INIT — called from index.html after all scripts load
    ================================================================== */
+// ---- Centralized State ----
+// Single source of truth: derives app state from filesystem, not in-memory caches.
+
+function getAppState() {
+  return api("GET", "/api/app/state");
+}
+
+function resetAppState() {
+  // Clear backend in-memory progress dicts
+  api("POST", "/api/app/reset").catch(function() {});
+  // Clear frontend state
+  _stagingSession = null;
+  wizardState.currentStep = 1;
+  wizardState.completedSteps = {};
+  wizardState.stagingDir = null;
+  wizardState.sourceDir = null;
+  wizardState.lastReport = null;
+  state.groups = [];
+  state.filteredIndices = [];
+  state.currentGroupIndex = 0;
+  state.decisions = {};
+  state.currentReport = null;
+  _dashFolderPaths = { staging: "", dupes: "", keepers: "" };
+  _sessionScanCompleted = false;
+}
+
 function _refreshFolderPaths() {
   // Keep folder paths up-to-date for navigation from any view
-  api("GET", "/api/folders/status").then(function(data) {
-    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-      _dashFolderPaths.staging = data.staging.path;
-    } else {
-      _dashFolderPaths.staging = "";
-    }
-    if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
-      _dashFolderPaths.dupes = data.dupes.path;
-    } else {
-      _dashFolderPaths.dupes = "";
-    }
-    if (data.keepers && data.keepers.exists && data.keepers.file_count > 0) {
-      _dashFolderPaths.keepers = data.keepers.path;
-    } else {
-      _dashFolderPaths.keepers = "";
+  getAppState().then(function(appState) {
+    var f = appState.folders;
+    _dashFolderPaths.staging = (f.staging.exists && f.staging.count > 0) ? f.staging.path : "";
+    _dashFolderPaths.dupes = (f.dupes.exists && f.dupes.count > 0) ? f.dupes.path : "";
+    _dashFolderPaths.keepers = (f.keepers.exists && f.keepers.count > 0) ? f.keepers.path : "";
+    // Update session from filesystem too
+    if (appState.session.active) {
+      _stagingSession = { source_dir: appState.session.source_dir, staging_dir: appState.session.staging_dir };
     }
     _updateNavStates();
   }).catch(function() {});

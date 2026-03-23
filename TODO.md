@@ -80,6 +80,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Batch complete dialog: Cancel left, Next Batch + Take a Break right
 - [x] Clear archive shows confirmation dialog with OK button
 - [x] Help link in nav menu (placeholder view added)
+
 ### Current App Features (build next)
 
 - [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
@@ -100,7 +101,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ### OneDrive Integration
 
-- [ ] OneDrive sync management: pause-sync prompts, "Keep or Delete" explanation, auto-detect sync state
+- [x] OneDrive sync management: pause-sync prompts, "Keep or Delete" explanation, auto-detect sync state
 
 ### Help System
 
