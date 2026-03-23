@@ -1264,12 +1264,11 @@ function _tooltipHelp() {
 function _checkPersistentLogging() {
   api("GET", "/api/settings").then(function(s) {
     if (s && s.persistent_logging) {
-      api("POST", "/api/logs/enable").then(function() {
-        _updatePersistentLogBadge(true);
-        _updateLoggingUI(true);
-      });
+      // Show badge immediately from settings, don't wait for logs/enable
+      _updatePersistentLogBadge(true);
+      _updateLoggingUI(true);
+      api("POST", "/api/logs/enable").catch(function() {});
     }
-    // Show debug mode badge if enabled
     if (s && s.debug_mode) {
       var badge = document.getElementById("debugModeBadge");
       if (badge) badge.style.display = "inline";
@@ -1278,10 +1277,9 @@ function _checkPersistentLogging() {
     setTimeout(function() {
       api("GET", "/api/settings").then(function(s) {
         if (s && s.persistent_logging) {
-          api("POST", "/api/logs/enable").then(function() {
-            _updatePersistentLogBadge(true);
-            _updateLoggingUI(true);
-          });
+          _updatePersistentLogBadge(true);
+          _updateLoggingUI(true);
+          api("POST", "/api/logs/enable").catch(function() {});
         }
         if (s && s.debug_mode) {
           var badge = document.getElementById("debugModeBadge");
