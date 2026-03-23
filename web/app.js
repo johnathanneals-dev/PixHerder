@@ -878,7 +878,7 @@ function route() {
   for (var i = 0; i < links.length; i++) {
     links[i].classList.toggle("active", links[i].getAttribute("data-view") === navView);
   }
-  _updateNavStates();
+  _refreshFolderPaths();  // Always refresh nav from filesystem
 
   // Show kbd hints only in review
   document.getElementById("kbdHints").style.display = view === "review" ? "flex" : "none";

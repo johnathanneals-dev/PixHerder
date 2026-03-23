@@ -29,6 +29,8 @@ function saveSettings() {
   var oldPort = (state.settings && state.settings.port) || 8787;
   var newPort = parseInt(document.getElementById("setPort").value) || 8787;
 
+  // Preserve settings not shown in the UI (persistent_logging, debug_mode)
+  var preserved = state.settings || {};
   var data = {
     threshold: parseInt(document.getElementById("setThreshold").value) || 5,
     move_destination: document.getElementById("setMoveDir").value.trim(),
@@ -38,6 +40,8 @@ function saveSettings() {
     show_hints: document.getElementById("setShowHints").checked,
     show_tooltips: document.getElementById("setShowTooltips").checked,
     show_onedrive_prompts: document.getElementById("setShowOneDrivePrompts").checked,
+    persistent_logging: preserved.persistent_logging || false,
+    debug_mode: preserved.debug_mode || false,
     extensions: exts
   };
 
