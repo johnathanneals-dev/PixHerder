@@ -555,6 +555,18 @@ function _quickFill(which) {
   });
 }
 
+function _pasteToInput(inputId) {
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    navigator.clipboard.readText().then(function(text) {
+      if (text) document.getElementById(inputId).value = text.trim();
+    }).catch(function() {
+      toast("Could not read clipboard", "warning");
+    });
+  } else {
+    toast("Clipboard not available", "warning");
+  }
+}
+
 function openFolderPicker(targetInputId) {
   _folderPickerTarget = targetInputId;
   var startPath = document.getElementById(targetInputId).value.trim();
