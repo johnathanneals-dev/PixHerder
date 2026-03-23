@@ -478,11 +478,23 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         os.makedirs(str(SCANS_DIR), exist_ok=True)
         result_path = SCANS_DIR / filename
 
+        # Build filtered file_info with only files in groups
+        group_files = set()
+        for g in exact_groups_data:
+            group_files.add(g["keep"])
+            group_files.update(g["duplicates"])
+        for g in perceptual_groups_data:
+            group_files.add(g["keep"])
+            group_files.update(g["duplicates"])
+        report_file_info = {k: v for k, v in file_info.items()
+                            if k in group_files}
+
         report = {
             "metadata": {
                 "directory": directory,
                 "mode": mode,
                 "threshold": threshold,
+                "hash_size": hash_size,
                 "recursive": recursive,
                 "timestamp": datetime.now().isoformat(),
                 "total_images": total_images,
@@ -493,6 +505,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
             },
             "exact_groups": exact_groups_data,
             "perceptual_groups": perceptual_groups_data,
+            "file_info": report_file_info,
         }
 
         with open(str(result_path), "w") as f:
@@ -1262,6 +1275,7 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
                 self.send_json({
                     "groups": groups,
                     "metadata": data.get("metadata"),
+                    "file_info": data.get("file_info", {}),
                 })
             else:
                 self.send_error_json("Invalid report format")

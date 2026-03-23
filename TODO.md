@@ -82,6 +82,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Help link in nav menu (placeholder view added)
 ### Current App Features (build next)
 
+- [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
 - [ ] Auto-move duplicates option: scan identifies and moves dupes to Removed Duplicates automatically, user reviews after
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Recycle Bin capacity indicator before bulk recycle operations

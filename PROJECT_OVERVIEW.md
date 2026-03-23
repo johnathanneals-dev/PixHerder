@@ -33,9 +33,10 @@ The application runs as a pywebview native window (using the system's Edge WebVi
    - *Perceptual* -- Finds images that look visually similar even if they differ in size, compression, or format. Adjustable similarity threshold.
    - *Both* -- Runs exact first, then perceptual on the remaining files. Recommended for thorough cleaning.
 
-3. **Review** -- PixHerder presents duplicate groups one at a time. For each group, you see the images side by side and decide which to keep. You can:
+3. **Review** -- PixHerder presents duplicate groups one at a time. For each group, you see the images side by side with metadata (dimensions, file size, date, similarity percentage) to help you decide which to keep. You can:
    - Click an image to toggle it between "keep" and "duplicate"
    - Keep multiple files from a group if you want
+   - Zoom in to compare details -- the lightbox shows metadata at the bottom
    - Use "Mark All Remaining" to bulk-process when you are confident
    - Work through groups in manageable batches (50, 100, 250, 500, or all at once)
    - Close the app and come back later -- your decisions are auto-saved

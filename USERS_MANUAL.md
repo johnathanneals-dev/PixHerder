@@ -113,6 +113,15 @@ Click **Open Review** to enter the full review interface.
 
 Each duplicate group shows all the matching files side by side. PixHerder picks one to keep (green KEEP badge) and marks the rest as duplicates (red DUPE badge).
 
+**Image details shown on each card:**
+
+- Image dimensions (e.g., 4032 x 3024)
+- File size (e.g., 3.2 MB)
+- Date modified (e.g., 2024-11-15)
+- Similarity percentage (e.g., 98% similar) or "100% match" for exact duplicates
+
+This information helps you decide which copy is the best quality. Click **Zoom** on any image to see it full-size -- the lightbox also shows these details at the bottom of the screen.
+
 **Choosing which files to keep:**
 Click any image to toggle it between KEEP (green) and DUPE (red). You can mark multiple files as KEEP in the same group -- at least one must always be kept. Click the **Zoom** button on any image to see it full-size.
 

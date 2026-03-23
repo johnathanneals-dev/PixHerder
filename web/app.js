@@ -37,6 +37,15 @@ function formatTime(seconds) {
   return m + ":" + (s < 10 ? "0" : "") + s;
 }
 
+function formatDate(timestamp) {
+  if (!timestamp) return "";
+  var d = new Date(timestamp * 1000);
+  var y = d.getFullYear();
+  var m = ("0" + (d.getMonth() + 1)).slice(-2);
+  var day = ("0" + d.getDate()).slice(-2);
+  return y + "-" + m + "-" + day;
+}
+
 function getFilename(fp) {
   if (!fp) return "";
   var sep = fp.indexOf("\\") >= 0 ? "\\" : "/";
@@ -102,11 +111,28 @@ function openLightbox(encodedPath) {
   var view = parseHash().view;
   var showControls = (view === "browser" || view === "review");
   document.getElementById("lightboxControls").style.display = showControls ? "flex" : "none";
+  // Show metadata if available
+  var infoEl = document.getElementById("lightboxInfo");
+  if (infoEl) {
+    var info = (state._fileInfo || {})[_lightboxFilePath];
+    if (info) {
+      var parts = [];
+      if (info.width && info.height) parts.push(info.width + " x " + info.height);
+      if (info.size) parts.push(formatBytes(info.size));
+      if (info.mtime) parts.push(formatDate(info.mtime));
+      infoEl.textContent = parts.join("  |  ");
+      infoEl.style.display = "block";
+    } else {
+      infoEl.style.display = "none";
+    }
+  }
 }
 function closeLightbox() {
   document.getElementById("lightbox").classList.remove("active");
   document.getElementById("lightboxImg").src = "";
   _lightboxFilePath = "";
+  var infoEl = document.getElementById("lightboxInfo");
+  if (infoEl) infoEl.style.display = "none";
 }
 function moveLightboxToKeepers() {
   if (!_lightboxFilePath) return;

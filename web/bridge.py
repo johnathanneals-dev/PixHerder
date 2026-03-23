@@ -241,7 +241,8 @@ class Api:
                     data.get("exact_groups", [])
                     + data.get("perceptual_groups", [])
                 )
-                return {"groups": groups, "metadata": data.get("metadata")}
+                return {"groups": groups, "metadata": data.get("metadata"),
+                        "file_info": data.get("file_info", {})}
             return {"error": "Invalid report format"}
         except Exception as e:
             return {"error": "Error reading report: " + str(e)}

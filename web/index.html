@@ -87,6 +87,7 @@
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()" role="dialog" aria-label="Image zoom view">
   <img id="lightboxImg" src="">
+  <div class="lightbox-info" id="lightboxInfo" onclick="event.stopPropagation()"></div>
   <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
     <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;" data-tip="Save this file as a confirmed keeper">Move to Verified Keepers</button>
     <button onclick="deleteLightboxFile()" data-tip="Send this file to the Recycle Bin">Recycle This File</button>

@@ -8,7 +8,7 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
-from engine.hasher import md5_hash, perceptual_hash
+from engine.hasher import md5_hash, perceptual_hash, perceptual_hash_with_dims
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,14 @@ def find_exact_duplicates(image_paths, progress_cb=None, cancel_event=None,
                 computed_hashes[path_str] = digest
                 try:
                     st = os.stat(path_str)
-                    file_info[path_str] = {"mtime": st.st_mtime, "size": st.st_size}
+                    info = {"mtime": st.st_mtime, "size": st.st_size}
+                    try:
+                        from PIL import Image as PILImage
+                        with PILImage.open(path_str) as _img:
+                            info["width"], info["height"] = _img.size
+                    except Exception:
+                        pass
+                    file_info[path_str] = info
                 except Exception:
                     pass
 
@@ -126,14 +133,22 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
             except Exception:
                 # Stored hash is corrupt, recompute
                 computed_hashes.pop(path_str, None)
-                h, err = perceptual_hash(path, hash_size=hash_size)
+                h, dims, err = perceptual_hash_with_dims(path, hash_size=hash_size)
                 if err:
                     errors.append({"path": path_str, "error": err})
                 if h is not None:
                     hashes.append((path, h))
                     computed_hashes[path_str] = str(h)
+                    try:
+                        st = os.stat(path_str)
+                        info = {"mtime": st.st_mtime, "size": st.st_size}
+                        if dims:
+                            info["width"], info["height"] = dims
+                        file_info[path_str] = info
+                    except Exception:
+                        pass
         else:
-            h, err = perceptual_hash(path, hash_size=hash_size)
+            h, dims, err = perceptual_hash_with_dims(path, hash_size=hash_size)
             if err:
                 errors.append({"path": path_str, "error": err})
             if h is not None:
@@ -141,7 +156,10 @@ def find_perceptual_duplicates(image_paths, threshold=5, hash_size=16,
                 computed_hashes[path_str] = str(h)
                 try:
                     st = os.stat(path_str)
-                    file_info[path_str] = {"mtime": st.st_mtime, "size": st.st_size}
+                    info = {"mtime": st.st_mtime, "size": st.st_size}
+                    if dims:
+                        info["width"], info["height"] = dims
+                    file_info[path_str] = info
                 except Exception:
                     pass
 

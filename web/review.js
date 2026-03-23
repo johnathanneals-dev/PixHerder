@@ -152,6 +152,7 @@ function initReview(report, returnTo) {
   api("GET", "/api/groups?report=" + encodeURIComponent(report)).then(function(data) {
     state.groups = data.groups || [];
     state._scanMetadata = data.metadata || {};
+    state._fileInfo = data.file_info || {};
     state.filteredIndices = [];
     for (var i = 0; i < state.groups.length; i++) state.filteredIndices.push(i);
 
@@ -335,7 +336,7 @@ function renderReviewGroup() {
     if (group.distances && group.distances[allFiles[i]] !== undefined) {
       fileDist = group.distances[allFiles[i]];
     }
-    html += makeImageCardHtml(allFiles[i], isKeep ? "keep" : "dupe", fileDist, realIdx);
+    html += makeImageCardHtml(allFiles[i], isKeep ? "keep" : "dupe", fileDist, realIdx, group.type);
   }
   html += '</div>';
 
@@ -343,11 +344,12 @@ function renderReviewGroup() {
   window.scrollTo(0, 0);
 }
 
-function makeImageCardHtml(filepath, type, distance, groupIdx) {
+function makeImageCardHtml(filepath, type, distance, groupIdx, groupType) {
   var encoded = encodeURIComponent(filepath);
   var badgeClass = type === "keep" ? "badge-keep" : "badge-dupe";
   var badgeText = type === "keep" ? "KEEP" : "DUPE";
   var cardClass = type;
+  var info = (state._fileInfo || {})[filepath];
 
   var html = '<div class="image-card ' + cardClass + '" style="cursor:pointer;" onclick="toggleKeepDupe(' + groupIdx + ',\'' + escAttr(filepath) + '\')">';
   html += '<div class="image-wrapper">';
@@ -357,9 +359,33 @@ function makeImageCardHtml(filepath, type, distance, groupIdx) {
   html += '</div>';
   html += '<div class="card-info">';
   html += '<div class="card-filename">' + escHtml(getFilename(filepath)) + '</div>';
+
+  // Metadata line: dimensions, file size, date
+  if (info) {
+    var metaParts = [];
+    if (info.width && info.height) {
+      metaParts.push(info.width + ' x ' + info.height);
+    }
+    if (info.size) {
+      metaParts.push(formatBytes(info.size));
+    }
+    if (info.mtime) {
+      metaParts.push(formatDate(info.mtime));
+    }
+    if (metaParts.length > 0) {
+      html += '<div class="card-meta card-meta-info">' + metaParts.join(' &middot; ') + '</div>';
+    }
+  }
+
+  // Folder path + similarity
   html += '<div class="card-meta">' + escHtml(getFolder(filepath));
   if (distance !== null && distance !== undefined) {
-    html += ' | dist: ' + distance;
+    var hashSize = (state._scanMetadata && state._scanMetadata.hash_size) || 16;
+    var maxDist = hashSize * hashSize;
+    var pct = Math.round(100 * (1 - distance / maxDist));
+    html += ' | ' + pct + '% similar';
+  } else if (groupType === 'exact') {
+    html += ' | 100% match';
   }
   html += '</div>';
   html += '</div></div>';

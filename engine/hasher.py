@@ -45,3 +45,23 @@ def perceptual_hash(filepath, hash_size=DEFAULT_HASH_SIZE):
     except Exception as e:
         logger.error("Hash error for %s: %s", filepath, e)
         return (None, str(e))
+
+
+def perceptual_hash_with_dims(filepath, hash_size=DEFAULT_HASH_SIZE):
+    """Compute perceptual hash and extract image dimensions.
+
+    Opens the image once for both operations. Image.size reads
+    only the header -- no pixel decode, effectively free.
+
+    Returns:
+        Tuple of (imagehash_object_or_None, (width, height)_or_None,
+                  error_string_or_None).
+    """
+    try:
+        logger.debug("Computing pHash+dims for %s", filepath)
+        with Image.open(str(filepath)) as img:
+            dims = img.size
+            return (imagehash.phash(img, hash_size=hash_size), dims, None)
+    except Exception as e:
+        logger.error("Hash error for %s: %s", filepath, e)
+        return (None, None, str(e))
