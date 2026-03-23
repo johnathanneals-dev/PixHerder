@@ -130,14 +130,25 @@ Click any image to toggle it between KEEP (green) and DUPE (red). You can mark m
 - **Mark as Duplicate** -- mark the DUPE files for removal to Recovery
 - **Delete** -- mark the DUPE files for permanent deletion
 
-**Keyboard shortcuts:**
+**Keyboard shortcuts (Review):**
+
 | Key | Action |
 |-----|--------|
 | Left/Right arrows | Previous/next group |
 | S | Keep All (keep every file) |
 | M | Mark as Duplicate |
 | D | Delete |
+| E | Apply Decisions |
+| Space | Open/close image zoom |
 | Escape | Close image zoom |
+
+**System keyboard shortcuts (available anywhere):**
+
+| Key              | Action                           |
+| ---------------- | -------------------------------- |
+| Ctrl+Shift+F5    | Toggle persistent logging on/off |
+| Ctrl+Shift+F6    | Toggle debug console view        |
+| Ctrl+Shift+F7    | Toggle debug mode                |
 
 **Toolbar features:**
 - Sort by: default, file size, reclaimable space, distance

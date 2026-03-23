@@ -37,9 +37,13 @@ def is_onedrive_path(directory):
 def is_onedrive_running():
     """Check if the OneDrive process is currently running."""
     try:
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = 0  # SW_HIDE
         result = subprocess.run(
             ["tasklist", "/FI", "IMAGENAME eq OneDrive.exe", "/NH"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True, text=True, timeout=5,
+            startupinfo=si
         )
         return "OneDrive.exe" in result.stdout
     except Exception:

@@ -17,15 +17,20 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
 
   // Determine step states
   var hasFiles = hasStaging || hasDupes || hasKeepers;
-  if (!hasFiles) {
-    guide.style.display = "none";
-    return;
-  }
   guide.style.display = "block";
 
   // Hint box visibility controlled by setting, stepper always visible
   var hintBox = document.getElementById("dashHint");
   if (hintBox) hintBox.style.display = hintsEnabled ? "block" : "none";
+
+  // Stepper hidden when no files (but hints still show)
+  var stepper = document.getElementById("dashStepper");
+  if (stepper) stepper.style.display = hasFiles ? "flex" : "none";
+  if (!hasFiles) {
+    var hintText = document.getElementById("dashHintText");
+    if (hintText) hintText.textContent = "Import your files to get started. Use Start Guided Cleanup or Migrate to Staging above.";
+    return;
+  }
 
   var steps = [
     { num: 1, label: "Import", state: "locked", tip: "Import your photos into PixHerder for scanning" },
