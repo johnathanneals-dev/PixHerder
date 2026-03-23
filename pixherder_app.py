@@ -175,6 +175,20 @@ def _run_native_mode(port):
 
     window.events.closing += on_closing
 
+    def on_shown():
+        """Enable context menu on input fields after window is ready."""
+        try:
+            # Access WebView2 settings to re-enable context menus
+            if hasattr(window, 'gui') and window.gui:
+                widget = window.gui.BrowserView.instances.get(window.uid)
+                if widget and hasattr(widget, 'browser'):
+                    settings = widget.browser.CoreWebView2.Settings
+                    settings.AreDefaultContextMenusEnabled = True
+        except Exception:
+            pass
+
+    window.events.shown += on_shown
+
     # Start the window (blocks until closed)
     # Check if debug mode is enabled in settings
     _settings = load_settings()
