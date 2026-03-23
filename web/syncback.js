@@ -84,7 +84,7 @@ function cleanupStaging() {
     document.getElementById("dialogTitle").textContent = "Remove Workspace";
     document.getElementById("dialogMessage").innerHTML =
       '<div style="margin-bottom:16px;">You have <strong>' + count.toLocaleString() +
-      '</strong> files in My Files. What would you like to do with them?</div>' +
+      '</strong> files in Staging. What would you like to do with them?</div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
       '<button class="btn btn-danger" onclick="_recycleStagingConfirm(' + count + ')">Send to Recycle Bin</button>' +
       '<button class="btn btn-primary" onclick="closeDialog(); sendFilesHome()">Send Files Home</button>' +
@@ -118,7 +118,7 @@ function _executeRecycleStaging() {
   closeDialog();
   startWorkingView(
     "Recycling Workspace",
-    "Sending My Files to the Recycle Bin.",
+    "Sending Staging to the Recycle Bin.",
     function(done) {
       api("POST", "/api/staging/recycle-bin", {
         staging_dir: _stagingSession.staging_dir

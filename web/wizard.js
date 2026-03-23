@@ -114,17 +114,17 @@ function wizardGoToStep(n) {
       var sBtn = document.getElementById("wizStagingBtn");
       var dBtn = document.getElementById("wizDupesBtn");
       if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-        sBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
+        sBtn.textContent = "Staging (" + data.staging.file_count.toLocaleString() + ")";
         sBtn.disabled = false;
       } else {
-        sBtn.textContent = "My Files (empty)";
+        sBtn.textContent = "Staging (empty)";
         sBtn.disabled = true;
       }
       if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
-        dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+        dBtn.textContent = "Recovery (" + data.dupes.file_count.toLocaleString() + ")";
         dBtn.disabled = false;
       } else {
-        dBtn.textContent = "Removed Duplicates (empty)";
+        dBtn.textContent = "Recovery (empty)";
         dBtn.disabled = true;
       }
     }).catch(function() {});

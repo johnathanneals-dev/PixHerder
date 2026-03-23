@@ -69,7 +69,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Sticky browser toolbar: buttons stay at top when scrolling in folder view (fixed: moved to nav bar row)
 - [x] Persistent logging toggle -- badge visibility fixed with retry on startup
 - [x] Debug mode toggle (Ctrl+Shift+F7) -- implemented, reads from settings on startup
-- [ ] Auto-move duplicates to Removed Duplicates option (scan moves dupes automatically, user reviews after)
+- [ ] Auto-move duplicates to Recovery option (scan moves dupes automatically, user reviews after)
 - [x] Tooltips on Execute Actions view (batch dialog is known limitation — z-index overlap)
 - [x] BUG: "Rescan" from scan results -- fixed to navigate to scan-config directly
 - [x] BUG: "Complete migration first" toast -- caused by Rescan going through wizard, fixed
@@ -83,11 +83,12 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ### Current App Features (build next)
 
 - [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
-- [ ] Auto-move duplicates option: scan identifies and moves dupes to Removed Duplicates automatically, user reviews after
+- [ ] Restart button: green button in status bar bottom-left, shifts server info toward middle. Tooltip, small confirmation dialog, force-closes and relaunches app with no further interaction.
+- [ ] Auto-move duplicates option: scan identifies and moves dupes to Recovery automatically, user reviews after
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
-- [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in My Files browser
-- [ ] Move to Keepers source picker: choose My Files, Removed Duplicates, or both
+- [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in Staging browser
+- [ ] Move to Keepers source picker: choose Staging, Recovery, or both
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 
@@ -144,7 +145,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Top menu redesign: Dashboard | Migrate | Scan | Review | Finalize | Activity | Settings
 - [x] Grey out nav items when not applicable
 - [x] Rename Advanced Scan to Direct Scan
-- [x] Rescan boxes on dashboard (Removed Duplicates + Verified Keepers)
+- [x] Rescan boxes on dashboard (Recovery + Keepers)
 - [x] Fix "Choose a different step" button missing border
 - [x] Post-action navigation: horizontal stage buttons + Open Recycle Bin
 - [x] Perceptual threshold + scan mode explanations on scan config
@@ -154,7 +155,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Fix staging folder discovery bug (_find_staging_subfolder helper)
 - [x] Fix inflated file counts in execute actions with Both scan mode
 - [x] Fix wizard skipping to Stage 4 after Send Files Home
-- [x] Rename Cleaned Files to My Files throughout
+- [x] Rename Cleaned Files to Staging throughout
 - [x] Fix Explorer and Recycle Bin opening behind browser (window.blur)
 - [x] Remove duplicate Back to Dashboard button from action results
 - [x] Blocking progress view (#working) for all file operations

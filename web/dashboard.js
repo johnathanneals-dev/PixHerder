@@ -120,11 +120,11 @@ function _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers) {
   if (hasStaging && hasDupes) {
     hint.textContent = "Use the scan buttons above, or access wizard steps for more options.";
   } else if (hasStaging && !hasDupes) {
-    hint.textContent = "Scan My Files to find duplicates.";
+    hint.textContent = "Scan Staging to find duplicates.";
   } else if (hasDupes && !hasStaging) {
-    hint.textContent = "Removed Duplicates has files. Use Rescue & Review or finish up from wizard steps.";
+    hint.textContent = "Recovery has files. Use Rescue & Review or finish up from wizard steps.";
   } else if (hasKeepers) {
-    hint.textContent = "Verified Keepers are ready to go home. Access wizard steps to finish up.";
+    hint.textContent = "Keepers are ready to go home. Access wizard steps to finish up.";
   } else {
     hint.textContent = "";
   }
@@ -189,26 +189,26 @@ function _dashUpdateFolders() {
 
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
       stagingBtn.disabled = false;
-      stagingBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
+      stagingBtn.textContent = "Staging (" + data.staging.file_count.toLocaleString() + ")";
       stagingHint.textContent = "";
       _dashFolderPaths.staging = data.staging.path;
       hasAny = true;
     } else {
       stagingBtn.disabled = true;
-      stagingBtn.textContent = "My Files";
+      stagingBtn.textContent = "Staging";
       stagingHint.textContent = "No staged files";
       _dashFolderPaths.staging = "";
     }
 
     if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
       dupesBtn.disabled = false;
-      dupesBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+      dupesBtn.textContent = "Recovery (" + data.dupes.file_count.toLocaleString() + ")";
       dupesHint.textContent = "";
       _dashFolderPaths.dupes = data.dupes.path;
       hasAny = true;
     } else {
       dupesBtn.disabled = true;
-      dupesBtn.textContent = "Removed Duplicates";
+      dupesBtn.textContent = "Recovery";
       dupesHint.textContent = "No files yet";
       _dashFolderPaths.dupes = "";
     }
@@ -218,13 +218,13 @@ function _dashUpdateFolders() {
     var keepersHint = document.getElementById("dashKeepersHint");
     if (data.keepers && data.keepers.exists && data.keepers.file_count > 0) {
       keepersBtn.disabled = false;
-      keepersBtn.textContent = "Verified Keepers (" + data.keepers.file_count.toLocaleString() + ")";
+      keepersBtn.textContent = "Keepers (" + data.keepers.file_count.toLocaleString() + ")";
       keepersHint.textContent = "";
       _dashFolderPaths.keepers = data.keepers.path;
       hasAny = true;
     } else {
       keepersBtn.disabled = true;
-      keepersBtn.textContent = "Verified Keepers";
+      keepersBtn.textContent = "Keepers";
       keepersHint.textContent = "No files yet";
       _dashFolderPaths.keepers = "";
     }
@@ -293,22 +293,22 @@ function rescueAndReview() {
     var dupesHasFiles = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
 
     if (!dupesHasFiles) {
-      toast("No files in the Removed Duplicates folder to review", "warning");
+      toast("No files in the Recovery folder to review", "warning");
       return;
     }
 
     if (stagingHasFiles) {
-      document.getElementById("dialogTitle").textContent = "My Files Has Files";
+      document.getElementById("dialogTitle").textContent = "Staging Has Files";
       document.getElementById("dialogMessage").innerHTML =
-        '<div style="margin-bottom:16px;">My Files still has <strong>' +
+        '<div style="margin-bottom:16px;">Staging still has <strong>' +
         data.staging.file_count.toLocaleString() + '</strong> files. How would you like to proceed?</div>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
         '<button class="btn btn-primary" onclick="_rnrMerge()">Merge Dupes</button>' +
         '<button class="btn btn-secondary" onclick="_rnrSyncAndRecycle()">Return / Reload</button>' +
         '</div>' +
         '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text-dim);">' +
-        '<span style="color:#fff;font-weight:600;">Merge Dupes</span> files from Removed Duplicates will be merged with the files in My Files. You\'ll find all the files in the My Files folder again.<br><br>' +
-        '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your My Files home first, then brings the Removed Duplicates back for another review.' +
+        '<span style="color:#fff;font-weight:600;">Merge Dupes</span> files from Recovery will be merged with the files in Staging. You\'ll find all the files in the Staging folder again.<br><br>' +
+        '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your Staging home first, then brings the Recovery back for another review.' +
         '</div>' +
         '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
@@ -319,21 +319,21 @@ function rescueAndReview() {
 
     showDialog(
       "Rescue & Review",
-      "This will move " + data.dupes.file_count.toLocaleString() + " files from Removed Duplicates " +
-      "into My Files for scanning and review.\n\nContinue?",
+      "This will move " + data.dupes.file_count.toLocaleString() + " files from Recovery " +
+      "into Staging for scanning and review.\n\nContinue?",
       "Start",
       "btn-primary",
       function() {
         startWorkingView(
           "Loading Files for Review",
-          "Moving files from Removed Duplicates to My Files.",
+          "Moving files from Recovery to Staging.",
           function(done) {
             api("POST", "/api/staging/recycle").then(function(r) {
               if (r.success) {
                 wizardState.stagingDir = r.staging_path;
                 wizardState.completedSteps = { 1: true };
                 wizardState.currentStep = 2;
-                done("Files Loaded", r.files_moved.toLocaleString() + " files ready for scanning in My Files.");
+                done("Files Loaded", r.files_moved.toLocaleString() + " files ready for scanning in Staging.");
                 _workingConfig.destination = "wizard";
               } else {
                 done("Failed", r.error || "Unknown error");
@@ -355,7 +355,7 @@ function _rnrMerge() {
   closeDialog();
   startWorkingView(
     "Merging Files",
-    "Moving files from Removed Duplicates to My Files.",
+    "Moving files from Recovery to Staging.",
     function(done) {
       api("POST", "/api/staging/recycle", { force: true }).then(function(r) {
         if (r.success) {
@@ -364,12 +364,12 @@ function _rnrMerge() {
           api("GET", "/api/folders/status").then(function(fs) {
             var cleanedCount = (fs.staging && fs.staging.file_count) || 0;
             var dupesCount = (fs.dupes && fs.dupes.file_count) || 0;
-            var msg = r.files_moved.toLocaleString() + " files moved to My Files.\n" +
-              "My Files now has " + cleanedCount.toLocaleString() + " files.";
-            if (dupesCount > 0) msg += " Removed Duplicates has " + dupesCount.toLocaleString() + " remaining.";
+            var msg = r.files_moved.toLocaleString() + " files moved to Staging.\n" +
+              "Staging now has " + cleanedCount.toLocaleString() + " files.";
+            if (dupesCount > 0) msg += " Recovery has " + dupesCount.toLocaleString() + " remaining.";
             done("Merge Complete", msg);
           }).catch(function() {
-            done("Merge Complete", r.files_moved.toLocaleString() + " files moved to My Files.");
+            done("Merge Complete", r.files_moved.toLocaleString() + " files moved to Staging.");
           });
         } else {
           done("Merge Failed", r.error || "Unknown error");
@@ -386,7 +386,7 @@ function _rnrSyncAndRecycle() {
   closeDialog();
   startWorkingView(
     "Return / Reload",
-    "Sending My Files home, then loading Removed Duplicates for review.",
+    "Sending Staging home, then loading Recovery for review.",
     function(done) {
       api("GET", "/api/staging/status").then(function(status) {
         var stagingDir = status.staging_dir || _dashFolderPaths.staging || "";
@@ -395,18 +395,18 @@ function _rnrSyncAndRecycle() {
           done("Failed", "Could not determine file locations.");
           return;
         }
-        document.getElementById("workingStatus").textContent = "Sending My Files home...";
+        document.getElementById("workingStatus").textContent = "Sending Staging home...";
         api("POST", "/api/staging/restore", { staging_dir: stagingDir, source_dir: sourceDir }).then(function(r) {
           if (!r.success) { done("Failed", r.error || "Restore failed"); return; }
           document.getElementById("workingStatus").textContent = "Cleaning up workspace...";
           api("POST", "/api/staging/cleanup", { staging_dir: stagingDir }).then(function() {
-            document.getElementById("workingStatus").textContent = "Loading Removed Duplicates...";
+            document.getElementById("workingStatus").textContent = "Loading Recovery...";
             api("POST", "/api/staging/recycle").then(function(r2) {
               if (r2.success) {
                 wizardState.stagingDir = r2.staging_path;
                 wizardState.completedSteps = { 1: true };
                 wizardState.currentStep = 2;
-                done("Ready for Review", r2.files_moved.toLocaleString() + " files loaded into My Files.");
+                done("Ready for Review", r2.files_moved.toLocaleString() + " files loaded into Staging.");
                 _workingConfig.destination = "wizard";
               } else {
                 done("Failed", r2.error || "Unknown error");
@@ -451,7 +451,7 @@ function sendFilesHome() {
         function() {
           showDialog(
             "Confirm",
-            "All files will be returned and My Files will be cleaned up. Continue?",
+            "All files will be returned and Staging will be cleaned up. Continue?",
             "Send Home", "btn-primary",
             function() { _confirmSendHome(); }
           );
@@ -501,18 +501,18 @@ function _restartAllFiles() {
     }
     showDialog(
       "Start Over",
-      "Put all " + total.toLocaleString() + " files from Removed Duplicates" +
-      (keepersCount > 0 ? " and Verified Keepers" : "") +
-      " back into My Files so you can rescan everything?",
+      "Put all " + total.toLocaleString() + " files from Recovery" +
+      (keepersCount > 0 ? " and Keepers" : "") +
+      " back into Staging so you can rescan everything?",
       "Start Over", "btn-warning",
       function() {
         startWorkingView(
           "Starting Over",
-          "Moving all files back to My Files.",
+          "Moving all files back to Staging.",
           function(done) {
             api("POST", "/api/consolidate").then(function(r) {
               if (r.success) {
-                done("Ready to Rescan", r.moved.toLocaleString() + " files moved back to My Files.");
+                done("Ready to Rescan", r.moved.toLocaleString() + " files moved back to Staging.");
               } else {
                 done("Failed", r.error || "Unknown error");
               }
@@ -531,21 +531,21 @@ function promoteToKeepers() {
   api("GET", "/api/folders/status").then(function(data) {
     var count = (data.dupes && data.dupes.file_count) || 0;
     if (count === 0) {
-      toast("No files in Removed Duplicates to promote");
+      toast("No files in Recovery to promote");
       return;
     }
     showDialog(
       "Move to Keepers",
-      "Move " + count.toLocaleString() + " files from Removed Duplicates to Verified Keepers?",
+      "Move " + count.toLocaleString() + " files from Recovery to Keepers?",
       "Move", "btn-primary",
       function() {
         startWorkingView(
           "Moving to Keepers",
-          "Saving files from Removed Duplicates as Verified Keepers.",
+          "Saving files from Recovery as Keepers.",
           function(done) {
             api("POST", "/api/dupes/promote").then(function(r) {
               if (r.success) {
-                done("Moved to Keepers", r.moved.toLocaleString() + " files saved as Verified Keepers.");
+                done("Moved to Keepers", r.moved.toLocaleString() + " files saved as Keepers.");
               } else {
                 done("Failed", r.error || "Unknown error");
               }
@@ -570,14 +570,14 @@ function purgeAllDupes() {
     }
     showDialog(
       "Delete All Duplicates",
-      "This will send " + count.toLocaleString() + " files from Removed Duplicates to the Recycle Bin. " +
+      "This will send " + count.toLocaleString() + " files from Recovery to the Recycle Bin. " +
       "You can recover them from there if needed.",
       "Send to Recycle Bin",
       "btn-danger",
       function() {
         startWorkingView(
           "Recycling Files",
-          "Sending files from Removed Duplicates to the Recycle Bin.",
+          "Sending files from Recovery to the Recycle Bin.",
           function(done) {
             api("POST", "/api/dupes/purge").then(function(r) {
               if (r.success) {
@@ -629,7 +629,7 @@ function initDashboard() {
   // Check recovery archive
   _dashUpdateRecovery();
 
-  // Update stats from most recent scan
+  // Update stats from most recent scan (list is sorted newest first)
   api("GET", "/api/scans").then(function(scans) {
     var statsBox = document.getElementById("dashboardStats");
     if (!scans || scans.length === 0) {
@@ -641,15 +641,10 @@ function initDashboard() {
       }
       return;
     }
-    var totalGroups = 0, totalDupes = 0, totalSpace = 0;
-    for (var i = 0; i < scans.length; i++) {
-      totalGroups += scans[i].total_groups || 0;
-      totalDupes += scans[i].total_dupes || 0;
-      totalSpace += scans[i].reclaimable_bytes || 0;
-    }
-    document.getElementById("dStatGroups").textContent = totalGroups.toLocaleString();
-    document.getElementById("dStatDupes").textContent = totalDupes.toLocaleString();
-    document.getElementById("dStatSpace").textContent = formatBytes(totalSpace);
+    var latest = scans[0];
+    document.getElementById("dStatGroups").textContent = (latest.total_groups || 0).toLocaleString();
+    document.getElementById("dStatDupes").textContent = (latest.total_dupes || 0).toLocaleString();
+    document.getElementById("dStatSpace").textContent = formatBytes(latest.reclaimable_bytes || 0);
     statsBox.style.display = "grid";
   }).catch(function() {});
 }
@@ -717,7 +712,7 @@ function _showRecoveryFiles() {
 function _restoreRecoveryFile(archivedPath) {
   api("POST", "/api/recovery/restore", { archived_path: archivedPath }).then(function(r) {
     if (r.success) {
-      toast("File restored to My Files");
+      toast("File restored to Staging");
       closeDialog();
       _dashUpdateRecovery();
       _refreshFolderPaths();

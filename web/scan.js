@@ -54,17 +54,17 @@ function initScanConfig() {
 
   // Context-aware layout
   if (ctx === "staging") {
-    title.textContent = "Configure My Files Scan";
+    title.textContent = "Configure Staging Scan";
     subtitle.textContent = "Scan your files to find duplicates.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
   } else if (ctx === "dupes") {
-    title.textContent = "Configure Removed Duplicates Scan";
+    title.textContent = "Configure Recovery Scan";
     subtitle.textContent = "Review your removed duplicates with different scan settings.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
   } else if (ctx === "keepers") {
-    title.textContent = "Configure Verified Keepers Scan";
+    title.textContent = "Configure Keepers Scan";
     subtitle.textContent = "Rescan your verified keepers to check for remaining duplicates.";
     if (folderGroup) folderGroup.style.display = "none";
     if (keepersSection) keepersSection.style.display = "none";
@@ -82,7 +82,7 @@ function initScanConfig() {
   var retConfigBtn = document.getElementById("scanReturnFolderConfigBtn");
   if (retConfigBtn) {
     if (ctx) {
-      var labels = { staging: "My Files", dupes: "Removed Duplicates", keepers: "Verified Keepers" };
+      var labels = { staging: "Staging", dupes: "Recovery", keepers: "Keepers" };
       retConfigBtn.textContent = "Return to " + (labels[ctx] || "Folder");
       retConfigBtn.style.display = "inline-flex";
     } else {
@@ -104,18 +104,18 @@ function initScanConfig() {
     var sBtn = document.getElementById("scanFillStagingBtn");
     var dBtn = document.getElementById("scanFillDupesBtn");
     if (data.staging && data.staging.exists && data.staging.file_count > 0) {
-      sBtn.textContent = "My Files (" + data.staging.file_count.toLocaleString() + ")";
+      sBtn.textContent = "Staging (" + data.staging.file_count.toLocaleString() + ")";
       sBtn.disabled = false;
     } else {
-      sBtn.textContent = "My Files (empty)";
+      sBtn.textContent = "Staging (empty)";
       sBtn.disabled = true;
     }
     if (data.dupes && data.dupes.exists && data.dupes.file_count > 0) {
-      dBtn.textContent = "Removed Duplicates (" + data.dupes.file_count.toLocaleString() + ")";
+      dBtn.textContent = "Recovery (" + data.dupes.file_count.toLocaleString() + ")";
       dBtn.disabled = false;
       if (!ctx) document.getElementById("scanKeepersSection").style.display = "block";
     } else {
-      dBtn.textContent = "Removed Duplicates (empty)";
+      dBtn.textContent = "Recovery (empty)";
       dBtn.disabled = true;
       document.getElementById("scanKeepersSection").style.display = "none";
     }
@@ -356,7 +356,7 @@ function showScanComplete(d) {
   var retBtn = document.getElementById("scanReturnFolderBtn");
   if (retBtn) {
     if (_lastScanContext) {
-      var labels = { staging: "My Files", dupes: "Removed Duplicates", keepers: "Verified Keepers" };
+      var labels = { staging: "Staging", dupes: "Recovery", keepers: "Keepers" };
       retBtn.textContent = "Return to " + (labels[_lastScanContext] || "Folder");
       retBtn.style.display = "inline-flex";
     } else {

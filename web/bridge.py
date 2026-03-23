@@ -910,9 +910,9 @@ class Api:
         force = params.get("force", False)
 
         if not os.path.isdir(dupes_dir):
-            return {"error": "Removed Duplicates folder not found"}
+            return {"error": "Recovery folder not found"}
         if not staging_path:
-            return {"error": "My Files folder not found"}
+            return {"error": "Staging folder not found"}
 
         moved = 0
         errors_count = 0
@@ -951,7 +951,7 @@ class Api:
         dupes_dir = settings.get("move_destination",
                                  DEFAULTS["move_destination"])
         if not os.path.isdir(dupes_dir):
-            return {"error": "Removed Duplicates folder not found"}
+            return {"error": "Recovery folder not found"}
         result = recycle_staging(dupes_dir)
         _log_activity("dupes_purge", result)
         return {"status": "purged", **result}
@@ -962,7 +962,7 @@ class Api:
                                  DEFAULTS["move_destination"])
         keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
         if not os.path.isdir(dupes_dir):
-            return {"error": "Removed Duplicates folder not found"}
+            return {"error": "Recovery folder not found"}
         os.makedirs(keepers_dir, exist_ok=True)
         moved = 0
         errors_count = 0
@@ -993,7 +993,7 @@ class Api:
         keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
         staging_path = _find_staging_subfolder()
         if not staging_path:
-            return {"error": "My Files folder not found"}
+            return {"error": "Staging folder not found"}
 
         moved = 0
         errors_count = 0
@@ -1141,7 +1141,7 @@ class Api:
             params = {}
         from engine.recovery import restore_file
         archived_path = params.get("archived_path", "")
-        # Restore to staging (My Files) by default
+        # Restore to staging (Staging) by default
         settings = load_settings()
         dest_dir = params.get("destination", "")
         if not dest_dir:

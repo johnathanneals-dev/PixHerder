@@ -16,16 +16,16 @@
     <span id="debugModeBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 3s ease-in-out infinite;">Debug mode enabled</span>
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
-      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into PixHerder">Migrate</button>
+      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into PixHerder staging area">Migrate to Staging</button>
       <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)" data-tip="Configure and start a scan">Scan</button>
       <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()" data-tip="Review duplicate groups from last scan">Review</button>
       <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')" data-tip="Finish up and send files home">Finalize</button>
-      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')" data-tip="Browse your imported files">My Files</button>
-      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Removed Duplicates</button>
-      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Verified Keepers</button>
+      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')" data-tip="Browse your imported files">Staging</button>
+      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Recovery</button>
+      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Keepers</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Previous Scans</button>
-      <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
       <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure PixHerder preferences">Settings</button>
+      <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -43,7 +43,7 @@
 <div id="browserNavBar" style="display:none;padding:8px 32px;border-bottom:2px solid var(--accent-dim);align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);position:fixed;top:56px;left:0;right:0;z-index:99;">
   <button class="btn btn-ghost" id="browserBackBtn2" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back to Dashboard</button>
   <button class="btn btn-primary btn-sm" id="browserScanBtn2" onclick="scanFromBrowser()" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
-  <button class="btn btn-primary btn-sm" id="browserPromoteBtn2" onclick="promoteToKeepers()" style="display:none;" data-tip="Move all files to Verified Keepers">Move All to Verified Keepers</button>
+  <button class="btn btn-primary btn-sm" id="browserPromoteBtn2" onclick="promoteToKeepers()" style="display:none;" data-tip="Move all files to Keepers">Move All to Keepers</button>
   <button class="btn btn-secondary btn-sm" onclick="openInExplorer()" data-tip="Open this folder in Windows File Explorer">Open in Explorer</button>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <select class="form-input" id="browserSort2" onchange="browserRefresh()" style="width:auto;padding:4px 8px;font-size:12px;" data-tip="Change the order files are displayed">
@@ -89,7 +89,7 @@
   <img id="lightboxImg" src="">
   <div class="lightbox-info" id="lightboxInfo" onclick="event.stopPropagation()"></div>
   <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
-    <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;" data-tip="Save this file as a confirmed keeper">Move to Verified Keepers</button>
+    <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;" data-tip="Save this file as a confirmed keeper">Move to Keepers</button>
     <button onclick="deleteLightboxFile()" data-tip="Send this file to the Recycle Bin">Recycle This File</button>
     <button onclick="closeLightbox()" style="background:rgba(80,80,80,0.85);" data-tip="Close the zoomed view">Back</button>
   </div>
@@ -124,27 +124,27 @@
       <h2>Browse Files</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
         <div style="text-align:center;min-width:180px;">
-          <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled data-tip="Browse the files you imported for scanning" data-help="folders">My Files</button>
+          <button class="btn btn-secondary btn-browse" id="dashStagingBtn" onclick="openBrowserFromDashboard('staging')" disabled data-tip="Browse the files you imported for scanning" data-help="folders">Staging</button>
           <div id="dashStagingHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
         </div>
         <div style="text-align:center;min-width:180px;">
-          <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled data-tip="Files identified as duplicates during review" data-help="folders">Removed Duplicates</button>
+          <button class="btn btn-secondary btn-browse" id="dashDupesBtn" onclick="openBrowserFromDashboard('dupes')" disabled data-tip="Files identified as duplicates during review" data-help="folders">Recovery</button>
           <div id="dashDupesHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
         </div>
         <div style="text-align:center;min-width:180px;">
-          <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled data-tip="Files you confirmed are not duplicates" data-help="folders">Verified Keepers</button>
+          <button class="btn btn-secondary btn-browse" id="dashKeepersBtn" onclick="openBrowserFromDashboard('keepers')" disabled data-tip="Files you confirmed are not duplicates" data-help="folders">Keepers</button>
           <div id="dashKeepersHint" style="font-size:11px;color:var(--text-dim);margin-top:4px;min-height:16px;">No files</div>
         </div>
       </div>
       <div id="dashRescanRow" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
         <div id="dashRescanStagingBox" style="display:none;min-width:180px;text-align:center;">
-          <button class="btn btn-primary btn-browse" id="dashRescanStagingBtn" onclick="_rescanFolder('staging')" data-tip="Run a new scan on your imported files" data-help="scanning">Rescan My Files</button>
+          <button class="btn btn-primary btn-browse" id="dashRescanStagingBtn" onclick="_rescanFolder('staging')" data-tip="Run a new scan on your imported files" data-help="scanning">Rescan Staging</button>
         </div>
         <div id="dashRescanBoxes" style="display:none;min-width:180px;text-align:center;">
-          <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled data-tip="Check removed duplicates for files worth keeping" data-help="scanning">Scan Removed Duplicates</button>
+          <button class="btn btn-secondary btn-browse" id="dashRescanDupesBtn" onclick="_rescanFolder('dupes')" disabled data-tip="Check removed duplicates for files worth keeping" data-help="scanning">Scan Recovery</button>
         </div>
         <div id="dashRescanKeepersBox" style="display:none;min-width:180px;text-align:center;">
-          <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled data-tip="Verify your kept files for remaining duplicates" data-help="scanning">Scan Verified Keepers</button>
+          <button class="btn btn-secondary btn-browse" id="dashRescanKeepersBtn" onclick="_rescanFolder('keepers')" disabled data-tip="Verify your kept files for remaining duplicates" data-help="scanning">Scan Keepers</button>
         </div>
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
@@ -165,8 +165,8 @@
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
             </div>
             <div>
-              <button class="btn btn-warning btn-fixed" onclick="_restartAllFiles()" data-tip="Move everything back to My Files for rescanning from scratch" data-help="start-over">Start Over</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into My Files so you can rescan everything from scratch.</div>
+              <button class="btn btn-warning btn-fixed" onclick="_restartAllFiles()" data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Staging so you can rescan everything from scratch.</div>
             </div>
           </div>
         </div>
@@ -174,7 +174,7 @@
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
               <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()" data-tip="Move removed duplicates back for another round of review" data-help="rescue-review">Rescue &amp; Review</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to My Files for another round of scanning. If My Files already has files, you can choose to merge them together or send the My Files home first.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to Staging for another round of scanning. If Staging already has files, you can choose to merge them together or send the Staging home first.</div>
             </div>
             <div>
               <button class="btn btn-primary btn-fixed" onclick="promoteToKeepers()" data-tip="Save these files as confirmed keepers for safekeeping" data-help="keepers">Move to Keepers</button>
@@ -182,7 +182,7 @@
             </div>
             <div>
               <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()" data-tip="Send all removed duplicates to the Recycle Bin" data-help="recycling">Recycle All Remaining</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Removed Duplicates to the Recycle Bin. You can recover them from there if needed.</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Recovery to the Recycle Bin. You can recover them from there if needed.</div>
             </div>
           </div>
         </div>
@@ -390,8 +390,8 @@
         </div>
         <h3 style="margin-top:20px;">Browse Files</h3>
         <div style="display:flex;gap:12px;margin:12px 0 24px;">
-          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">My Files</button>
-          <button class="btn btn-secondary" id="wizDupesBtn" onclick="openBrowser('dupes')">Removed Duplicates</button>
+          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">Staging</button>
+          <button class="btn btn-secondary" id="wizDupesBtn" onclick="openBrowser('dupes')">Recovery</button>
         </div>
         <h3>Next Steps</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
@@ -422,8 +422,8 @@
         <input class="form-input" type="text" id="scanDir"
                placeholder="copy/paste your path to what you want scanned here">
         <div style="margin-top:6px;display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" id="scanFillStagingBtn" onclick="fillScanDir('staging')">My Files</button>
-          <button class="btn btn-secondary btn-sm" id="scanFillDupesBtn" onclick="fillScanDir('dupes')">Removed Duplicates</button>
+          <button class="btn btn-secondary btn-sm" id="scanFillStagingBtn" onclick="fillScanDir('staging')">Staging</button>
+          <button class="btn btn-secondary btn-sm" id="scanFillDupesBtn" onclick="fillScanDir('dupes')">Recovery</button>
         </div>
       </div>
 
@@ -495,14 +495,14 @@
     </div>
 
     <div class="card" style="max-width:640px;margin-top:24px;display:none;" id="scanKeepersSection">
-      <h3 style="margin-bottom:12px;">Rescan Removed Duplicates</h3>
+      <h3 style="margin-bottom:12px;">Rescan Recovery</h3>
       <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
-        Scan your Removed Duplicates folder to find files that aren't actually duplicates.
+        Scan your Recovery folder to find files that aren't actually duplicates.
         After reviewing, use <strong>Move to Keepers</strong> on the dashboard to save
         the ones you want to keep.
       </p>
       <button class="btn btn-primary" onclick="fillScanDir('dupes'); startScan();">
-        Scan Removed Duplicates
+        Scan Recovery
       </button>
     </div>
   </div>
@@ -511,7 +511,7 @@
   <div class="view" id="view-staging-progress">
     <div class="progress-center">
       <h2>Staging Files...</h2>
-      <p class="subtitle">Copying your files to My Files for reliable scanning.</p>
+      <p class="subtitle">Copying your files to Staging for reliable scanning.</p>
       <div class="progress-stage" id="stagingStage">Counting files</div>
 
       <div class="progress-container">
@@ -555,8 +555,8 @@
         <div class="card" style="text-align:left;">
           <h3 style="margin-bottom:12px;">Ready to apply cleanup</h3>
           <p style="color:var(--text-dim);margin-bottom:16px;">
-            Files you removed from My Files will be deleted from their original location.
-            Files still in My Files will be left untouched.
+            Files you removed from Staging will be deleted from their original location.
+            Files still in Staging will be left untouched.
           </p>
           <div style="padding:10px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;font-size:13px;">
             <strong>Warning:</strong> This is the only action in PixHerder that permanently deletes files
@@ -797,7 +797,7 @@
   <div class="view" id="view-actions">
     <h1>Execute Actions</h1>
     <p class="subtitle">Review and execute pending file operations.</p>
-    <p style="font-size:13px;color:var(--text-dim);margin:-8px 0 16px 0;line-height:1.5;">Files marked as duplicates will be moved from My Files to Removed Duplicates. Files marked for recycling will be sent to the Windows Recycle Bin.</p>
+    <p style="font-size:13px;color:var(--text-dim);margin:-8px 0 16px 0;line-height:1.5;">Files marked as duplicates will be moved from Staging to Recovery. Files marked for recycling will be sent to the Windows Recycle Bin.</p>
 
     <div id="actionsContent">
       <div class="card" id="actionsSummaryCard">

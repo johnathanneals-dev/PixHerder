@@ -223,7 +223,7 @@ def restore_file(archived_path, destination_dir):
 
     Args:
         archived_path: Path to the archived file.
-        destination_dir: Directory to restore to (e.g., My Files).
+        destination_dir: Directory to restore to (e.g., Staging).
 
     Returns:
         Dict with success, destination path, or error.

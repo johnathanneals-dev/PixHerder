@@ -26,7 +26,7 @@ The application runs as a pywebview native window (using the system's Edge WebVi
 
 ### Guided Wizard (recommended for most users)
 
-1. **Migrate** -- Point PixHerder at your photos folder (e.g., OneDrive Pictures). It copies the images to a local workspace called "My Files" so your originals stay safe and untouched during the entire process.
+1. **Migrate** -- Point PixHerder at your photos folder (e.g., OneDrive Pictures). It copies the images to a local workspace called "Staging" so your originals stay safe and untouched during the entire process.
 
 2. **Scan** -- Choose a scan mode:
    - *Exact (MD5)* -- Finds files that are byte-for-byte identical. Fast, zero false positives.
@@ -48,16 +48,16 @@ The application runs as a pywebview native window (using the system's Edge WebVi
 
 ### Additional capabilities
 
-- **Rescue and Review** -- If you change your mind, cycle files from Removed Duplicates back into My Files for another scan pass at a different threshold
-- **Start Over** -- Consolidate all system folders back into My Files for a fresh scan
+- **Rescue and Review** -- If you change your mind, cycle files from Recovery back into Staging for another scan pass at a different threshold
+- **Start Over** -- Consolidate all system folders back into Staging for a fresh scan
 - **Send Files Home** -- A full refund: returns every file from every system folder back to the original location, cleans up silently
 - **Direct Scan** -- Skip the wizard and scan any folder directly (for users comfortable with the tool)
 
 ### The three system folders
 
-- **My Files** -- The working area where scanning and review happen
-- **Removed Duplicates** -- Where files marked as duplicates are held until you finalize
-- **Verified Keepers** -- A safe zone for files confirmed as good (used during iterative review)
+- **Staging** -- The working area where scanning and review happen
+- **Recovery** -- Where files marked as duplicates are held until you finalize
+- **Keepers** -- A safe zone for files confirmed as good (used during iterative review)
 
 ## Has it been working well? What prompted the audit?
 

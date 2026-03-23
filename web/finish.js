@@ -46,12 +46,12 @@ function _finishConfirm() {
   var msg = "";
   if (_finishCounts.staging > 0 || _finishCounts.keepers > 0) {
     var homeCount = _finishCounts.staging + _finishCounts.keepers;
-    msg += homeCount.toLocaleString() + " files from My Files";
-    if (_finishCounts.keepers > 0) msg += " and Verified Keepers";
+    msg += homeCount.toLocaleString() + " files from Staging";
+    if (_finishCounts.keepers > 0) msg += " and Keepers";
     msg += " will be placed back in their original folder. ";
   }
   if (_finishCounts.dupes > 0) {
-    msg += _finishCounts.dupes.toLocaleString() + " files in Removed Duplicates will be sent to the Recycle Bin. ";
+    msg += _finishCounts.dupes.toLocaleString() + " files in Recovery will be sent to the Recycle Bin. ";
   }
   msg += "The recovery archive will also be cleared.";
   showDialog("Confirm Finish", msg, "Yes, Finish", "btn-primary", function() {
@@ -68,7 +68,7 @@ function _executeFinish() {
   var totalPhases = (_finishCounts.staging > 0 || _finishCounts.keepers > 0 ? 1 : 0) + (_finishCounts.dupes > 0 ? 1 : 0) + 1;
   var curPhase = 0;
 
-  // Phase 1: Restore all kept files (My Files + Keepers) to source — safe copy, no deletions
+  // Phase 1: Restore all kept files (Staging + Keepers) to source — safe copy, no deletions
   if ((_finishCounts.staging > 0 || _finishCounts.keepers > 0) && _stagingSession) {
     curPhase++;
     document.getElementById("finishPhaseLabel").textContent = "Step " + curPhase + " of " + totalPhases + ": Returning your files...";

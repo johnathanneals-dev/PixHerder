@@ -7,7 +7,7 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 ## Design Philosophy
 
 1. **File security first.** No user file is ever permanently deleted by PixHerder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
-2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (My Files, Removed Duplicates, Verified Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
+2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (Staging, Recovery, Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
 
 ---
@@ -86,7 +86,7 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 |-------|-----------|-------|
 | `btn-lg` | None (auto) | Hero actions: Start Guided Cleanup, Finished with Scanning |
 | `btn-fixed` | 160px | Dashboard action buttons in More Options |
-| `btn-browse` | 240px | Folder browse and scan buttons (My Files, Removed Duplicates, Verified Keepers, Rescan) |
+| `btn-browse` | 240px | Folder browse and scan buttons (Staging, Recovery, Keepers, Rescan) |
 | `btn-sm` | None (auto) | Review action bar, compact toolbars |
 | (default) | None (auto) | Standard buttons in dialogs and forms |
 
@@ -176,9 +176,9 @@ Always use the exact capitalized names the user sees on dashboard buttons:
 
 | Internal | User-facing |
 |----------|-------------|
-| staging / workspace | **My Files** |
-| dupes / move_destination | **Removed Duplicates** |
-| keepers | **Verified Keepers** |
+| staging / workspace | **Staging** |
+| dupes / move_destination | **Recovery** |
+| keepers | **Keepers** |
 | OneDrive / source | **home folder** or **original folder** |
 | sync-back | **Apply Cleanup** (advanced only) |
 
@@ -444,7 +444,7 @@ The rolling recovery archive provides a safety net for recently recycled files. 
 
 - 2 rolling slots: newest operation in slot 1, previous in slot 2
 - When a third operation occurs, slot 2 is discarded, slot 1 moves to slot 2, new operation takes slot 1
-- Restore moves files back to their original folder (My Files, Removed Duplicates, or Verified Keepers)
+- Restore moves files back to their original folder (Staging, Recovery, or Keepers)
 - Clear button uses `btn-danger` style (destructive) with confirmation dialog
 - Archive is cleared automatically during the Finish flow
 

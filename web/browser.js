@@ -183,7 +183,7 @@ function browserRefresh() {
 function buildBreadcrumb(fullPath) {
   var root = browserState.rootPath.replace(/\\/g, "/");
   var current = fullPath.replace(/\\/g, "/");
-  var rootLabel = browserState.type === "staging" ? "My Files" : "Removed Duplicates";
+  var rootLabel = browserState.type === "staging" ? "Staging" : "Recovery";
 
   var html = '<span class="browser-crumb" data-nav="' + escHtml(browserState.rootPath) + '">'
     + escHtml(rootLabel) + '</span>';

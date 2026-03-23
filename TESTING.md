@@ -38,7 +38,7 @@ Track file counts, scan results, and test outcomes for consistency across sessio
 
 Use these to verify file integrity after operations:
 
-| Checkpoint | My Files | Removed Dupes | Verified Keepers | Total |
+| Checkpoint | Staging | Recovery | Keepers | Total |
 |------------|----------|---------------|------------------|-------|
 | After migration | 22,777 | 0 | 0 | 22,777 |
 | After first scan+execute | ~17,000 | ~5,700 | 0 | 22,777 |

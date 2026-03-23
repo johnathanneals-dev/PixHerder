@@ -138,8 +138,8 @@ function moveLightboxToKeepers() {
   if (!_lightboxFilePath) return;
   var filename = _lightboxFilePath.split("\\").pop();
   showDialog(
-    "Move to Verified Keepers",
-    "Move " + filename + " to Verified Keepers?",
+    "Move to Keepers",
+    "Move " + filename + " to Keepers?",
     "Move to Keepers",
     "btn-primary",
     function() {
@@ -147,7 +147,7 @@ function moveLightboxToKeepers() {
       api("POST", "/api/browser/move-to-keepers", { path: filePath }).then(function(r) {
         if (r.success) {
           closeLightbox();
-          toast("Moved to Verified Keepers");
+          toast("Moved to Keepers");
           // Remove from browser grid
           var items = document.querySelectorAll(".browser-item");
           for (var i = 0; i < items.length; i++) {

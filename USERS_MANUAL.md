@@ -127,7 +127,7 @@ Click any image to toggle it between KEEP (green) and DUPE (red). You can mark m
 
 **Actions per group:**
 - **Keep All** -- keep every file in this group, don't remove anything
-- **Mark as Duplicate** -- mark the DUPE files for removal to Removed Duplicates
+- **Mark as Duplicate** -- mark the DUPE files for removal to Recovery
 - **Delete** -- mark the DUPE files for permanent deletion
 
 **Keyboard shortcuts:**
@@ -157,8 +157,8 @@ When done reviewing, click **Apply Decisions** to carry out your choices. After 
 
 Browse your files and decide next steps:
 
-- **My Files** -- browse the files you're keeping
-- **Removed Duplicates** -- check that nothing was wrongly removed
+- **Staging** -- browse the files you're keeping
+- **Recovery** -- check that nothing was wrongly removed
 - **Rescan** -- return to Step 2 for another pass with different settings
 - **Finished with Scanning** -- wraps everything up (see "Finishing Up" below)
 - **Back to Dashboard** -- return to the dashboard for more options
@@ -177,7 +177,7 @@ The built-in file browser shows image thumbnails in a grid. Features:
 - **Scan for Duplicates** -- kicks off a scan on the folder you're browsing
 - **Back** button stays visible as you scroll and returns to where you came from (dashboard or wizard)
 
-The browser is restricted to the My Files, Removed Duplicates, and Verified Keepers folders for security.
+The browser is restricted to the Staging, Recovery, and Keepers folders for security.
 
 ---
 
@@ -187,8 +187,8 @@ When you're done scanning and reviewing, the dashboard offers a one-click finish
 
 1. Click **Finished with Scanning** on the dashboard (or the **Finish** link in the top nav)
 2. A summary page shows exactly what will happen:
-   - How many files in My Files will be kept safe
-   - How many files in Removed Duplicates will be sent to the Recycle Bin
+   - How many files in Staging will be kept safe
+   - How many files in Recovery will be sent to the Recycle Bin
 3. Click **Finish Now** and confirm
 4. PixHerder keeps your files safe, recycles duplicates, and cleans up
 
@@ -200,10 +200,10 @@ Below the "Finished with Scanning" button, the dashboard also shows:
 
 - **Send Files Home** -- put all your files back where they came from. Nothing gets deleted.
 - **Remove Workspace** -- choose to send files home or to the Recycle Bin, then remove the local copy
-- **Start Over** -- put all files back into My Files so you can rescan everything from scratch
-- **Rescue & Review** -- move Removed Duplicates back to My Files for another scan pass (see below)
-- **Move to Keepers** -- save Removed Duplicates files as confirmed keepers (see below)
-- **Delete All Remaining** -- send everything in Removed Duplicates to the Recycle Bin
+- **Start Over** -- put all files back into Staging so you can rescan everything from scratch
+- **Rescue & Review** -- move Recovery back to Staging for another scan pass (see below)
+- **Move to Keepers** -- save Recovery files as confirmed keepers (see below)
+- **Delete All Remaining** -- send everything in Recovery to the Recycle Bin
 
 When you use any of these options, PixHerder takes you to a progress screen while it works. You can't accidentally click other buttons during the operation. When it's done, you'll see a summary and a **Continue** button to return to the dashboard.
 
@@ -211,12 +211,12 @@ When you use any of these options, PixHerder takes you to a progress screen whil
 
 ## Rescue & Review
 
-After running scans and moving duplicates, the Removed Duplicates folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back for another look:
+After running scans and moving duplicates, the Recovery folder may contain files you want to keep. The **Rescue & Review** button on the dashboard lets you cycle those files back for another look:
 
 1. Click **Rescue & Review**
-2. If My Files already has files, you'll be asked:
-   - **Merge Dupes** -- files from Removed Duplicates will be merged with the files in My Files
-   - **Return / Reload** -- sends your My Files home first, then brings the Removed Duplicates back for review
+2. If Staging already has files, you'll be asked:
+   - **Merge Dupes** -- files from Recovery will be merged with the files in Staging
+   - **Return / Reload** -- sends your Staging home first, then brings the Recovery back for review
 3. Scan again to find the real duplicates
 4. Review groups -- click images to toggle keep/dupe, then apply your decisions
 5. Repeat until you're confident nothing important remains
@@ -224,9 +224,9 @@ After running scans and moving duplicates, the Removed Duplicates folder may con
 
 This is designed to be an iterative loop. Each pass reduces the file count as you separate keepers from junk.
 
-### Verified Keepers
+### Keepers
 
-After rescanning and deleting the real duplicates, click **Move to Keepers** to save the remaining Removed Duplicates files as confirmed keepers. Files in Verified Keepers are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
+After rescanning and deleting the real duplicates, click **Move to Keepers** to save the remaining Recovery files as confirmed keepers. Files in Keepers are safe -- they won't be touched during further scanning, and they'll be sent home with your other files when you finish.
 
 ---
 
@@ -399,9 +399,9 @@ PixHerder is designed with file security as the top priority. **No user file is 
 - PixHerder uses **copy + delete** (not move) to avoid file locking issues
 - Each file operation is independent -- one failure won't stop the rest
 - Failed files are logged and shown in the UI
-- Move operations are reversible: files go to Removed Duplicates
+- Move operations are reversible: files go to Recovery
 - All delete operations (individual files, folders, Delete All Remaining, review deletions) go to the **Recycle Bin**
-- The **Finish** flow sends Removed Duplicates to the Recycle Bin
+- The **Finish** flow sends Recovery to the Recycle Bin
 - **Send Files Home** puts everything back where it came from -- nothing is deleted
 - The **Finish** flow never deletes your originals. It copies kept files back and recycles local duplicate copies only.
 

@@ -1196,6 +1196,9 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
                     reclaimable = sum(
                         g.get("reclaimable_bytes", 0) for g in all_groups
                     )
+                    total_dupes = sum(
+                        len(g.get("duplicates", [])) for g in all_groups
+                    )
                     scans.append({
                         "filename": f.name,
                         "source": "scan",
@@ -1206,6 +1209,7 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
                         "exact_groups": exact_count,
                         "perceptual_groups": perceptual_count,
                         "total_groups": exact_count + perceptual_count,
+                        "total_dupes": total_dupes,
                         "reclaimable_bytes": reclaimable,
                         "duration": meta.get("duration_seconds", 0),
                     })
