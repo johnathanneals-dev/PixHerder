@@ -555,18 +555,6 @@ function _quickFill(which) {
   });
 }
 
-function _pasteToInput(inputId) {
-  if (navigator.clipboard && navigator.clipboard.readText) {
-    navigator.clipboard.readText().then(function(text) {
-      if (text) document.getElementById(inputId).value = text.trim();
-    }).catch(function() {
-      toast("Could not read clipboard", "warning");
-    });
-  } else {
-    toast("Clipboard not available", "warning");
-  }
-}
-
 function openFolderPicker(targetInputId) {
   _folderPickerTarget = targetInputId;
   var startPath = document.getElementById(targetInputId).value.trim();
@@ -1333,6 +1321,22 @@ function _updateStatusBarToggles(settings) {
 function _appInit() {
   _initTooltips();
   _updateStatusBarPort();
+
+  // Re-enable right-click context menu on input fields (pywebview disables it)
+  document.addEventListener("contextmenu", function(e) {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+      e.stopPropagation();
+    }
+  }, true);
+
+  // Ensure Ctrl+V/C/X/A work in input fields (pywebview can intercept them)
+  document.addEventListener("keydown", function(e) {
+    if ((e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") &&
+        e.ctrlKey && !e.shiftKey && !e.altKey &&
+        (e.key === "v" || e.key === "c" || e.key === "x" || e.key === "a")) {
+      e.stopPropagation();
+    }
+  }, true);
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
       _refreshFolderPaths();
