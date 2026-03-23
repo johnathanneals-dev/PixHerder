@@ -1,8 +1,8 @@
 @echo off
 cd /d "C:\Projects\Duped"
-echo Starting DupeFinder...
+echo Starting PixHerder...
 echo.
-"C:\Program Files\Python313\python.exe" dupefinder_app.py
+"C:\Program Files\Python313\python.exe" pixherder_app.py
 echo.
-echo DupeFinder has stopped. Press any key to close.
+echo PixHerder has stopped. Press any key to close.
 pause >nul
