@@ -1,7 +1,7 @@
-# DupeFinder TODO
+# PixHerder TODO
 
 Persistent task list tracked in the repo. Updated with every commit cycle.
-See also: `Auditor/` for audit reports (Audit #1: Audit190326.txt, Audit #2: DupeFinder_Audit_Report*.txt)
+See also: `Auditor/` for audit reports (Audit #1: Audit190326.txt, Audit #2: PixHerder_Audit_Report*.txt)
 Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ---
@@ -37,7 +37,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ## Audit Phase 2: Performance & Quality [NEXT]
 
 - [x] #4 Batch PowerShell recycling -- _recycle_files_batch_powershell() added
-- [x] #5 Move defaults from temp to LOCALAPPDATA -- DupeFinder subfolder under LOCALAPPDATA
+- [x] #5 Move defaults from temp to LOCALAPPDATA -- PixHerder subfolder under LOCALAPPDATA
 - [x] #7 Add view teardown to SPA router -- implemented in stale data fix (route() clears state on view change)
 - [x] #8 Extract shared _is_allowed_path() helper in server.py (5 locations consolidated)
 - [x] #9 Fix move counter -- fixed verify_copy error handling (wrong variable names)
@@ -123,7 +123,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] Auto-recycle exact duplicates: checkbox on scan config, byte-for-byte identical files automatically sent to Recycle Bin (keeps largest), zero false positives, default unchecked
 - [x] Smart dashboard flow guidance: progress stepper (Import > Scan > Review > Finish) with contextual hints showing workflow position and next action
-- [x] Rolling recovery archive: 2-slot backup in DupeFinder_Recovery folder, copies preserved before recycling, browse/restore from dashboard, cleared on session finish
+- [x] Rolling recovery archive: 2-slot backup in PixHerder_Recovery folder, copies preserved before recycling, browse/restore from dashboard, cleared on session finish
 - [x] Chunked scanning: scan batch size dropdown (All/500/1000/2000/5000, default 2000), scans first N files, next scan picks up remaining after review+actions
 
 ## Completed (2026-03-20)
@@ -166,7 +166,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] Face detection/recognition in photos (may warrant separate app)
 - [ ] Duplicate video finder (separate app — different algorithms, larger files)
-- [ ] Unified dashboard app to manage all tools (DupeFinder, video deduper, face finder, etc.)
+- [ ] Unified dashboard app to manage all tools (PixHerder, video deduper, face finder, etc.)
 
 ## Won't Do / Deferred
 

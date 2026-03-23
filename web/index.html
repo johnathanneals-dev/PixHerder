@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DupeFinder</title>
+<title>PixHerder</title>
 <link rel="stylesheet" href="/web/style.css">
 </head>
 <body>
@@ -11,12 +11,12 @@
 <!-- Top Navigation -->
 <div class="topnav" role="navigation" aria-label="Main navigation">
   <div class="topnav-left">
-    <div class="logo">DupeFinder</div>
+    <div class="logo">PixHerder</div>
     <span id="persistentLogBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 2s ease-in-out infinite;">Persistent logging enabled</span>
     <span id="debugModeBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 3s ease-in-out infinite;">Debug mode enabled</span>
     <div class="nav-links" id="navLinks">
       <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
-      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into DupeFinder">Migrate</button>
+      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into PixHerder">Migrate</button>
       <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToWizardStep(2)" data-tip="Configure and start a scan">Scan</button>
       <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()" data-tip="Review duplicate groups from last scan">Review</button>
       <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')" data-tip="Finish up and send files home">Finalize</button>
@@ -25,7 +25,7 @@
       <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Verified Keepers</button>
       <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Previous Scans</button>
       <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
-      <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure DupeFinder preferences">Settings</button>
+      <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure PixHerder preferences">Settings</button>
     </div>
   </div>
   <div class="kbd-hints" id="kbdHints" style="display:none;">
@@ -235,7 +235,7 @@
       <div class="card">
         <h2>Step 1: Migrate Files</h2>
         <div class="wizard-explanation">
-          First, DupeFinder makes a working copy of your pictures so it can
+          First, PixHerder makes a working copy of your pictures so it can
           scan without interruption. Your originals stay exactly where
           they are -- nothing is changed or deleted.
         </div>
@@ -256,7 +256,7 @@
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizMigrateInfoText"></div>
         </div>
         <div id="wizMigrateActions">
-          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to DupeFinder for scanning">Begin Migration</button>
+          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to PixHerder for scanning">Begin Migration</button>
           <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
           <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Back to Dashboard</button>
         </div>
@@ -558,7 +558,7 @@
             Files still in My Files will be left untouched.
           </p>
           <div style="padding:10px;background:var(--surface-alt);border-radius:8px;margin-bottom:16px;font-size:13px;">
-            <strong>Warning:</strong> This is the only action in DupeFinder that permanently deletes files
+            <strong>Warning:</strong> This is the only action in PixHerder that permanently deletes files
             (from the original folder, not the Recycle Bin). If you just want to put files back
             where they came from, use <strong>Send Files Home</strong> on the dashboard instead.
           </div>
@@ -963,7 +963,7 @@
         <div class="form-group">
           <label class="form-label">Server port</label>
           <input class="form-input" type="number" id="setPort" value="8787">
-          <div class="form-hint">Close and reopen DupeFinder for this to take effect.</div>
+          <div class="form-hint">Close and reopen PixHerder for this to take effect.</div>
         </div>
 
         <div class="form-group">
@@ -987,7 +987,7 @@
             <input type="checkbox" id="setEnableLogging" onchange="_toggleLogging(this.checked)">
             Enable verbose logging
           </label>
-          <div class="form-hint">Captures detailed debug information for troubleshooting. May affect performance during scans. Resets to off when DupeFinder is restarted. Log files older than 30 days are automatically deleted.</div>
+          <div class="form-hint">Captures detailed debug information for troubleshooting. May affect performance during scans. Resets to off when PixHerder is restarted. Log files older than 30 days are automatically deleted.</div>
         </div>
       </div>
 
@@ -1025,7 +1025,7 @@
     <span id="statusBarPort">127.0.0.1:8787</span>
   </div>
   <div class="status-bar-right">
-    <span id="statusBarInfo">DupeFinder</span>
+    <span id="statusBarInfo">PixHerder</span>
   </div>
 </div>
 

@@ -1,8 +1,8 @@
-# DupeFinder - Full-Stack Frontend Build Prompt
+# PixHerder - Full-Stack Frontend Build Prompt
 
 ## Project Overview
 
-Build a unified web-based frontend for DupeFinder, a duplicate image detection tool. The app should replace all command-line interaction with a polished browser-based UI. It runs as a local Python web server (no cloud, no accounts, no external services). Everything runs on the user's machine.
+Build a unified web-based frontend for PixHerder, a duplicate image detection tool. The app should replace all command-line interaction with a polished browser-based UI. It runs as a local Python web server (no cloud, no accounts, no external services). Everything runs on the user's machine.
 
 The project lives in `C:\Projects\Duped\`. There are existing Python scripts that contain the core logic — you should refactor and integrate them into a single cohesive application, not start from scratch.
 
@@ -10,7 +10,7 @@ The project lives in `C:\Projects\Duped\`. There are existing Python scripts tha
 
 Review these files before writing any code:
 
-- **dupefinder.py** — Core scanning engine. Has MD5 exact matching, perceptual hashing (pHash via imagehash library), file discovery, grouping logic, and actions (report, move, delete, JSON export). The `pick_original()` function decides which file to keep (currently: largest file).
+- **pixherder.py** — Core scanning engine. Has MD5 exact matching, perceptual hashing (pHash via imagehash library), file discovery, grouping logic, and actions (report, move, delete, JSON export). The `pick_original()` function decides which file to keep (currently: largest file).
 - **reviewer.py** — Local web server that serves an HTML/JS/CSS single-page app for reviewing duplicate groups side-by-side. Serves images via `/image?path=` endpoint. Has keyboard shortcuts, lightbox zoom, mark-for-move/skip workflow, and exports a PowerShell move script. The UI design is dark-themed with green (#6ee7b7) for KEEP and red (#f87171) for DUPE badges. This is the design language to build on.
 - **oddball_finder.py** — Verification tool that re-hashes KEEP/DUPE pairs and flags weak matches (high hamming distance) as potential false positives.
 - **perceptual_report.json** — Example output from a scan (5,597 groups, ~9,500 dupes).
@@ -40,7 +40,7 @@ Review these files before writing any code:
 
 ### Single entry point
 ```
-python dupefinder_app.py
+python pixherder_app.py
 ```
 This starts the web server and opens the browser. Everything else happens in the UI.
 
@@ -155,7 +155,7 @@ While refactoring the scan engine, make these improvements:
 
 ```
 C:\Projects\Duped\
-  dupefinder_app.py          # Main entry point — starts server, opens browser
+  pixherder_app.py          # Main entry point — starts server, opens browser
   engine/
     __init__.py
     scanner.py               # Image discovery
@@ -185,4 +185,4 @@ After building, test with:
 
 ## Summary
 
-The goal is: the user runs one command (`python dupefinder_app.py`), a browser opens, and they can scan folders, review duplicates visually, and clean them up — all without touching the command line again. Keep it simple, keep it robust, and match the dark polished aesthetic of the existing reviewer UI.
+The goal is: the user runs one command (`python pixherder_app.py`), a browser opens, and they can scan folders, review duplicates visually, and clean them up — all without touching the command line again. Keep it simple, keep it robust, and match the dark polished aesthetic of the existing reviewer UI.

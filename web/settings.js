@@ -42,7 +42,7 @@ function saveSettings() {
   api("POST", "/api/settings", data).then(function(saved) {
     state.settings = saved;
     if (newPort !== oldPort) {
-      toast("Port changed. Close and reopen DupeFinder for this to take effect.");
+      toast("Port changed. Close and reopen PixHerder for this to take effect.");
     } else {
       toast("Settings saved");
     }

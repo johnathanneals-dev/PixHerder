@@ -1,5 +1,5 @@
 """
-DupeFinder image scanner.
+PixHerder image scanner.
 Discovers image files in directories with extension filtering.
 """
 

@@ -1,5 +1,5 @@
 """
-DupeFinder debug logging configuration.
+PixHerder debug logging configuration.
 Provides rotating file handlers for debug and error logs.
 Session-only toggle -- resets to off on restart.
 """
@@ -29,7 +29,7 @@ def setup_logging(enable=False):
     root = logging.getLogger()
 
     # Avoid adding duplicate handlers on repeated calls
-    if any(getattr(h, "_dupefinder_tag", False) for h in root.handlers):
+    if any(getattr(h, "_pixherder_tag", False) for h in root.handlers):
         return
 
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -43,7 +43,7 @@ def setup_logging(enable=False):
     )
     debug_handler.setLevel(logging.DEBUG)
     debug_handler.setFormatter(fmt)
-    debug_handler._dupefinder_tag = True
+    debug_handler._pixherder_tag = True
 
     # Error log -- 5 MB, 2 backups
     error_handler = RotatingFileHandler(
@@ -54,7 +54,7 @@ def setup_logging(enable=False):
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(fmt)
-    error_handler._dupefinder_tag = True
+    error_handler._pixherder_tag = True
 
     root.addHandler(debug_handler)
     root.addHandler(error_handler)

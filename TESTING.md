@@ -1,4 +1,4 @@
-# DupeFinder Testing Tracker
+# PixHerder Testing Tracker
 
 Track file counts, scan results, and test outcomes for consistency across sessions.
 

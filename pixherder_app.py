@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-DupeFinder - Native desktop application for finding and cleaning duplicate images.
+PixHerder - Native desktop application for finding and cleaning duplicate images.
 
 Usage:
-    python dupefinder_app.py
-    python dupefinder_app.py --port 8787
+    python pixherder_app.py
+    python pixherder_app.py --port 8787
 
 Opens a native window for scanning folders, reviewing duplicates side-by-side,
 and cleaning them up.
@@ -42,14 +42,14 @@ def _check_write_access():
         try:
             import webview
             webview.create_window(
-                "DupeFinder - Setup Required",
+                "PixHerder - Setup Required",
                 html=(
                     '<html><body style="background:#1a1a22;color:#e8e8ed;'
                     'font-family:sans-serif;padding:40px;text-align:center;">'
                     '<h2 style="color:#f87171;">Write Access Blocked</h2>'
                     '<p style="color:#7a7a8a;max-width:500px;margin:16px auto;">'
                     'Windows Defender Controlled Folder Access is preventing '
-                    'DupeFinder from saving files.</p>'
+                    'PixHerder from saving files.</p>'
                     '<p style="color:#e8e8ed;max-width:500px;margin:16px auto;">'
                     'To fix this:</p>'
                     '<ol style="text-align:left;max-width:420px;margin:0 auto;'
@@ -66,7 +66,7 @@ def _check_write_access():
                     + python_exe.replace("\\", "\\\\")
                     + '</code></li></ol>'
                     '<p style="color:#7a7a8a;margin-top:24px;">Then restart '
-                    'DupeFinder.</p></body></html>'
+                    'PixHerder.</p></body></html>'
                 ),
                 width=600, height=480,
             )
@@ -78,7 +78,7 @@ def _check_write_access():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="DupeFinder - Find and clean duplicate images",
+        description="PixHerder - Find and clean duplicate images",
     )
     parser.add_argument(
         "--port", type=int, default=None,
@@ -135,7 +135,7 @@ def _run_native_mode(port):
     url = "http://127.0.0.1:" + str(port)
 
     print("")
-    print("  DupeFinder")
+    print("  PixHerder")
     print("  " + "-" * 40)
     print("  Mode:    Native window")
     print("  Server:  " + url + " (internal)")
@@ -146,7 +146,7 @@ def _run_native_mode(port):
 
     # Create native window with API bridge
     window = webview.create_window(
-        "DupeFinder",
+        "PixHerder",
         url=url,
         js_api=api,
         width=1200,

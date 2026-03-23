@@ -40,7 +40,7 @@ final_review/
 oddballs_report.json
 
 # Generated docs
-DupeFinder_Users_Manual.docx
+PixHerder_Users_Manual.docx
 generate_manual.py
 
 # Auditor (separate tool)

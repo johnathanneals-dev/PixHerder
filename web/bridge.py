@@ -1,5 +1,5 @@
 """
-DupeFinder pywebview API bridge.
+PixHerder pywebview API bridge.
 Maps all HTTP API endpoints to Python methods callable from JS.
 Imports shared state and runner functions from server.py.
 """

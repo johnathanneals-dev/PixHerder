@@ -1,5 +1,5 @@
 """
-DupeFinder hashing utilities.
+PixHerder hashing utilities.
 Provides MD5 (exact match) and perceptual (visual similarity) hashing.
 """
 

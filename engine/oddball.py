@@ -1,5 +1,5 @@
 """
-DupeFinder oddball verification.
+PixHerder oddball verification.
 Re-hashes KEEP/DUPE pairs and flags weak matches as potential false positives.
 """
 

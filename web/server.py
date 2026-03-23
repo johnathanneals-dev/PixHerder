@@ -1,5 +1,5 @@
 """
-DupeFinder web server and API routes.
+PixHerder web server and API routes.
 Handles HTTP routing, SSE for progress, and serves the SPA.
 """
 
@@ -572,7 +572,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                        "Please whitelist the Python executable in "
                        "Windows Security settings.")
         elif "Permission" in err_msg or "Access" in err_msg:
-            err_msg = ("Permission denied. Check that DupeFinder has "
+            err_msg = ("Permission denied. Check that PixHerder has "
                        "write access to its data folders.")
         logger.error("Scan failed: %s", e)
         scan_progress.update({
@@ -704,8 +704,8 @@ def _find_staging_subfolder():
     settings = load_settings()
     staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
     search_paths = [staging_base]
-    # Also check C:\Temp\DupeFinder_Staging (common alternative)
-    alt_base = os.path.join("C:\\Temp", "DupeFinder_Staging")
+    # Also check C:\Temp\PixHerder_Staging (common alternative)
+    alt_base = os.path.join("C:\\Temp", "PixHerder_Staging")
     if alt_base != staging_base and os.path.isdir(alt_base):
         search_paths.append(alt_base)
 
@@ -904,8 +904,8 @@ def _run_syncback(staging_dir, source_dir):
         _log_activity("syncback_error", {"error": str(e)})
 
 
-class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
-    """HTTP request handler for the DupeFinder web API."""
+class PixHerderHandler(http.server.BaseHTTPRequestHandler):
+    """HTTP request handler for the PixHerder web API."""
 
     def log_message(self, format, *args):
         """Suppress default access logs."""
@@ -1664,7 +1664,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
             helper_code = (
                 "import ctypes, subprocess, time, sys\n"
                 "u = ctypes.windll.user32\n"
-                "h = u.FindWindowW(None, 'DupeFinder')\n"
+                "h = u.FindWindowW(None, 'PixHerder')\n"
                 "if h: u.ShowWindow(h, 6)\n"
                 "time.sleep(0.3)\n"
                 "subprocess.Popen(['explorer.exe', sys.argv[1]])\n"
@@ -1702,7 +1702,7 @@ class DupeFinderHandler(http.server.BaseHTTPRequestHandler):
         keepers_dir = settings.get("keepers_dir", "")
         if not keepers_dir:
             import tempfile
-            keepers_dir = os.path.join(tempfile.gettempdir(), "DupeFinder_Keepers")
+            keepers_dir = os.path.join(tempfile.gettempdir(), "PixHerder_Keepers")
 
         os.makedirs(keepers_dir, exist_ok=True)
         filename = os.path.basename(filepath)
@@ -2516,7 +2516,7 @@ def create_server(port=8787):
     global _server_instance
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", port),
-        DupeFinderHandler,
+        PixHerderHandler,
     )
     _server_instance = server
     logger.info("Server started on port %d", port)

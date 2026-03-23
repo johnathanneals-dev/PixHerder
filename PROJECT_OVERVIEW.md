@@ -1,14 +1,14 @@
-# DupeFinder Project Overview
+# PixHerder Project Overview
 
-## What does DupeFinder do?
+## What does PixHerder do?
 
-DupeFinder is a desktop application that finds and helps you clean up duplicate images. It scans a folder of photos, identifies duplicates using two methods (exact file matching via MD5 checksums, and visual similarity via perceptual hashing), then presents the results in a side-by-side review interface where you decide what to keep and what to remove.
+PixHerder is a desktop application that finds and helps you clean up duplicate images. It scans a folder of photos, identifies duplicates using two methods (exact file matching via MD5 checksums, and visual similarity via perceptual hashing), then presents the results in a side-by-side review interface where you decide what to keep and what to remove.
 
-The key differentiator is its safety-first approach: DupeFinder never permanently deletes anything. All removals go to the Windows Recycle Bin, giving you a final safety net. Files are always copied to a local workspace before scanning, so your originals are never touched during the process.
+The key differentiator is its safety-first approach: PixHerder never permanently deletes anything. All removals go to the Windows Recycle Bin, giving you a final safety net. Files are always copied to a local workspace before scanning, so your originals are never touched during the process.
 
 ## Who is it for?
 
-DupeFinder is being developed as a general-purpose tool for everyday Windows users, not just technical people. The target audience is anyone with a large photo collection that has accumulated duplicates over time -- particularly people using OneDrive-synced folders like Pictures, where duplicates tend to pile up from phone syncs, backups, and manual copies.
+PixHerder is being developed as a general-purpose tool for everyday Windows users, not just technical people. The target audience is anyone with a large photo collection that has accumulated duplicates over time -- particularly people using OneDrive-synced folders like Pictures, where duplicates tend to pile up from phone syncs, backups, and manual copies.
 
 The UI is designed so that someone with no technical background can follow the guided wizard from start to finish without needing to understand what is happening behind the scenes. Button labels, dialog text, and explanations are all written in plain, non-technical language.
 
@@ -17,8 +17,8 @@ Currently in active development and testing by the developer, with plans for bro
 ## How do you launch it?
 
 1. Run `setup.bat` once (downloads a portable Python runtime, installs dependencies, creates desktop shortcut)
-2. Double-click the DupeFinder desktop shortcut (or `launch.vbs`)
-3. A native application window opens with the DupeFinder interface
+2. Double-click the PixHerder desktop shortcut (or `launch.vbs`)
+3. A native application window opens with the PixHerder interface
 
 The application runs as a pywebview native window (using the system's Edge WebView2 engine). A lightweight internal HTTP server handles image display, but all user interaction flows through a direct Python-to-JavaScript bridge -- no browser tab, no URL to remember, no orphaned tabs.
 
@@ -26,14 +26,14 @@ The application runs as a pywebview native window (using the system's Edge WebVi
 
 ### Guided Wizard (recommended for most users)
 
-1. **Migrate** -- Point DupeFinder at your photos folder (e.g., OneDrive Pictures). It copies the images to a local workspace called "My Files" so your originals stay safe and untouched during the entire process.
+1. **Migrate** -- Point PixHerder at your photos folder (e.g., OneDrive Pictures). It copies the images to a local workspace called "My Files" so your originals stay safe and untouched during the entire process.
 
 2. **Scan** -- Choose a scan mode:
    - *Exact (MD5)* -- Finds files that are byte-for-byte identical. Fast, zero false positives.
    - *Perceptual* -- Finds images that look visually similar even if they differ in size, compression, or format. Adjustable similarity threshold.
    - *Both* -- Runs exact first, then perceptual on the remaining files. Recommended for thorough cleaning.
 
-3. **Review** -- DupeFinder presents duplicate groups one at a time. For each group, you see the images side by side and decide which to keep. You can:
+3. **Review** -- PixHerder presents duplicate groups one at a time. For each group, you see the images side by side and decide which to keep. You can:
    - Click an image to toggle it between "keep" and "duplicate"
    - Keep multiple files from a group if you want
    - Use "Mark All Remaining" to bulk-process when you are confident
@@ -43,7 +43,7 @@ The application runs as a pywebview native window (using the system's Edge WebVi
 4. **Finalize** -- When you are satisfied:
    - Files you marked as duplicates go to the Windows Recycle Bin (recoverable)
    - Files you kept are sent back to their original folder
-   - DupeFinder cleans up its workspace
+   - PixHerder cleans up its workspace
 
 ### Additional capabilities
 

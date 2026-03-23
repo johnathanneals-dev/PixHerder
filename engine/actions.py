@@ -1,5 +1,5 @@
 """
-DupeFinder file actions.
+PixHerder file actions.
 Move, delete, and rescue operations with per-file error handling.
 Uses copy+delete instead of shutil.move for OneDrive compatibility.
 """

@@ -1,12 +1,12 @@
-# DupeFinder Design Standards
+# PixHerder Design Standards
 
-This document defines the visual and interaction standards for DupeFinder. Refer to this when building new features or modifying existing UI.
+This document defines the visual and interaction standards for PixHerder. Refer to this when building new features or modifying existing UI.
 
 ---
 
 ## Design Philosophy
 
-1. **File security first.** No user file is ever permanently deleted by DupeFinder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
+1. **File security first.** No user file is ever permanently deleted by PixHerder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
 2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (My Files, Removed Duplicates, Verified Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
 
@@ -361,7 +361,7 @@ The dashboard displays a horizontal progress stepper showing the 4 workflow stag
 - **Border**: `2px solid var(--accent-dim)` — visible against dark desktop backgrounds
 - **Min size**: 900x600
 - **Default size**: 1200x800
-- **Title bar**: App name only (e.g., "DupeFinder")
+- **Title bar**: App name only (e.g., "PixHerder")
 - **No console window**: Use `pythonw.exe` for launch
 - **Single instance**: Port binding check prevents duplicate launches
 

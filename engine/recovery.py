@@ -1,5 +1,5 @@
 """
-DupeFinder Recovery Archive.
+PixHerder Recovery Archive.
 Maintains a rolling 2-slot archive of recycled files for undo capability.
 Each slot holds files from one recycle operation. When a 3rd operation
 starts, the oldest slot is purged. Archive is cleared on session finish.
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def _recovery_base():
     """Return the recovery archive base directory."""
-    return os.path.join(tempfile.gettempdir(), "DupeFinder_Recovery")
+    return os.path.join(tempfile.gettempdir(), "PixHerder_Recovery")
 
 
 def _slot_path(slot_num):

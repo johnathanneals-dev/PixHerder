@@ -1,5 +1,5 @@
 """
-DupeFinder OneDrive staging module.
+PixHerder OneDrive staging module.
 Copies files from OneDrive-managed folders to a local staging directory
 for interference-free scanning and deduplication.
 """
@@ -38,7 +38,7 @@ def get_staging_dir(source_dir, base_staging_dir=None):
     """Return a deterministic staging subdirectory for a source path."""
     if base_staging_dir is None:
         import tempfile
-        base_staging_dir = os.path.join(tempfile.gettempdir(), "DupeFinder_Staging")
+        base_staging_dir = os.path.join(tempfile.gettempdir(), "PixHerder_Staging")
     key = os.path.normpath(source_dir).lower()
     short_hash = hashlib.md5(key.encode("utf-8")).hexdigest()[:10]
     return os.path.join(base_staging_dir, short_hash)

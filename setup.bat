@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo.
-echo  DupeFinder Setup
+echo  PixHerder Setup
 echo  ----------------------------------------
 echo.
 
@@ -108,7 +108,7 @@ if exist "%BASE%scans\_write_test.tmp" (
     echo  [OK] Write access to data folders.
 ) else (
     echo.
-    echo  [WARNING] Cannot write to DupeFinder data folders.
+    echo  [WARNING] Cannot write to PixHerder data folders.
     echo  Windows Defender Controlled Folder Access may be blocking Python.
     echo.
     echo  To fix: Open Windows Security ^> Virus ^& threat protection
@@ -117,7 +117,7 @@ if exist "%BASE%scans\_write_test.tmp" (
     echo    %PYTHON_DIR%\python.exe
     echo    %PYTHON_DIR%\pythonw.exe
     echo.
-    echo  DupeFinder may not work correctly until this is resolved.
+    echo  PixHerder may not work correctly until this is resolved.
     echo.
     pause
 )
@@ -126,7 +126,7 @@ if exist "%BASE%scans\_write_test.tmp" (
 powershell -ExecutionPolicy Bypass -Command "exit 0" >nul 2>&1
 if errorlevel 1 (
     echo  [WARNING] PowerShell is restricted on this system.
-    echo  DupeFinder uses PowerShell to send files to the Recycle Bin.
+    echo  PixHerder uses PowerShell to send files to the Recycle Bin.
     echo  File recycling may not work. Files will be kept in place if
     echo  recycling fails -- nothing will be permanently deleted.
 ) else (
@@ -137,7 +137,7 @@ if errorlevel 1 (
 "%PYTHON_EXE%" -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',8787)); s.close(); print('ok')" >nul 2>&1
 if errorlevel 1 (
     echo  [WARNING] Port 8787 may be in use or blocked by a firewall.
-    echo  DupeFinder needs this port for its internal server.
+    echo  PixHerder needs this port for its internal server.
     echo  If blocked, you can change the port in Settings after launch.
 ) else (
     echo  [OK] Port 8787 available.
@@ -155,7 +155,7 @@ echo Set WshShell = CreateObject^("WScript.Shell"^)
 echo Set fso = CreateObject^("Scripting.FileSystemObject"^)
 echo baseDir = fso.GetParentFolderName^(WScript.ScriptFullName^)
 echo WshShell.CurrentDirectory = baseDir
-echo WshShell.Run """" ^& baseDir ^& "\python\pythonw.exe"" """ ^& baseDir ^& "\dupefinder_app.py""", 1, False
+echo WshShell.Run """" ^& baseDir ^& "\python\pythonw.exe"" """ ^& baseDir ^& "\pixherder_app.py""", 1, False
 ) > "%BASE%launch.vbs"
 
 echo  [OK] launch.vbs created.
@@ -166,11 +166,11 @@ echo  [OK] launch.vbs created.
 (
 echo @echo off
 echo cd /d "%%~dp0"
-echo echo Starting DupeFinder...
+echo echo Starting PixHerder...
 echo echo.
-echo "%%~dp0python\python.exe" dupefinder_app.py
+echo "%%~dp0python\python.exe" pixherder_app.py
 echo echo.
-echo echo DupeFinder has stopped. Press any key to close.
+echo echo PixHerder has stopped. Press any key to close.
 echo pause ^>nul
 ) > "%BASE%launch.bat"
 
@@ -182,7 +182,7 @@ echo  [OK] launch.bat created.
 echo.
 set /p SHORTCUT="  Create a desktop shortcut? [Y/N]: "
 if /i "%SHORTCUT%"=="Y" (
-    powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine($ws.SpecialFolders('Desktop'), 'DupeFinder.lnk')); $s.TargetPath = '%BASE%launch.vbs'; $s.WorkingDirectory = '%BASE%'; $s.Description = 'DupeFinder - Find and clean duplicate images'; $s.Save()"
+    powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut([System.IO.Path]::Combine($ws.SpecialFolders('Desktop'), 'PixHerder.lnk')); $s.TargetPath = '%BASE%launch.vbs'; $s.WorkingDirectory = '%BASE%'; $s.Description = 'PixHerder - Find and clean duplicate images'; $s.Save()"
     if errorlevel 1 (
         echo  [WARNING] Could not create shortcut. You can create one manually.
     ) else (
@@ -209,13 +209,13 @@ echo  ========================================
 echo  Setup complete!
 echo  ========================================
 echo.
-echo  To start DupeFinder:
-echo    - Double-click the DupeFinder shortcut on your desktop
+echo  To start PixHerder:
+echo    - Double-click the PixHerder shortcut on your desktop
 echo    - Or double-click launch.vbs in this folder
 echo    - Or run launch.bat for debug mode (shows console for troubleshooting)
 echo.
 echo  To uninstall:
-echo    - Close DupeFinder
+echo    - Close PixHerder
 echo    - Delete this folder
 echo    - Delete the desktop shortcut if created
 echo.

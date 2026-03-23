@@ -1,5 +1,5 @@
 """
-DupeFinder configuration and settings management.
+PixHerder configuration and settings management.
 Handles settings persistence, directory paths, and defaults.
 """
 
@@ -27,7 +27,7 @@ IMAGE_EXTENSIONS = {
 
 DEFAULTS = {
     "threshold": 5,
-    "move_destination": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Dupes"),
+    "move_destination": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Dupes"),
     "keep_strategy": "largest",
     "extensions": [
         ".jpg", ".jpeg", ".png", ".gif", ".bmp",
@@ -36,8 +36,8 @@ DEFAULTS = {
     "recursive": True,
     "port": 8787,
     "hash_size": 16,
-    "staging_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Staging"),
-    "keepers_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "DupeFinder", "Keepers"),
+    "staging_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Staging"),
+    "keepers_dir": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Keepers"),
     "onedrive_safe_mode": True,
     "scan_batch_size": 2000,
     "show_hints": True,

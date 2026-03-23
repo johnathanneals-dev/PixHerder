@@ -28,7 +28,7 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   if (hintBox) hintBox.style.display = hintsEnabled ? "block" : "none";
 
   var steps = [
-    { num: 1, label: "Import", state: "locked", tip: "Import your photos into DupeFinder for scanning" },
+    { num: 1, label: "Import", state: "locked", tip: "Import your photos into PixHerder for scanning" },
     { num: 2, label: "Scan", state: hasScans ? "completed" : (hasStaging ? "current" : "pending"), tip: "Scan your files to find duplicates" },
     { num: 3, label: "Review", state: hasDupes ? (hasScans ? "current" : "completed") : "pending", tip: "Review duplicate groups and decide what to keep" },
     { num: 4, label: "Finish", state: (!hasStaging && !hasDupes && hasKeepers) ? "current" : "pending", tip: "Send your files home and clean up" }

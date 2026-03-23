@@ -1,1 +1,1 @@
-# DupeFinder web package
+# PixHerder web package

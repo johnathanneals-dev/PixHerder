@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DupeReviewer - Local web server for reviewing duplicate image groups.
+PixHerder Reviewer - Local web server for reviewing duplicate image groups.
 Opens a browser-based tool to view duplicates side-by-side.
 
 Usage:
@@ -29,7 +29,7 @@ def get_html():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DupeReviewer</title>
+<title>PixHerder Reviewer</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -311,7 +311,7 @@ def get_html():
 
 <div class="header">
   <div class="header-left">
-    <div class="logo">DupeReviewer</div>
+    <div class="logo">PixHerder Reviewer</div>
     <div class="stats">
       <span>Groups: <strong id="totalGroups">0</strong></span>
       <span>Dupes: <strong id="totalDupes">0</strong></span>
@@ -653,7 +653,7 @@ class ReviewerHandler(http.server.BaseHTTPRequestHandler):
             move_dir = os.path.join(os.getcwd(), "perceptual_dupes")
 
             lines = []
-            lines.append('# DupeReviewer - Move Script')
+            lines.append('# PixHerder Reviewer - Move Script')
             lines.append('# Generated from perceptual duplicate review')
             lines.append('# ' + str(len(move_groups)) + ' groups marked for move')
             lines.append('')
@@ -717,7 +717,7 @@ class ReviewerHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DupeReviewer - Review duplicate images in your browser")
+    parser = argparse.ArgumentParser(description="PixHerder Reviewer - Review duplicate images in your browser")
     parser.add_argument('--report', default=DEFAULT_REPORT, help='Path to JSON report (default: ' + DEFAULT_REPORT + ')')
     parser.add_argument('--port', type=int, default=DEFAULT_PORT, help='Port to run on (default: ' + str(DEFAULT_PORT) + ')')
     args = parser.parse_args()
@@ -725,14 +725,14 @@ def main():
     report_path = Path(args.report)
     if not report_path.exists():
         print("[ERROR] Report not found: " + str(report_path))
-        print("  Run dupefinder.py with --action json first.")
+        print("  Run pixherder.py with --action json first.")
         sys.exit(1)
 
     with open(report_path) as f:
         data = json.load(f)
 
     print("")
-    print("DupeReviewer")
+    print("PixHerder Reviewer")
     print("  Report:  " + str(report_path))
     print("  Groups:  " + str(len(data)))
     print("  Port:    " + str(args.port))

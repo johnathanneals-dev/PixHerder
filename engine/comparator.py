@@ -1,5 +1,5 @@
 """
-DupeFinder duplicate detection and grouping logic.
+PixHerder duplicate detection and grouping logic.
 Groups images by exact match (MD5) or visual similarity (pHash).
 """
 

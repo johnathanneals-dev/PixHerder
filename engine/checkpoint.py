@@ -1,5 +1,5 @@
 """
-DupeFinder scan checkpoint management.
+PixHerder scan checkpoint management.
 Saves and restores scan state so interrupted scans can be resumed.
 """
 

@@ -13,10 +13,10 @@ check.py
 CLAUDE.md
 delete_dupes.ps1
 DESIGN_STANDARDS.md
-dupefinder.py
-dupefinder_app.py
-DUPEFINDER_FRONTEND_PROMPT.md
-DupeFinder_Users_Manual.docx
+pixherder.py
+pixherder_app.py
+PIXHERDER_FRONTEND_PROMPT.md
+PixHerder_Users_Manual.docx
 final_sort.py
 generate_manual.py
 HANDOFF.md

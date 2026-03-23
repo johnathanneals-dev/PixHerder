@@ -1,1 +1,1 @@
-# DupeFinder engine package
+# PixHerder engine package

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-DupeFinder - A customizable duplicate image finder.
+PixHerder - A customizable duplicate image finder.
 Finds duplicate and near-duplicate images using multiple strategies.
 
 Usage:
-    python dupefinder.py /path/to/photos
-    python dupefinder.py /path/to/photos --threshold 10 --action report
-    python dupefinder.py /path/to/photos --action move --move-dir ./dupes
+    python pixherder.py /path/to/photos
+    python pixherder.py /path/to/photos --threshold 10 --action report
+    python pixherder.py /path/to/photos --action move --move-dir ./dupes
 
 Strategies:
     1. Exact match   - MD5 hash (byte-identical files)
@@ -259,7 +259,7 @@ def action_json(groups, output_file="dupes_report.json"):
 # ----------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
-        description="DupeFinder - Find duplicate images fast.",
+        description="PixHerder - Find duplicate images fast.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("directory", help="Folder to scan for duplicate images")
@@ -294,7 +294,7 @@ def main():
         print(f"[ERROR] Not a directory: {directory}")
         sys.exit(1)
 
-    print(f"\nDupeFinder - Scanning: {directory}")
+    print(f"\nPixHerder - Scanning: {directory}")
     print(f"  Mode: {args.mode} | Threshold: {args.threshold} | Action: {args.action}\n")
 
     # Collect all images

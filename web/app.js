@@ -1,5 +1,5 @@
 /* ==================================================================
-   DupeFinder SPA - State, Router, API, Views
+   PixHerder SPA - State, Router, API, Views
    ================================================================== */
 
 // ---- Global State ----
@@ -805,7 +805,7 @@ function _toggleDebugMode() {
     var badge = document.getElementById("debugModeBadge");
     if (badge) badge.style.display = enabled ? "inline" : "none";
     if (enabled) {
-      toast("Debug mode enabled. Restart DupeFinder to see DevTools window.");
+      toast("Debug mode enabled. Restart PixHerder to see DevTools window.");
     } else {
       toast("Debug mode disabled. Takes effect on next restart.");
     }
@@ -886,7 +886,7 @@ function _toggleLogging(enable) {
   if (enable) {
     showDialog(
       "Enable Verbose Logging",
-      "Verbose logging captures detailed debug information for every operation. This may slow down scans and file operations while enabled. Logging resets to off when DupeFinder is restarted.",
+      "Verbose logging captures detailed debug information for every operation. This may slow down scans and file operations while enabled. Logging resets to off when PixHerder is restarted.",
       "Enable Logging", "btn-warning",
       function() {
         api("POST", "/api/logs/enable").then(function() {
