@@ -41,6 +41,7 @@ function saveSettings() {
 
   api("POST", "/api/settings", data).then(function(saved) {
     state.settings = saved;
+    _updateStatusBarToggles(saved);
     if (newPort !== oldPort) {
       toast("Port changed. Close and reopen PixHerder for this to take effect.");
     } else {

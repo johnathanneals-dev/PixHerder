@@ -84,6 +84,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
 - [ ] Restart button: green button in status bar bottom-left, shifts server info toward middle. Tooltip, small confirmation dialog, force-closes and relaunches app with no further interaction.
+- [ ] Double-launch protection: second instance via shortcut leaves orphaned pythonw.exe process. Current single-instance check (port bind) exits silently but process may linger. Investigate mutex or PID file approach.
+- [ ] Wizard walkthrough: thorough end-to-end review of the 4-step wizard flow, verify all states and transitions
 - [ ] Auto-move duplicates option: scan identifies and moves dupes to Recovery automatically, user reviews after
 - [ ] "Choose another destination" option for Send Files Home
 - [ ] Recycle Bin capacity indicator before bulk recycle operations

@@ -303,6 +303,13 @@
     min-height: 56px;
   }
   .topnav-left { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .company-mark {
+    font-size: 18px; font-weight: 700; color: #C19A6B;
+    font-family: 'Segoe Script', 'Brush Script MT', cursive;
+    letter-spacing: 1.5px; font-style: italic;
+    white-space: nowrap; margin-right: 8px;
+    align-self: flex-start; margin-top: 12px;
+  }
   .logo {
     font-size: 36px; font-weight: 900; letter-spacing: -0.5px;
     color: var(--accent); font-family: monospace;

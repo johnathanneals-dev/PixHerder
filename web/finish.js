@@ -154,6 +154,21 @@ function _finishPhase3(restoreResult, recycleResult) {
   }); // end Promise.all
 }
 
+function _finishSendHome() {
+  // Single confirmation (lighter than dashboard double-confirm)
+  var total = _finishCounts.staging + _finishCounts.dupes + _finishCounts.keepers;
+  if (total === 0) {
+    toast("No files to send home");
+    return;
+  }
+  showDialog(
+    "Send Files Home",
+    "All " + total.toLocaleString() + " files will be returned to their original folder. Continue?",
+    "Send Home", "btn-primary",
+    function() { _confirmSendHome(); }
+  );
+}
+
 function _finishError(msg) {
   document.getElementById("finishProgress").style.display = "none";
   document.getElementById("finishComplete").style.display = "block";

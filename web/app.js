@@ -308,15 +308,15 @@ function _loadScanList() {
       if (s.reclaimable_bytes) meta += " | " + formatBytes(s.reclaimable_bytes) + " reclaimable";
       if (s.directory) meta += " | " + s.directory;
       if (s.timestamp) meta += " | " + s.timestamp.substring(0, 19);
-      html += '<div class="scan-item">';
+      html += '<div class="scan-item" data-tip="' + s.total_groups + ' duplicate groups, ' + formatBytes(s.reclaimable_bytes || 0) + ' reclaimable">';
       html += '<div class="scan-item-info">';
       html += '<div class="scan-item-name">' + badge + " " + escHtml(s.filename) + '</div>';
       html += '<div class="scan-item-meta">' + escHtml(meta) + '</div>';
       html += '</div>';
       html += '<div class="scan-item-actions">';
-      html += '<button class="btn btn-primary btn-sm" onclick="navigate(\'review\',{report:\'' + escAttr(s.filename) + '\'})">Review</button>';
+      html += '<button class="btn btn-primary btn-sm" onclick="navigate(\'review\',{report:\'' + escAttr(s.filename) + '\'})" data-tip="Open this scan for review">Review</button>';
       if (s.source === "scan") {
-        html += '<button class="btn btn-secondary btn-sm" onclick="deleteScan(\'' + escAttr(s.filename) + '\')">Delete</button>';
+        html += '<button class="btn btn-secondary btn-sm" onclick="deleteScan(\'' + escAttr(s.filename) + '\')" data-tip="Remove this scan from the list">Delete</button>';
       }
       html += '</div></div>';
     }
@@ -605,6 +605,21 @@ function _navToWizardStep(step) {
   navigate("wizard");
 }
 
+function _navToScan() {
+  // Go directly to scan config, skip wizard Step 1
+  api("GET", "/api/folders/status").then(function(data) {
+    if (data.staging && data.staging.exists && data.staging.file_count > 0) {
+      _scanContext = "staging";
+      document.getElementById("scanDir").value = data.staging.path;
+      navigate("scan-config");
+    } else {
+      toast("No files in Staging to scan", "warning");
+    }
+  }).catch(function() {
+    toast("Could not check folder status", "error");
+  });
+}
+
 function _navToReview() {
   // Always fetch fresh scan list to avoid referencing deleted reports (Issue 7)
   api("GET", "/api/scans").then(function(scans) {
@@ -639,17 +654,17 @@ function _updateNavStates() {
   var hasAnyFiles = !!(_dashFolderPaths.staging || _dashFolderPaths.dupes || _dashFolderPaths.keepers);
   migrate.classList.toggle("disabled", hasAnyFiles);
 
-  // Scan: available if staging session exists (files migrated)
-  var hasStagingSession = !!(wizardState.stagingDir || (_stagingSession && _stagingSession.staging_dir));
+  // Scan: available if staging has files or session exists
+  var hasStagingSession = !!(wizardState.stagingDir || (_stagingSession && _stagingSession.staging_dir) || _dashFolderPaths.staging);
   scan.classList.toggle("disabled", !hasStagingSession);
 
   // Review: available if there are scan results
   var hasScans = !!(state.lastReport || (state.scans && state.scans.length > 0));
   review.classList.toggle("disabled", !hasScans);
 
-  // Finalize: available if staging has files
-  var hasFiles = hasStagingSession;
-  finalize.classList.toggle("disabled", !hasFiles);
+  // Finalize: available if dupes or keepers have files (not just staging alone)
+  var hasDupesOrKeepers = !!(_dashFolderPaths.dupes || _dashFolderPaths.keepers);
+  finalize.classList.toggle("disabled", !hasDupesOrKeepers);
 
   // Folder nav links: available if folders have files
   var navMyFiles = document.getElementById("navMyFiles");
@@ -1108,7 +1123,27 @@ function _updateStatusBarPort() {
     var port = s.port || 8787;
     var el = document.getElementById("statusBarPort");
     if (el) el.textContent = "127.0.0.1:" + port;
+    _updateStatusBarToggles(s);
   }).catch(function() {});
+}
+
+function _updateStatusBarToggles(settings) {
+  var el = document.getElementById("statusBarToggles");
+  if (!el) return;
+  var s = settings || state.settings || {};
+  var tooltips = s.show_tooltips !== false;
+  var hints = s.show_hints !== false;
+  var parts = [];
+  if (tooltips) parts.push("Tooltips enabled");
+  if (hints) parts.push("Hints enabled");
+  if (parts.length > 0) {
+    el.innerHTML = '<span style="color:var(--accent);font-style:italic;">Enable/Disable in Settings</span>' +
+      ' &nbsp;&middot;&nbsp; ' +
+      '<span style="color:var(--accent);">' + parts.join(' &middot; ') + '</span>' +
+      ' &middot; ';
+  } else {
+    el.textContent = "";
+  }
 }
 
 function _appInit() {
