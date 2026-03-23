@@ -286,7 +286,7 @@ When complete, the spinner is replaced with a result card:
   - **Active page**: `--accent` color with `--accent-bg` background
   - **Clickable**: `--text` color (white)
   - **Unavailable**: `opacity: 0.4`, `pointer-events: none`
-- **Order**: Dashboard first, then workflow steps in order, then utility links (Activity, Settings last)
+- **Order**: Dashboard first, then workflow steps in order, then utility links (Scan Logs, Settings, Help last)
 - **Wrapping**: `flex-wrap: wrap` — fills from left on narrow windows
 
 ### Flow Stepper

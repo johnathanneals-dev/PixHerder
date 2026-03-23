@@ -339,23 +339,22 @@ Each pass is independent -- your originals are never changed until you explicitl
 
 ---
 
-## Advanced Scan
+## Direct Scan
 
-For users who don't need the wizard, click **Advanced Scan** on the dashboard. This gives you direct access to the scan configuration without the migration step. Useful for scanning folders that don't need a working copy made first.
+For users who don't need the wizard, click **Direct Scan** on the dashboard. This gives you direct access to the scan configuration without the migration step. Useful for scanning folders that don't need a working copy made first.
 
 If you scan a synced folder (like OneDrive), PixHerder will detect it and offer to make a local copy first.
 
 ---
 
-## Activity Log
+## Scan Logs
 
-Click the **Activity** tab to see a log of everything PixHerder has done:
-- Server starts and shutdowns
-- Scans started, completed, cancelled, or errored
-- Staging operations
-- File move/delete actions
+Click **Scan Logs** in the top menu to see your previous scan results. Each entry shows the scan date, mode, and file counts. From here you can:
 
-Use **Clear** to reset the log.
+- **Review** -- reopen a scan to review its duplicate groups
+- **Delete** -- remove a scan result you no longer need
+
+Scan logs are stored as JSON files in the `scans/` folder.
 
 ---
 
@@ -384,11 +383,8 @@ Click the **Settings** tab to customize defaults:
 ## System Requirements
 
 - **Windows 10** version 1803 (April 2018 Update) or later
-- A modern browser: Chrome 80+, Firefox 80+, Safari 14+, or Edge 80+
-- Internet Explorer and Edge Legacy are not supported
+- Edge WebView2 runtime (included with Windows 10/11 updates)
 - ~50 MB disk space for the app, plus temp space for staging (roughly equal to your pictures folder size)
-
-If your browser is too old, a red warning banner will appear at the top of the page.
 
 ---
 
@@ -440,11 +436,9 @@ Windows Defender's Controlled Folder Access is enabled. If the app can't create 
 | Problem | Solution |
 |---------|----------|
 | **Launching** | |
-| Double-clicking the shortcut does nothing | Make sure Python is installed at `C:\Program Files\Python313\python.exe`. Try `launch.bat` instead to see error messages in a terminal window |
-| Browser doesn't open | The desktop shortcut should always open the browser. If not, navigate to `http://127.0.0.1:8787` manually |
-| Page is blank or says "Unable to connect" | The server may still be starting up. Wait a few seconds and refresh. If it persists, try `launch.bat` to check for errors |
-| "Address already in use" | Another instance is already running. Check your browser for an existing PixHerder tab, or restart your computer to clear it |
-| Window doesn't open | Check Task Manager for lingering python.exe processes and end them, then relaunch |
+| Double-clicking the shortcut does nothing | Make sure Python is installed. Try `launch.bat` instead to see error messages in a terminal window |
+| "Address already in use" | Another instance is already running. Check Task Manager for lingering pythonw.exe processes, end them, then relaunch |
+| Window doesn't open | Check Task Manager for lingering pythonw.exe processes and end them, then relaunch |
 | **Scanning** | |
 | Scan seems stuck at a percentage | The progress bar tracks multiple phases. During "Comparing images..." the bar may move slowly on large collections -- this is normal. You can cancel and try an exact-only scan first |
 | "Not enough images to compare" | The selected folder has fewer than 2 image files. Check the path and make sure "Include subfolders" is checked if your images are in subdirectories |
