@@ -127,6 +127,12 @@ class Api:
                                "_onSyncbackProgress",
                                ("complete", "error", "idle"))
 
+    def subscribe_restore_progress(self, params=None):
+        import web.server as srv
+        return self._subscribe("restore", srv.restore_progress,
+                               "_onRestoreProgress",
+                               ("complete", "error", "idle"))
+
     # ---- GET equivalents ----
 
     def get_scans(self, params=None):
@@ -946,6 +952,7 @@ class Api:
         return {"status": "recycled", **result}
 
     def staging_restore(self, params=None):
+        import web.server as srv
         if params is None:
             params = {}
         staging_dir = params.get("staging_dir", "")
@@ -956,77 +963,16 @@ class Api:
         if not source_dir:
             return {"error": "Source directory not specified"}
 
-        # Validate paths match session
-        known_staging = staging_progress.get("staging_dir") or ""
-        if staging_dir and known_staging:
-            if os.path.normpath(staging_dir) != os.path.normpath(known_staging):
-                return {"error": "Staging directory mismatch"}
-        known_source = staging_progress.get("source_dir") or ""
-        if source_dir and known_source:
-            if os.path.normpath(source_dir) != os.path.normpath(known_source):
-                return {"error": "Source directory mismatch"}
+        if srv.restore_thread and srv.restore_thread.is_alive():
+            return {"error": "Restore already running"}
 
-        os.makedirs(source_dir, exist_ok=True)
-
-        copied = 0
-        skipped = 0
-        errors = 0
-
-        def _restore_folder(folder_dir, preserve_structure):
-            nonlocal copied, skipped, errors
-            if not folder_dir or not os.path.isdir(folder_dir):
-                return
-            for root, dirs, files in os.walk(folder_dir):
-                for fname in files:
-                    src = os.path.join(root, fname)
-                    if preserve_structure:
-                        rel = os.path.relpath(src, folder_dir)
-                        dest = os.path.join(source_dir, rel)
-                    else:
-                        dest = os.path.join(source_dir, fname)
-                    try:
-                        if os.path.exists(dest):
-                            skipped += 1
-                            continue
-                        os.makedirs(os.path.dirname(dest), exist_ok=True)
-                        shutil.copy2(src, dest)
-                        copied += 1
-                    except Exception:
-                        errors += 1
-
-        if staging_dir and os.path.isdir(staging_dir):
-            _restore_folder(staging_dir, True)
-
-        # Restore from dupes (flat)
-        settings = load_settings()
-        if full_restore or include_keepers:
-            dupes_dir = settings.get("move_destination",
-                                     DEFAULTS["move_destination"])
-            if os.path.isdir(dupes_dir):
-                _restore_folder(dupes_dir, False)
-
-        if include_keepers or full_restore:
-            keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
-            if os.path.isdir(keepers_dir):
-                _restore_folder(keepers_dir, True)
-
-        # If full restore, clean up
-        if full_restore:
-            if staging_dir and os.path.isdir(staging_dir):
-                cleanup_staging(staging_dir)
-            dupes_dir = settings.get("move_destination",
-                                     DEFAULTS["move_destination"])
-            if os.path.isdir(dupes_dir):
-                cleanup_staging(dupes_dir)
-            keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
-            if os.path.isdir(keepers_dir):
-                cleanup_staging(keepers_dir)
-
-        _log_activity("staging_restore", {
-            "copied": copied, "skipped": skipped, "errors": errors,
-            "full_restore": full_restore,
-        })
-        return {"success": True, "copied": copied, "skipped": skipped, "errors": errors}
+        srv.restore_thread = threading.Thread(
+            target=_run_restore,
+            args=(staging_dir, source_dir, full_restore, include_keepers),
+            daemon=True,
+        )
+        srv.restore_thread.start()
+        return {"status": "started"}
 
     def staging_recycle(self, params=None):
         """Rescue & Review: move dupes back into staging."""

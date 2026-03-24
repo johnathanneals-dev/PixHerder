@@ -16,6 +16,12 @@ None currently known.
 - **Fix:** `consolidate()` creates a new staging subfolder when none exists. Fixed response key to `success: true`.
 - **Files:** web/bridge.py
 
+**Finish progress bar stuck at 0%**
+- **Found:** Testing, 2026-03-23
+- **Description:** Finish restore phase was synchronous -- copied all files in a blocking loop with no progress updates. Progress bar sat at 0% until completion. With 6K+ files, user nearly killed the process thinking it stalled.
+- **Fix:** Restore now runs in a background thread (`_run_restore` in server.py) with progress dict updates. Frontend subscribes via `subscribe_restore_progress` and updates the bar in real-time.
+- **Files:** web/bridge.py, web/server.py, web/finish.js
+
 **Keyboard shortcuts bar overlaps nav menu**
 - **Found:** Testing, 2026-03-23
 - **Description:** kbd-hints was a flex child inside the topnav, competing for space with nav links. On narrow windows or when nav wrapped to two rows, shortcuts covered navigation buttons.

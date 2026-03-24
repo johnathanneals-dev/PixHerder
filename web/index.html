@@ -114,7 +114,7 @@
     <div id="dashFlowGuide" style="display:none;margin-bottom:24px;">
       <div id="dashStepper" style="display:flex;align-items:center;gap:0;"></div>
     </div>
-    <div class="card-grid" id="dashboardStats" style="display:none;">
+    <div class="card-grid" id="dashboardStats">
       <div class="stat-card" data-tip="Total number of files across all folders in the system" data-help="stats"><div class="num" id="dStatTotal">0</div><div class="label">Total Files</div></div>
       <div class="stat-card" data-tip="Sets of matching files found by the scanner" data-help="scanning"><div class="num" id="dStatGroups">0</div><div class="label">Duplicate Groups</div></div>
       <div class="stat-card" data-tip="Individual files identified as duplicates" data-help="scanning"><div class="num" id="dStatDupes">0</div><div class="label">Duplicate Files</div></div>
@@ -126,7 +126,7 @@
       <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard" data-help="scanning">Direct Scan</button>
     </div>
 
-    <div id="dashFolders" style="display:none;margin-bottom:32px;">
+    <div id="dashFolders" style="margin-bottom:32px;">
       <h2>Browse Files</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
         <div style="text-align:center;min-width:180px;">
@@ -157,39 +157,33 @@
         <button class="btn btn-warning" onclick="_dashStagePicker()" data-tip="Navigate to any step of the guided cleanup wizard" data-help="wizard">Access Wizard Steps</button>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>
-      <div id="dashAdvancedOptions" style="display:none;">
+      <div id="dashAdvancedOptions">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
         <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">More Options</h3>
-        <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
-          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-            <div>
-              <button class="btn btn-primary btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
-            </div>
-            <div>
-              <button class="btn btn-danger btn-fixed" onclick="cleanupStaging()" data-tip="Choose to send files home or to the Recycle Bin, then remove the local copy" data-help="cleanup">Remove Workspace</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
-            </div>
-            <div>
-              <button class="btn btn-warning btn-fixed" onclick="_restartAllFiles()" data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Staging so you can rescan everything from scratch.</div>
-            </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px;">
+          <div>
+            <button class="btn btn-primary btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" disabled data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
+            <div class="dash-btn-desc explanation-text" id="dashSendHomeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
           </div>
-        </div>
-        <div id="dashDupeActions" style="display:none;">
-          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
-            <div>
-              <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()" data-tip="Move removed duplicates back for another round of review" data-help="rescue-review">Rescue &amp; Review</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back to Staging for another round of scanning. If Staging already has files, you can choose to merge them together or send the Staging home first.</div>
-            </div>
-            <div>
-              <button class="btn btn-primary btn-fixed" onclick="promoteToKeepers()" data-tip="Save these files as confirmed keepers for safekeeping" data-help="keepers">Move to Keepers</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Save these files as confirmed keepers. They'll go home with your other files when you finish.</div>
-            </div>
-            <div>
-              <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()" data-tip="Send all removed duplicates to the Recycle Bin" data-help="recycling">Recycle All Remaining</button>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Recovery to the Recycle Bin. You can recover them from there if needed.</div>
-            </div>
+          <div>
+            <button class="btn btn-danger btn-fixed" id="dashCleanupBtn" onclick="cleanupStaging()" disabled data-tip="Choose to send files home or to the Recycle Bin, then remove the local copy" data-help="cleanup">Remove Workspace</button>
+            <div class="dash-btn-desc explanation-text" id="dashCleanupDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
+          </div>
+          <div>
+            <button class="btn btn-warning btn-fixed" id="dashStartOverBtn" onclick="_restartAllFiles()" disabled data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>
+            <div class="dash-btn-desc explanation-text" id="dashStartOverDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Staging so you can rescan everything from scratch.</div>
+          </div>
+          <div>
+            <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()" disabled data-tip="Move removed duplicates back for another round of review" data-help="rescue-review">Rescue &amp; Review</button>
+            <div class="dash-btn-desc explanation-text" id="dashRescueDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back for another round of scanning.</div>
+          </div>
+          <div>
+            <button class="btn btn-primary btn-fixed" id="dashPromoteBtn" onclick="promoteToKeepers()" disabled data-tip="Save these files as confirmed keepers for safekeeping" data-help="keepers">Move to Keepers</button>
+            <div class="dash-btn-desc explanation-text" id="dashPromoteDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Save these files as confirmed keepers.</div>
+          </div>
+          <div>
+            <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()" disabled data-tip="Send all removed duplicates to the Recycle Bin" data-help="recycling">Recycle All Remaining</button>
+            <div class="dash-btn-desc explanation-text" id="dashPurgeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Recovery to the Recycle Bin.</div>
           </div>
         </div>
       </div>

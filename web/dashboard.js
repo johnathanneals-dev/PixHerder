@@ -229,8 +229,6 @@ function _dashUpdateFolders() {
       _dashFolderPaths.keepers = "";
     }
 
-    box.style.display = hasAny ? "block" : "none";
-
     var hasStaging = data.staging && data.staging.exists && data.staging.file_count > 0;
     var hasDupes = data.dupes && data.dupes.exists && data.dupes.file_count > 0;
     var hasKeepers = data.keepers && data.keepers.exists && data.keepers.file_count > 0;
@@ -275,14 +273,22 @@ function _dashUpdateFolders() {
     // Update nav states
     _updateNavStates();
 
-    // Show advanced options section when any folder has files
-    document.getElementById("dashAdvancedOptions").style.display = (hasStaging || hasDupes || hasKeepers) ? "block" : "none";
+    // Enable/disable More Options buttons based on folder state
+    var hasAny = hasStaging || hasDupes || hasKeepers;
+    document.getElementById("dashSendHomeBtn").disabled = !hasAny;
+    document.getElementById("dashCleanupBtn").disabled = !hasStaging;
+    document.getElementById("dashStartOverBtn").disabled = !(hasDupes || hasKeepers);
+    document.getElementById("dashRescueBtn").disabled = !hasDupes;
+    document.getElementById("dashPromoteBtn").disabled = !hasDupes;
+    document.getElementById("dashPurgeBtn").disabled = !hasDupes;
 
-    // Show send-home/cleanup actions when staging folder has files
-    document.getElementById("dashStagingActions").style.display = hasStaging ? "block" : "none";
-
-    // Show rescue/purge actions when dupes folder has files
-    document.getElementById("dashDupeActions").style.display = hasDupes ? "block" : "none";
+    // Show description text only when button is active
+    document.getElementById("dashSendHomeDesc").style.display = hasAny ? "" : "none";
+    document.getElementById("dashCleanupDesc").style.display = hasStaging ? "" : "none";
+    document.getElementById("dashStartOverDesc").style.display = (hasDupes || hasKeepers) ? "" : "none";
+    document.getElementById("dashRescueDesc").style.display = hasDupes ? "" : "none";
+    document.getElementById("dashPromoteDesc").style.display = hasDupes ? "" : "none";
+    document.getElementById("dashPurgeDesc").style.display = hasDupes ? "" : "none";
   }).catch(function() {});
 }
 
@@ -670,20 +676,14 @@ function initDashboard() {
   // Update stats from most recent scan (list is sorted newest first)
   api("GET", "/api/scans").then(function(scans) {
     var statsBox = document.getElementById("dashboardStats");
+    statsBox.style.display = "flex";
     if (!scans || scans.length === 0) {
-      var totalEl = document.getElementById("dStatTotal");
-      if (totalEl && totalEl.textContent !== "0") {
-        statsBox.style.display = "grid";
-      } else {
-        statsBox.style.display = "none";
-      }
       return;
     }
     var latest = scans[0];
     document.getElementById("dStatGroups").textContent = (latest.total_groups || 0).toLocaleString();
     document.getElementById("dStatDupes").textContent = (latest.total_dupes || 0).toLocaleString();
     document.getElementById("dStatSpace").textContent = formatBytes(latest.reclaimable_bytes || 0);
-    statsBox.style.display = "grid";
   }).catch(function() {});
 }
 

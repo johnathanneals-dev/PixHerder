@@ -115,6 +115,10 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] Built-in #help view with anchored topics, full nav, "Back to where I was" (placeholder view exists)
 
+### Testing
+
+- [ ] USB drive: plug in a USB drive, verify folder picker shows it in My Computer view, migrate files from it, send files back to it
+
 ### Distribution
 
 - [ ] Marketability -- branding, installer, landing page, packaging

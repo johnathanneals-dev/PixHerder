@@ -92,7 +92,7 @@ function _executeFinish() {
   var totalPhases = (_finishCounts.staging > 0 || _finishCounts.keepers > 0 ? 1 : 0) + (_finishCounts.dupes > 0 ? 1 : 0) + 1;
   var curPhase = 0;
 
-  // Phase 1: Restore all kept files (Staging + Keepers) to source — safe copy, no deletions
+  // Phase 1: Restore all kept files (Staging + Keepers) to source — threaded with progress
   if ((_finishCounts.staging > 0 || _finishCounts.keepers > 0) && _stagingSession) {
     curPhase++;
     document.getElementById("finishPhaseLabel").textContent = "Step " + curPhase + " of " + totalPhases + ": Returning your files...";
@@ -102,8 +102,27 @@ function _executeFinish() {
       staging_dir: _stagingSession.staging_dir,
       source_dir: _stagingSession.source_dir,
       include_keepers: true
-    }).then(function(r) {
-      _finishPhase2(r || {});
+    }).then(function() {
+      // Subscribe to restore progress
+      function _onRestore(d) {
+        var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
+        document.getElementById("finishProgressFill").style.width = pct + "%";
+        document.getElementById("finishProgressPct").textContent = pct + "%";
+        document.getElementById("finishProgressLeft").textContent =
+          d.current + " / " + d.total + " files";
+        document.getElementById("finishStage").textContent =
+          d.phase === "cleanup" ? "Cleaning up workspace..." : "Copying files back to original folder";
+
+        if (d.status === "complete") {
+          window._onRestoreProgress = null;
+          _finishPhase2({copied: d.copied, skipped: d.skipped, errors: d.errors});
+        } else if (d.status === "error") {
+          window._onRestoreProgress = null;
+          _finishError(d.message || "Restore failed");
+        }
+      }
+      window._onRestoreProgress = _onRestore;
+      window.pywebview.api.subscribe_restore_progress();
     }).catch(function(err) {
       _finishError("Restore failed: " + err.message);
     });

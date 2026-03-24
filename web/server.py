@@ -147,6 +147,18 @@ syncback_progress = {
     "message": "",
 }
 
+restore_thread = None
+restore_progress = {
+    "status": "idle",
+    "current": 0,
+    "total": 0,
+    "copied": 0,
+    "skipped": 0,
+    "errors": 0,
+    "message": "",
+    "phase": "",
+}
+
 
 def _reset_all_progress():
     """Clear all in-memory progress dicts to prevent stale state."""
@@ -169,6 +181,11 @@ def _reset_all_progress():
     syncback_progress.update({
         "status": "idle", "current": 0, "total": 0,
         "deleted": 0, "errors": 0, "message": "",
+    })
+    restore_progress.update({
+        "status": "idle", "current": 0, "total": 0,
+        "copied": 0, "skipped": 0, "errors": 0,
+        "message": "", "phase": "",
     })
 
 
@@ -890,6 +907,103 @@ def _update_syncback_progress(current, total, stage):
     syncback_progress["message"] = (
         "Syncing: " + str(current) + "/" + str(total) + " files"
     )
+
+
+def _run_restore(staging_dir, source_dir, full_restore, include_keepers):
+    """Background restore thread. Copies files back to source with progress."""
+    global restore_progress
+
+    restore_progress.update({
+        "status": "running", "current": 0, "total": 0,
+        "copied": 0, "skipped": 0, "errors": 0,
+        "message": "Counting files...", "phase": "counting",
+    })
+
+    settings = load_settings()
+    dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+    keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+
+    # Count total files across all folders to restore
+    total = 0
+    folders_to_restore = []  # list of (dir, preserve_structure)
+    if staging_dir and os.path.isdir(staging_dir):
+        folders_to_restore.append((staging_dir, True))
+    if full_restore or include_keepers:
+        if os.path.isdir(dupes_dir):
+            folders_to_restore.append((dupes_dir, False))
+    if include_keepers or full_restore:
+        if os.path.isdir(keepers_dir):
+            folders_to_restore.append((keepers_dir, True))
+
+    for folder_dir, _ in folders_to_restore:
+        for root, dirs, files in os.walk(folder_dir):
+            total += len(files)
+
+    restore_progress["total"] = total
+    restore_progress["phase"] = "restoring"
+    restore_progress["message"] = "Restoring files..."
+
+    os.makedirs(source_dir, exist_ok=True)
+    copied = 0
+    skipped = 0
+    errors = 0
+    current = 0
+
+    try:
+        for folder_dir, preserve_structure in folders_to_restore:
+            for root, dirs, files in os.walk(folder_dir):
+                for fname in files:
+                    current += 1
+                    src = os.path.join(root, fname)
+                    if preserve_structure:
+                        rel = os.path.relpath(src, folder_dir)
+                        dest = os.path.join(source_dir, rel)
+                    else:
+                        dest = os.path.join(source_dir, fname)
+                    try:
+                        if os.path.exists(dest):
+                            skipped += 1
+                        else:
+                            os.makedirs(os.path.dirname(dest), exist_ok=True)
+                            shutil.copy2(src, dest)
+                            copied += 1
+                    except Exception:
+                        errors += 1
+                    restore_progress.update({
+                        "current": current, "copied": copied,
+                        "skipped": skipped, "errors": errors,
+                        "message": "Restoring: " + str(current) + " / "
+                                   + str(total) + " files",
+                    })
+
+        # If full restore, clean up folders
+        if full_restore:
+            restore_progress["phase"] = "cleanup"
+            restore_progress["message"] = "Cleaning up workspace..."
+            if staging_dir and os.path.isdir(staging_dir):
+                cleanup_staging(staging_dir)
+            if os.path.isdir(dupes_dir):
+                cleanup_staging(dupes_dir)
+            if os.path.isdir(keepers_dir):
+                cleanup_staging(keepers_dir)
+
+        _log_activity("staging_restore", {
+            "copied": copied, "skipped": skipped, "errors": errors,
+            "full_restore": full_restore,
+        })
+
+        restore_progress.update({
+            "status": "complete", "current": total, "total": total,
+            "copied": copied, "skipped": skipped, "errors": errors,
+            "message": "Restore complete: " + str(copied) + " files copied",
+            "phase": "done",
+        })
+
+    except Exception as e:
+        restore_progress.update({
+            "status": "error",
+            "message": "Restore failed: " + str(e),
+        })
 
 
 def _run_syncback(staging_dir, source_dir):
