@@ -64,6 +64,47 @@ Some antivirus programs (Norton, McAfee, Avast, etc.) may flag PixHerder because
 
 ---
 
+## First Launch
+
+When you open PixHerder for the first time, you'll see a short walkthrough followed by a mode selector.
+
+### App Tour
+
+A 5-step slideshow introduces you to PixHerder:
+
+1. **Welcome** -- what PixHerder does and a tip to maximize the window
+2. **How it works** -- the 4-step workflow (Import, Scan, Review, Clean up)
+3. **Choose your style** -- overview of the 4 workflow modes
+4. **Your files are safe** -- everything goes to the Recycle Bin, originals are never deleted
+5. **Ready to go** -- prompts you to pick a mode
+
+You can click **Skip** (top-right) at any time to jump ahead to the mode selector. Use **Back** and **Next** to navigate between steps.
+
+### Choosing a Mode
+
+After the tour, you'll see the mode selector with 4 options:
+
+- **Easy** (Recommended for first-time users) -- Full guided wizard. Walks you through every step with explanations, hints, and tooltips. Best if you're new to PixHerder.
+- **Autonomous** -- One-click operation. Select a folder and PixHerder finds and separates all duplicates into a subfolder automatically. Minimal interaction required.
+- **Hybrid** -- Wizard for initial setup, then the dashboard gives you full control. Good balance of guidance and flexibility.
+- **Manual** -- Import your files, then do everything from the dashboard and nav menu. Maximum control for experienced users.
+
+Click a mode card to select it. Your choice is saved and you won't see this screen again on future launches.
+
+If you don't want to choose a mode right now, click the small **Continue to Dashboard** button below the mode cards. This defaults to Hybrid mode and takes you straight to the dashboard.
+
+### Replaying the Tour or Changing Modes
+
+You can always revisit the tour or change your mode:
+
+- **Dashboard > More Options > App Tour** -- replays the walkthrough
+- **Dashboard > More Options > Welcome Screen** -- reopens the mode selector
+- **Settings > Workflow Mode** dropdown -- change your mode anytime
+- **Settings > Show welcome screen on startup** -- check this to see the mode selector on next launch
+- **Settings > Replay Tour** button -- plays the walkthrough again
+
+---
+
 ## Guided Cleanup Wizard
 
 The recommended way to use PixHerder. Click **Start Guided Cleanup** on the dashboard.
@@ -372,6 +413,9 @@ If a scan is interrupted (cancelled or crashed), PixHerder saves a checkpoint wi
 ## Settings
 
 Click the **Settings** tab to customize defaults:
+- **Workflow Mode**: choose Easy, Autonomous, Hybrid, or Manual (see "Choosing a Mode" above)
+- **Show welcome screen on startup**: when checked, the mode selector appears on launch. Automatically unchecked after your first mode selection.
+- **Replay Tour**: button to watch the intro walkthrough again
 - **Threshold**: default perceptual similarity threshold (0-20)
 - **Move destination**: default folder for moving dupes (default: `C:\Temp\dupes`)
 - **Keep strategy**: how to pick which file to keep in each group
