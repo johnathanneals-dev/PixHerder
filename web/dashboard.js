@@ -282,13 +282,14 @@ function _dashUpdateFolders() {
     document.getElementById("dashPromoteBtn").disabled = !hasDupes;
     document.getElementById("dashPurgeBtn").disabled = !hasDupes;
 
-    // Show description text only when button is active
-    document.getElementById("dashSendHomeDesc").style.display = hasAny ? "" : "none";
-    document.getElementById("dashCleanupDesc").style.display = hasStaging ? "" : "none";
-    document.getElementById("dashStartOverDesc").style.display = (hasDupes || hasKeepers) ? "" : "none";
-    document.getElementById("dashRescueDesc").style.display = hasDupes ? "" : "none";
-    document.getElementById("dashPromoteDesc").style.display = hasDupes ? "" : "none";
-    document.getElementById("dashPurgeDesc").style.display = hasDupes ? "" : "none";
+    // Show description text only when button is active AND explanations are on
+    var _explOn = !state.settings || state.settings.show_explanations !== false;
+    document.getElementById("dashSendHomeDesc").style.display = (_explOn && hasAny) ? "" : "none";
+    document.getElementById("dashCleanupDesc").style.display = (_explOn && hasStaging) ? "" : "none";
+    document.getElementById("dashStartOverDesc").style.display = (_explOn && (hasDupes || hasKeepers)) ? "" : "none";
+    document.getElementById("dashRescueDesc").style.display = (_explOn && hasDupes) ? "" : "none";
+    document.getElementById("dashPromoteDesc").style.display = (_explOn && hasDupes) ? "" : "none";
+    document.getElementById("dashPurgeDesc").style.display = (_explOn && hasDupes) ? "" : "none";
   }).catch(function() {});
 }
 

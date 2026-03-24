@@ -10,7 +10,8 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (Staging, Recovery, Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
 4. **Dashboard is the design baseline.** The current dashboard layout (stat cards, browse buttons, More Options) is the baseline for all future design changes. All workflow modes use the dashboard. Modes control what is visible or prominent on it, but the underlying structure does not change. No mode removes the dashboard.
-5. **Welcome Screen / App Tour row is locked.** Welcome Screen and App Tour buttons are right-aligned (margin-left: auto), right edge aligned with stat cards and App Tour button. Do not reorder or reposition.
+5. **Settings view is always verbose.** Explanation text and tooltips are always visible in the Settings view regardless of user toggles. Settings is the reference manual -- users need context to understand what each setting does.
+6. **Welcome Screen / App Tour row is locked.** Welcome Screen and App Tour buttons are right-aligned (margin-left: auto), right edge aligned with stat cards and App Tour button. Do not reorder or reposition.
 
 ---
 

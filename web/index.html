@@ -177,7 +177,7 @@
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
         <button class="btn btn-warning" onclick="_dashStagePicker()" data-tip="Navigate to any step of the guided cleanup wizard" data-help="wizard">Access Wizard Steps</button>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
+        <div class="explanation-text" style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>
       <div id="dashAdvancedOptions">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
@@ -193,7 +193,7 @@
           </div>
           <div style="margin:0 auto;">
             <button class="btn btn-danger btn-fixed" id="dashCleanupBtn" onclick="cleanupStaging()" disabled data-tip="Choose to send files home or to the Recycle Bin, then remove the local copy" data-help="cleanup">Remove Workspace</button>
-            <div class="dash-btn-desc explanation-text" id="dashCleanupDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
+            <div class="dash-btn-desc explanation-text" id="dashCleanupDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:160px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
           </div>
           <div style="margin-left:auto;">
             <button class="btn btn-warning btn-fixed" id="dashStartOverBtn" onclick="_restartAllFiles()" disabled data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>

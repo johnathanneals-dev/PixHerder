@@ -4,6 +4,7 @@
 function initSettings() {
   api("GET", "/api/settings").then(function(settings) {
     state.settings = settings;
+    state._settingsStale = false;
     // Workflow mode
     var modeEl = document.getElementById("setWorkflowMode");
     if (modeEl) {

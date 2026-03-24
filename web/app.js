@@ -915,8 +915,8 @@ function route() {
     if (navBar) navBar.style.display = "none";
   }
   if (prevView === "settings" && view !== "settings") {
-    // Issue 33: invalidate cached settings so next use fetches fresh
-    state.settings = null;
+    // Issue 33: mark stale so initSettings refetches, but keep values for route() toggles
+    state._settingsStale = true;
   }
   state._currentView = view;
 
@@ -976,8 +976,8 @@ function route() {
     }
   }
 
-  // Toggle explanation text visibility
-  var explainOn = !state.settings || state.settings.show_explanations !== false;
+  // Toggle explanation text visibility (Settings view is always verbose)
+  var explainOn = view === "settings" || !state.settings || state.settings.show_explanations !== false;
   var explEls = document.querySelectorAll(".explanation-text");
   for (var ei = 0; ei < explEls.length; ei++) {
     explEls[ei].style.display = explainOn ? "" : "none";
@@ -1279,7 +1279,8 @@ function _initTooltips() {
   document.addEventListener("mouseover", function(e) {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
-    if (state.settings && state.settings.show_tooltips === false) return;
+    // Settings view always shows tooltips regardless of toggle
+    if (state.settings && state.settings.show_tooltips === false && state._currentView !== "settings") return;
 
     clearTimeout(_tipTimer);
     _tipTimer = setTimeout(function() {
