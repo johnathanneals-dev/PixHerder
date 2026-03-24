@@ -21,6 +21,7 @@ function initSettings() {
     document.getElementById("setShowExplanations").checked = settings.show_explanations !== false;
     document.getElementById("setShowOneDrivePrompts").checked = settings.show_onedrive_prompts !== false;
     document.getElementById("setShowWelcome").checked = settings.show_welcome !== false;
+    document.getElementById("setOpenFullscreen").checked = settings.open_fullscreen !== false;
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
   });
@@ -51,6 +52,7 @@ function saveSettings() {
     show_explanations: document.getElementById("setShowExplanations").checked,
     show_onedrive_prompts: document.getElementById("setShowOneDrivePrompts").checked,
     show_welcome: document.getElementById("setShowWelcome").checked,
+    open_fullscreen: document.getElementById("setOpenFullscreen").checked,
     persistent_logging: preserved.persistent_logging || false,
     debug_mode: preserved.debug_mode || false,
     extensions: exts

@@ -48,6 +48,7 @@ DEFAULTS = {
     "debug_mode": False,
     "workflow_mode": "",
     "show_welcome": True,
+    "open_fullscreen": True,
 }
 
 

@@ -145,6 +145,8 @@ def _run_native_mode(port):
     api = Api()
 
     # Create native window with API bridge
+    _settings = load_settings()
+    open_fullscreen = _settings.get("open_fullscreen", True)
     window = webview.create_window(
         "PixHerder",
         url=url,
@@ -152,6 +154,7 @@ def _run_native_mode(port):
         width=1200,
         height=800,
         min_size=(900, 600),
+        maximized=open_fullscreen,
     )
 
     # Wire up the bridge

@@ -182,35 +182,34 @@
       <div id="dashAdvancedOptions">
         <div style="border-top:1px solid var(--surface-2);margin:8px 0 16px;"></div>
         <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">More Options</h3>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;margin-bottom:16px;gap:12px;">
           <div>
             <button class="btn btn-primary btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" disabled data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
-            <div class="dash-btn-desc explanation-text" id="dashSendHomeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
-          </div>
-          <div>
-            <button class="btn btn-danger btn-fixed" id="dashCleanupBtn" onclick="cleanupStaging()" disabled data-tip="Choose to send files home or to the Recycle Bin, then remove the local copy" data-help="cleanup">Remove Workspace</button>
-            <div class="dash-btn-desc explanation-text" id="dashCleanupDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
-          </div>
-          <div>
-            <button class="btn btn-warning btn-fixed" id="dashStartOverBtn" onclick="_restartAllFiles()" disabled data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>
-            <div class="dash-btn-desc explanation-text" id="dashStartOverDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all files back into Staging so you can rescan everything from scratch.</div>
-          </div>
-          <div>
-            <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()" disabled data-tip="Move removed duplicates back for another round of review" data-help="rescue-review">Rescue &amp; Review</button>
-            <div class="dash-btn-desc explanation-text" id="dashRescueDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Not sure about some duplicates? This moves them back for another round of scanning.</div>
+            <div class="dash-btn-desc explanation-text" id="dashSendHomeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:160px;">Put all your files back where they came from. Nothing gets deleted.</div>
           </div>
           <div>
             <button class="btn btn-primary btn-fixed" id="dashPromoteBtn" onclick="promoteToKeepers()" disabled data-tip="Save these files as confirmed keepers for safekeeping" data-help="keepers">Move to Keepers</button>
-            <div class="dash-btn-desc explanation-text" id="dashPromoteDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Save these files as confirmed keepers.</div>
+            <div class="dash-btn-desc explanation-text" id="dashPromoteDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:160px;">Save these files as confirmed keepers.</div>
           </div>
+          <div style="margin:0 auto;">
+            <button class="btn btn-danger btn-fixed" id="dashCleanupBtn" onclick="cleanupStaging()" disabled data-tip="Choose to send files home or to the Recycle Bin, then remove the local copy" data-help="cleanup">Remove Workspace</button>
+            <div class="dash-btn-desc explanation-text" id="dashCleanupDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Choose to send files home or to the Recycle Bin, then remove the local copy.</div>
+          </div>
+          <div style="margin-left:auto;">
+            <button class="btn btn-warning btn-fixed" id="dashStartOverBtn" onclick="_restartAllFiles()" disabled data-tip="Move everything back to Staging for rescanning from scratch" data-help="start-over">Start Over</button>
+            <div class="dash-btn-desc explanation-text" id="dashStartOverDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:160px;">Put all files back into Staging so you can rescan everything from scratch.</div>
+          </div>
+          <div style="text-align:right;">
+            <button class="btn btn-warning btn-fixed" id="dashRescueBtn" onclick="rescueAndReview()" disabled data-tip="Move removed duplicates back for another round of review" data-help="rescue-review">Rescue &amp; Review</button>
+            <div class="dash-btn-desc explanation-text" id="dashRescueDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:160px;margin-left:auto;">Not sure about some duplicates? This moves them back for another round of scanning.</div>
+          </div>
+          <div style="flex-basis:100%;height:0;"></div>
           <div>
             <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()" disabled data-tip="Send all removed duplicates to the Recycle Bin" data-help="recycling">Recycle All Remaining</button>
             <div class="dash-btn-desc explanation-text" id="dashPurgeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Recovery to the Recycle Bin.</div>
           </div>
-          <div>
+          <div style="margin-left:auto;display:flex;gap:12px;">
             <button class="btn btn-warning btn-fixed" onclick="replayWelcome()" data-tip="Reopen the mode selector to change your workflow">Welcome Screen</button>
-          </div>
-          <div>
             <button class="btn btn-warning btn-fixed" onclick="replayTour()" data-tip="Watch the intro walkthrough again">App Tour</button>
           </div>
         </div>
@@ -1027,6 +1026,13 @@
           <label class="checkbox-label">
             <input type="checkbox" id="setShowWelcome" checked data-tip="Show the welcome screen and mode selector when PixHerder starts">
             Show welcome screen on startup
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setOpenFullscreen" checked data-tip="Open PixHerder maximized every time it starts">
+            Open full screen
           </label>
         </div>
 
