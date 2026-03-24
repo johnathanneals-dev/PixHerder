@@ -3,7 +3,7 @@
 ## Quick Start
 
 1. Double-click the **PixHerder** shortcut on your desktop (see setup below)
-2. The PixHerder window opens
+2. The PixHerder window opens -- **maximize it for the best experience**
 3. Click **Start Guided Cleanup** and follow the 4-step wizard
 4. Close the window when done
 
