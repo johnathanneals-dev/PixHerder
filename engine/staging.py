@@ -169,6 +169,11 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
         "/BYTES",      # show sizes in bytes
     ]
 
+    # Hide console window on Windows (prevents flash)
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = 0  # SW_HIDE
+
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -176,6 +181,7 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
         text=True,
         encoding="utf-8",
         errors="replace",
+        startupinfo=si,
     )
 
     copied = 0
@@ -246,7 +252,7 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
         "errors": errors,
         "cancelled": False,
         "staging_dir": staging_dir,
-        "manifest_path": str(manifest),
+        "manifest_path": str(manifest) if manifest else None,
         "total_staged": copied + skipped,
     }
 
@@ -328,13 +334,17 @@ def _stage_with_python(source_dir, staging_dir, extensions,
         "errors": errors,
         "cancelled": False,
         "staging_dir": staging_dir,
-        "manifest_path": str(manifest),
+        "manifest_path": str(manifest) if manifest else None,
         "total_staged": copied + skipped,
     }
 
 
 def _build_manifest(source_dir, staging_dir):
-    """Build and save a manifest mapping staged paths to originals."""
+    """Build and save a manifest mapping staged paths to originals.
+
+    Returns manifest path, or None if no files were staged (prevents
+    stale manifests from failed/empty migrations).
+    """
     mpath = manifest_path_for(source_dir)
 
     # Count staged files
@@ -347,6 +357,11 @@ def _build_manifest(source_dir, staging_dir):
                 staged_bytes += os.path.getsize(os.path.join(root, f))
             except Exception:
                 pass
+
+    # Never write a manifest for 0 files -- prevents stale session artifacts
+    if staged_count == 0:
+        logger.info("Skipping manifest write (0 files staged)")
+        return None
 
     manifest = {
         "source_dir": os.path.normpath(source_dir),
@@ -478,8 +493,12 @@ def _recycle_file_powershell(filepath, archive_slot=None):
         "'OnlyErrorDialogs', 'SendToRecycleBin')"
         '"'
     )
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = 0  # SW_HIDE
     result = subprocess.run(
-        cmd, shell=True, capture_output=True, timeout=30
+        cmd, shell=True, capture_output=True, timeout=30,
+        startupinfo=si,
     )
     if result.returncode != 0:
         stderr = result.stderr.decode(errors="replace").strip()
@@ -506,7 +525,11 @@ def _recycle_files_batch_powershell(filepaths):
     cmd = ('powershell -NoProfile -ExecutionPolicy Bypass -Command "'
            + ps_script + '"')
 
-    result = subprocess.run(cmd, shell=True, capture_output=True, timeout=120)
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = 0  # SW_HIDE
+    result = subprocess.run(cmd, shell=True, capture_output=True, timeout=120,
+                            startupinfo=si)
     # Can't easily tell which files failed in batch mode
     if result.returncode != 0:
         stderr = result.stderr.decode(errors="replace").strip()

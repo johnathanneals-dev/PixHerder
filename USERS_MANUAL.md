@@ -72,7 +72,7 @@ The recommended way to use PixHerder. Click **Start Guided Cleanup** on the dash
 
 PixHerder makes a working copy of your pictures so it can scan without interruption. Your originals stay exactly where they are -- nothing is changed or deleted.
 
-- Use the quick-fill buttons (**OneDrive Pictures**, **Pictures**, **Desktop**) or click **Browse** to select your source folder
+- Click **Browse** to select your source folder, or paste a folder path directly into the text field
 - Click **Begin Migration** (or **Cancel** to return to the dashboard)
 - Watch the progress bar as files are copied locally
 - When complete, the step shows a checkmark and Step 2 opens

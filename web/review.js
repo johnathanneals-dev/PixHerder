@@ -74,7 +74,7 @@ function _showChunkCheckpoint() {
     '<button class="btn btn-secondary" onclick="closeDialog(); reviewBulkSkip()">Keep All Remaining</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">' +
-    '<button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>' +
+    '<button class="btn btn-danger" onclick="closeDialog()">Cancel</button>' +
     '<div style="display:flex;gap:8px;">' +
     '<button class="btn btn-secondary" onclick="closeDialog(); _saveDecisionsNow(); navigate(\'dashboard\')">Take a Break</button>' +
     '<button class="btn btn-primary" onclick="closeDialog(); _showChunkCheckpoint_nextBatch()">Next Batch</button>' +

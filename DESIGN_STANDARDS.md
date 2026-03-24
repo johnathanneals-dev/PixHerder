@@ -40,7 +40,7 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 | `--accent` | `#6ee7b7` | Primary buttons, positive indicators, KEEP badge |
 | `--accent-dim` | `#2d6a54` | Accent borders |
 | `--accent-bg` | `#0f2a1f` | Accent backgrounds |
-| `--danger` | `#f87171` | Destructive buttons, DUPE badge |
+| `--danger` | `#e02020` | Destructive buttons, Cancel buttons, DUPE badge |
 | `--danger-dim` | `#5c2626` | Danger borders |
 | `--danger-bg` | `#2a1215` | Danger backgrounds |
 | `--warning` | `#d97706` | Caution buttons (amber) |
@@ -75,10 +75,10 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 | Class | Color | Meaning | Examples |
 |-------|-------|---------|----------|
 | `btn-primary` | Green (`--accent`) | Safe, forward, positive | Send Files Home, Move to Keepers, Finish Now, Apply Decisions |
-| `btn-danger` | Red (`--danger`) | Destructive (sends to Recycle Bin) | Delete, Delete All Remaining, Remove Workspace |
+| `btn-danger` | Red (`--danger`) | Destructive or Cancel | Delete, Delete All Remaining, Remove Workspace, Cancel |
 | `btn-warning` | Amber (`--warning`) | Caution, significant action | Rescue & Review, Start Over, Mark All Remaining |
 | `btn-secondary` | Dark surface + dim border | Alternative, neutral | Browse buttons, Return/Reload, alternative options |
-| `btn-ghost` | Transparent, dim text | Cancel, dismiss, minor | Cancel, Exit, Go Back |
+| `btn-ghost` | Transparent, dim text | Dismiss, minor | Exit, Go Back, Continue without pausing |
 
 ### Sizes
 
@@ -127,8 +127,8 @@ This ensures disabled buttons and greyed-out nav links have the same visual weig
 ### Standard Layout (showDialog)
 
 Simple two-button dialogs (confirm/cancel):
-- Cancel button left, action button right
-- Both right-justified in `dialog-actions` container
+- Cancel button left (`btn-danger`), action button right
+- Cancel is always red (`btn-danger`) to be clearly visible
 - Used for: simple confirmations, notifications
 
 ### Multi-Option Layout (custom innerHTML)
@@ -149,7 +149,7 @@ Complex dialogs with multiple choices:
 |                                  |
 | **Action2** description text     |
 |                                  |
-| [Cancel]                         |  <- bottom-left, btn-ghost
+| [Cancel]                         |  <- bottom-left, btn-danger (red)
 +----------------------------------+
 ```
 
@@ -163,7 +163,7 @@ Complex dialogs with multiple choices:
 
 ### Rules
 
-- Cancel/dismiss is always bottom-left (btn-ghost) in multi-option dialogs
+- Cancel is always bottom-left, red (`btn-danger`) in all dialogs
 - Explanation text uses white bold (`#fff, font-weight: 600`) for button names, `--text-dim` for descriptions
 - Separator: `border-top: 1px solid var(--border)`, 14px margin-top, 12px padding-top
 - Never use "permanently" or "cannot be undone" for operations that go to the Recycle Bin
@@ -401,6 +401,15 @@ All future applications should use the same tooltip system with the same 0.5s de
 
 ## Cancel Button Standard
 
+**All Cancel buttons are red (`btn-danger`) and positioned bottom-left.** No exceptions.
+
+### In dialogs
+- Always `btn-danger` class (red)
+- Always bottom-left position
+- Label is always "Cancel" (not "Close", "Dismiss", "Never mind", etc.)
+- Must be present in every dialog that has an action — user always has an escape route
+
+### During progress operations (scan, staging, actions)
 - Active during cancellable phases (hashing, comparing, copying)
 - **Greys out at point of no return** (saving results, writing manifests)
 - Uses `btn-danger` style when active
@@ -465,7 +474,7 @@ When building new applications (video deduper, face finder, dashboard):
 3. **Use this same button system** — green=safe, red=destructive, amber=caution, dark=neutral
 4. **Use this same typography** — system fonts, monospace for technical data
 5. **Use this same disabled standard** — opacity 0.4 everywhere
-6. **Use this same dialog format** — cancel bottom-left, actions top-right
+6. **Use this same dialog format** — cancel bottom-left (red), actions top-right
 7. **Use this same border system** — `--border-container` for non-interactive, `--text-dim` for interactive
 8. **Use this same nav pattern** — logo left, workflow links in order, utility links right
 9. **Use pywebview native window** — no browser, `pythonw.exe` launch, single instance

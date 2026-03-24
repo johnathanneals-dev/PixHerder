@@ -161,7 +161,7 @@ function _dashStagePicker() {
     '<button class="btn btn-secondary btn-fixed" onclick="closeDialog(); wizardState.completedSteps={1:true,2:true,3:true}; wizardState.currentStep=4; navigate(\'wizard\');">Step 4: Finalize</button>' +
     '<button class="btn btn-primary btn-fixed" onclick="closeDialog(); navigate(\'finish\');">Finish Up</button>' +
     '</div>' +
-    '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
+    '<div style="margin-top:12px;"><button class="btn btn-danger" onclick="closeDialog()">Cancel</button></div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
   document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
@@ -315,7 +315,7 @@ function rescueAndReview() {
         '<span style="color:#fff;font-weight:600;">Merge Dupes</span> files from Recovery will be merged with the files in Staging. You\'ll find all the files in the Staging folder again.<br><br>' +
         '<span style="color:#fff;font-weight:600;">Return / Reload</span> sends your Staging home first, then brings the Recovery back for another review.' +
         '</div>' +
-        '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
+        '<div style="margin-top:12px;"><button class="btn btn-danger" onclick="closeDialog()">Cancel</button></div>';
       document.getElementById("dialogConfirmBtn").style.display = "none";
       document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
       document.getElementById("dialogOverlay").classList.add("active");

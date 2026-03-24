@@ -175,25 +175,12 @@ def _run_native_mode(port):
 
     window.events.closing += on_closing
 
-    def on_shown():
-        """Enable context menu on input fields after window is ready."""
-        try:
-            # Access WebView2 settings to re-enable context menus
-            if hasattr(window, 'gui') and window.gui:
-                widget = window.gui.BrowserView.instances.get(window.uid)
-                if widget and hasattr(widget, 'browser'):
-                    settings = widget.browser.CoreWebView2.Settings
-                    settings.AreDefaultContextMenusEnabled = True
-        except Exception:
-            pass
-
-    window.events.shown += on_shown
-
-    # Start the window (blocks until closed)
-    # Check if debug mode is enabled in settings
-    _settings = load_settings()
-    _debug = _settings.get("debug_mode", False)
-    webview.start(debug=_debug)
+    # Always start with debug=True so WebView2 enables:
+    #   - Right-click context menus (paste, cut, copy, select all)
+    #   - Keyboard accelerators (Ctrl+V, Ctrl+C, Ctrl+X, Ctrl+A)
+    # Suppress DevTools window from auto-opening (user can still open via F12)
+    webview.settings['OPEN_DEVTOOLS_IN_DEBUG'] = False
+    webview.start(debug=True)
 
     # Ensure clean exit after window closes
     server.shutdown()

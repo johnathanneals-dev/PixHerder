@@ -65,7 +65,7 @@
     <h3 id="dialogTitle">Confirm</h3>
     <p id="dialogMessage">Are you sure?</p>
     <div class="dialog-actions">
-      <button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>
+      <button class="btn btn-danger" onclick="closeDialog()">Cancel</button>
       <button class="btn btn-danger" id="dialogConfirmBtn" onclick="dialogConfirmAction()">Confirm</button>
     </div>
   </div>
@@ -75,11 +75,11 @@
 <div class="dialog-overlay" id="folderPickerOverlay">
   <div class="dialog" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column;">
     <h3>Select Folder</h3>
-    <div id="folderPickerBreadcrumb" style="font-size:12px;color:var(--text-dim);margin-bottom:8px;word-break:break-all;"></div>
+    <div id="folderPickerBreadcrumb" style="font-size:13px;color:var(--accent);background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px;word-break:break-all;font-family:monospace;min-height:20px;"></div>
     <div id="folderPickerList" style="flex:1;overflow-y:auto;max-height:50vh;border:1px solid var(--border);border-radius:8px;padding:4px;">
     </div>
     <div class="dialog-actions" style="margin-top:12px;">
-      <button class="btn btn-secondary" onclick="closeFolderPicker()">Cancel</button>
+      <button class="btn btn-danger" onclick="closeFolderPicker()">Cancel</button>
       <button class="btn btn-primary" onclick="selectFolder()">Select This Folder</button>
     </div>
   </div>
@@ -90,9 +90,9 @@
   <img id="lightboxImg" src="">
   <div class="lightbox-info" id="lightboxInfo" onclick="event.stopPropagation()"></div>
   <div class="lightbox-controls" id="lightboxControls" onclick="event.stopPropagation()">
-    <button onclick="moveLightboxToKeepers()" style="background:var(--accent);color:#0a0a0c;" data-tip="Save this file as a confirmed keeper">Move to Keepers</button>
-    <button onclick="deleteLightboxFile()" data-tip="Send this file to the Recycle Bin">Recycle This File</button>
-    <button onclick="closeLightbox()" style="background:rgba(80,80,80,0.85);" data-tip="Close the zoomed view">Back</button>
+    <button class="btn btn-primary" onclick="moveLightboxToKeepers()" data-tip="Save this file as a confirmed keeper">Move to Keepers</button>
+    <button class="btn btn-danger" onclick="deleteLightboxFile()" data-tip="Send this file to the Recycle Bin">Recycle This File</button>
+    <button class="btn btn-ghost" onclick="closeLightbox()" data-tip="Close the zoomed view">Back</button>
   </div>
 </div>
 
@@ -158,7 +158,7 @@
         <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
-              <button class="btn btn-danger btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" style="background:#e02020;" data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
+              <button class="btn btn-danger btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
             </div>
             <div>
@@ -245,13 +245,8 @@
           <label class="form-label">Source folder</label>
           <div style="display:flex;gap:8px;">
             <input class="form-input" type="text" id="wizSourceDir"
-                   placeholder="Browse or use a button below to select a folder" style="flex:1;">
+                   placeholder="Paste a folder path or click Browse" style="flex:1;">
             <button class="btn btn-secondary" onclick="openFolderPicker('wizSourceDir')" style="white-space:nowrap;" data-tip="Browse for a folder to import">Browse</button>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('onedrive')" data-tip="Auto-fill with your OneDrive Pictures folder">OneDrive Pictures</button>
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('pictures')" data-tip="Auto-fill with your Pictures folder">Pictures</button>
-            <button class="btn btn-ghost" style="font-size:11px;padding:2px 10px;" onclick="_quickFill('desktop')" data-tip="Auto-fill with your Desktop folder">Desktop</button>
           </div>
         </div>
         <div id="wizMigrateInfo" style="display:none;margin-bottom:16px;">
@@ -259,7 +254,7 @@
         </div>
         <div id="wizMigrateActions">
           <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to PixHerder for scanning">Begin Migration</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
+          <button class="btn btn-danger" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
           <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Back to Dashboard</button>
         </div>
         <div id="wizMigrateProgress" style="display:none;margin-top:16px;">
@@ -321,7 +316,7 @@
         <div id="wizScanActions">
           <button class="btn btn-primary" onclick="wizardStartScan()" data-tip="Begin scanning for duplicates with these settings">Start Scan</button>
           <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Return to Dashboard</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
+          <button class="btn btn-danger" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
         </div>
         <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
           <div style="margin-bottom:12px;">
@@ -626,7 +621,7 @@
               <button class="btn btn-ghost" onclick="navigate('dashboard')" data-tip="Return to the dashboard without finishing">Go Back</button>
               <button class="btn btn-primary btn-lg" id="finishNowBtn" onclick="_finishConfirm()" data-tip="Send your files home and clean up" data-help="finishing">Finish Now</button>
             </div>
-            <button class="btn btn-danger btn-fixed" onclick="_finishSendHome()" data-tip="Return all files to their original folder without finishing" style="background:#e02020;">Send Files Home</button>
+            <button class="btn btn-danger btn-fixed" onclick="_finishSendHome()" data-tip="Return all files to their original folder without finishing">Send Files Home</button>
           </div>
         </div>
       </div>

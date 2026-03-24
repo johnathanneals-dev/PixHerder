@@ -35,6 +35,7 @@ from engine.staging import (
     is_onedrive_path, is_onedrive_running, get_staging_dir,
     count_files_for_staging, cleanup_staging, recycle_staging,
 )
+from engine.state_validator import validate_state
 
 # Import shared state and runners from server module
 from web.server import (
@@ -354,6 +355,10 @@ class Api:
         """Clear all in-memory state. Called after cleanup operations."""
         _reset_all_progress()
         return {"status": "reset"}
+
+    def validate_state(self, params=None):
+        """Run state validator to clean up stale artifacts."""
+        return validate_state()
 
     def staging_status(self, params=None):
         data = dict(staging_progress)

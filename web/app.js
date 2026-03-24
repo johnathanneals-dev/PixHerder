@@ -91,7 +91,7 @@ function showDialog(title, message, confirmText, confirmClass, onConfirm) {
   btn.textContent = confirmText || "Confirm";
   btn.className = "btn " + (confirmClass || "btn-danger");
   btn.style.display = "";
-  var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (_cancelBtn) _cancelBtn.style.display = "";
   _dialogCallback = onConfirm;
   document.getElementById("dialogOverlay").classList.add("active");
@@ -171,13 +171,16 @@ function _showOneDrivePauseDialog(operation, onContinue) {
         '<span style="color:#fff;font-weight:600;">I\'ve Paused It</span> continues with ' + opLabel + '.' +
       '</div>' +
     '</div>' +
-    '<div style="margin-top:14px;">' +
+    '<div style="margin-top:14px;display:flex;gap:8px;align-items:center;">' +
+      '<button class="btn btn-danger" onclick="closeDialog()"' +
+        ' data-tip="Cancel and return to dashboard">Cancel</button>' +
       '<button class="btn btn-ghost" onclick="closeDialog(); (' + _escCb(onContinue) + ')()"' +
         ' style="font-size:12px;">Continue without pausing</button>' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
-  if (ghostBtn) ghostBtn.style.display = "none";
+  // Hide the standard dialog Cancel button (replaced by inline Cancel)
+  var stdCancel = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
+  if (stdCancel) stdCancel.style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
 }
 
@@ -207,12 +210,12 @@ function _showOneDriveHowToPause(onContinue) {
       'PixHerder will remind you when your operation is done.' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (cancelBtn) cancelBtn.style.display = "none";
   var cbRef = _escCb(onContinue);
   var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
   actionsDiv.innerHTML =
-    '<button class="btn btn-ghost" onclick="closeDialog()" style="margin-right:auto;">Cancel</button>' +
+    '<button class="btn btn-danger" onclick="closeDialog()" style="margin-right:auto;">Cancel</button>' +
     '<button class="btn btn-primary" onclick="closeDialog(); (' + cbRef + ')()" data-tip="Continue with the operation">I\'ve Paused It</button>';
   document.getElementById("dialogOverlay").classList.add("active");
 }
@@ -244,7 +247,7 @@ function showOneDriveRestoreExplainer(fileCount, onDismiss) {
       '</div>' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  var cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (cancelBtn) cancelBtn.style.display = "none";
   var actionsDiv = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
   var cbRef = onDismiss ? _escCb(onDismiss) : null;
@@ -420,7 +423,7 @@ function showResumeDialog(title, detail, onResume, onFresh) {
     '<span style="color:#fff;font-weight:600;">Resume</span> picks up where the last scan left off, saving time.<br><br>' +
     '<span style="color:#fff;font-weight:600;">Start Fresh</span> starts a brand new scan from scratch.' +
     '</div>' +
-    '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
+    '<div style="margin-top:12px;"><button class="btn btn-danger" onclick="closeDialog()">Cancel</button></div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
   document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-secondary").style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
@@ -428,14 +431,14 @@ function showResumeDialog(title, detail, onResume, onFresh) {
   document.getElementById("resumeResumeBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (_cancelBtn) _cancelBtn.style.display = "";
     onResume();
   };
   document.getElementById("resumeFreshBtn").onclick = function() {
     closeDialog();
     document.getElementById("dialogConfirmBtn").style.display = "";
-    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+    var _cancelBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (_cancelBtn) _cancelBtn.style.display = "";
     onFresh();
   };
@@ -551,14 +554,37 @@ function _quickFill(which) {
     if (which === "onedrive") path = home;
     else if (which === "pictures") path = userProfile + "\\Pictures";
     else if (which === "desktop") path = userProfile + "\\Desktop";
-    if (path) document.getElementById("wizSourceDir").value = path;
+    if (path) {
+      document.getElementById("wizSourceDir").value = path;
+      // Quick check if the path has image files
+      api("POST", "/api/staging/check", { directory: path }).then(function(r) {
+        var count = r.source_count;
+        if (typeof count === "object") count = count[0] || 0;
+        if (count === 0) {
+          toast("No image files found in " + path.split("\\").pop(), "warning");
+        }
+      }).catch(function() {});
+    }
   });
 }
 
 function openFolderPicker(targetInputId) {
   _folderPickerTarget = targetInputId;
   var startPath = document.getElementById(targetInputId).value.trim();
-  _loadFolderPicker(startPath || "");
+  if (!startPath) {
+    // Default to user's home directory via settings
+    api("GET", "/api/settings").then(function(s) {
+      var home = s.default_pictures_path || "";
+      // Go up to USERPROFILE level
+      var userDir = home.replace(/\\OneDrive\\Pictures$/i, "")
+                        .replace(/\\Pictures$/i, "");
+      _loadFolderPicker(userDir || "C:\\");
+    }).catch(function() {
+      _loadFolderPicker("C:\\");
+    });
+  } else {
+    _loadFolderPicker(startPath);
+  }
   document.getElementById("folderPickerOverlay").classList.add("active");
 }
 
@@ -616,6 +642,7 @@ function _loadFolderPicker(path) {
 var _bridgeMap = {
   "GET /api/app/state": "app_state",
   "POST /api/app/reset": "reset_state",
+  "POST /api/state/validate": "validate_state",
   "GET /api/scans": "get_scans",
   "GET /api/settings": "get_settings",
   "GET /api/folders/status": "get_folders_status",
@@ -1061,8 +1088,10 @@ function getAppState() {
 }
 
 function resetAppState() {
-  // Clear backend in-memory progress dicts
-  api("POST", "/api/app/reset").catch(function() {});
+  // Clear backend in-memory progress dicts, then validate artifacts
+  api("POST", "/api/app/reset").then(function() {
+    return api("POST", "/api/state/validate");
+  }).catch(function() {});
   // Clear frontend state
   _stagingSession = null;
   wizardState.currentStep = 1;
@@ -1322,26 +1351,22 @@ function _appInit() {
   _initTooltips();
   _updateStatusBarPort();
 
-  // Re-enable right-click context menu on input fields (pywebview disables it)
-  document.addEventListener("contextmenu", function(e) {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
-      e.stopPropagation();
-    }
-  }, true);
+  // Note: right-click context menus and Ctrl+V/C/X/A are enabled natively
+  // via debug=True in pixherder_app.py (WebView2 ties these to debug mode)
 
-  // Ensure Ctrl+V/C/X/A work in input fields (pywebview can intercept them)
-  document.addEventListener("keydown", function(e) {
-    if ((e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") &&
-        e.ctrlKey && !e.shiftKey && !e.altKey &&
-        (e.key === "v" || e.key === "c" || e.key === "x" || e.key === "a")) {
-      e.stopPropagation();
-    }
-  }, true);
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
-      _refreshFolderPaths();
-      _checkPersistentLogging();
-      route();
+      // Validate state before anything else -- clean up stale artifacts
+      api("POST", "/api/state/validate").then(function(r) {
+        var total = (r.manifests_removed || 0) + (r.orphan_staging_removed || 0) +
+                    (r.stale_decisions_removed || 0) + (r.stale_checkpoints_removed || 0) +
+                    (r.recovery_slots_cleared || 0);
+        if (total > 0) console.log("State validator cleaned " + total + " artifacts");
+      }).catch(function() {}).finally(function() {
+        _refreshFolderPaths();
+        _checkPersistentLogging();
+        route();
+      });
     });
   } else {
     _refreshFolderPaths();

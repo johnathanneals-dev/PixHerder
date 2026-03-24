@@ -170,7 +170,7 @@ function showStagingDialog(dir, stagingDir, info, existingSession, mode, thresho
     + '<span style="color:#fff;font-weight:600;">Copy Locally First</span> is recommended. It avoids sync issues during scanning.<br><br>'
     + '<span style="color:#fff;font-weight:600;">Scan Directly</span> scans the folder as-is. May have issues with cloud-only files or sync locks.'
     + '</div>'
-    + '<div style="margin-top:12px;"><button class="btn btn-ghost" onclick="closeDialog()">Cancel</button></div>';
+    + '<div style="margin-top:12px;"><button class="btn btn-danger" onclick="closeDialog()">Cancel</button></div>';
 
   document.getElementById("dialogMessage").innerHTML = html;
   document.getElementById("dialogConfirmBtn").style.display = "none";
