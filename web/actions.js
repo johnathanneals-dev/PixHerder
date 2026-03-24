@@ -154,7 +154,7 @@ function showActionResult(d) {
     + '<p style="color:var(--text);font-weight:600;margin-bottom:12px;">What would you like to do next?</p>'
     + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
     + '<button class="btn btn-primary" onclick="navigate(\'finish\')">Finalize</button>'
-    + '<button class="btn btn-warning" onclick="_navToWizardStep(2)">Scan Again</button>'
+    + '<button class="btn btn-warning" onclick="navigate(\'scan-config\')">Scan Again</button>'
     + '<button class="btn btn-warning" onclick="_navToReview()">Review</button>'
     + '<button class="btn btn-warning" onclick="navigate(\'dashboard\')">Dashboard</button>'
     + '<button class="btn btn-secondary" onclick="_openRecycleBin()">Open Recycle Bin</button>'

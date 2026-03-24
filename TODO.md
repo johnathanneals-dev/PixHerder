@@ -99,6 +99,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
 - [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in Staging browser
 - [ ] Move to Keepers source picker: choose Staging, Recovery, or both
+- [ ] Power loop workflow: "Move All to Recovery" button on scan results page (skip review). Enables fast winnowing loop: scan > bulk-move dupes > rescan > repeat until clean > promote staging to Keepers > move Recovery back to staging > detailed review on concentrated dupes.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)

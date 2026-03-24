@@ -381,8 +381,8 @@
   .flow-connector.completed { background: var(--accent); }
 
   .card-grid {
-    display: flex; gap: 180px; margin-bottom: 90px;
-    justify-content: center;
+    display: flex; column-gap: 180px; row-gap: 24px; margin-bottom: 90px;
+    justify-content: center; flex-wrap: wrap;
   }
   .stat-card {
     background: var(--surface); border: 1px solid var(--border-container);

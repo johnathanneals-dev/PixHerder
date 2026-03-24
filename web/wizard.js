@@ -146,11 +146,15 @@ function updateStepper() {
     steps[i].onclick = null;
 
     if (wizardState.completedSteps[stepNum]) {
-      steps[i].classList.add("completed", "clickable");
+      steps[i].classList.add("completed");
       document.getElementById("wizStep" + stepNum + "Circle").innerHTML = "&#10003;";
-      (function(n) {
-        steps[i].onclick = function() { wizardGoToStep(n); };
-      })(stepNum);
+      // Step 1 is locked once complete -- users can't re-migrate while files exist
+      if (stepNum !== 1) {
+        steps[i].classList.add("clickable");
+        (function(n) {
+          steps[i].onclick = function() { wizardGoToStep(n); };
+        })(stepNum);
+      }
     } else if (stepNum === wizardState.currentStep) {
       steps[i].classList.add("active", "clickable");
       document.getElementById("wizStep" + stepNum + "Circle").textContent = stepNum;
@@ -253,52 +257,15 @@ function wizardStartScan() {
   var threshold = parseInt(document.getElementById("wizThreshold").value) || 5;
   var recursive = document.getElementById("wizRecursive").checked;
 
-  document.getElementById("wizScanActions").style.display = "none";
-  document.getElementById("wizScanProgress").style.display = "block";
-  document.getElementById("wizScanComplete").style.display = "none";
-
-  // Check for resume first
-  api("GET", "/api/scan/check-resume?directory=" + encodeURIComponent(wizardState.stagingDir) + "&mode=" + mode)
-    .then(function(data) {
-      var resume = false;
-      if (data.has_checkpoint) {
-        // Auto-resume in wizard mode
-        resume = true;
-      }
-      return api("POST", "/api/scan/start", {
-        directory: wizardState.stagingDir, mode: mode,
-        threshold: threshold, recursive: recursive, resume: resume
-      });
-    })
-    .then(function() {
-      function _onWizScan(d) {
-        var pct = d.total > 0 ? Math.round((d.current / d.total) * 100) : 0;
-        document.getElementById("wizScanFill").style.width = pct + "%";
-        document.getElementById("wizScanPct").textContent = pct + "%";
-        document.getElementById("wizScanLeft").textContent = d.current + " / " + d.total;
-        document.getElementById("wizScanStage").textContent = d.stage || "scanning";
-        if (d.status === "complete") {
-          window._onScanProgress = null;
-          document.getElementById("wizScanProgress").style.display = "none";
-          document.getElementById("wizScanComplete").style.display = "block";
-          document.getElementById("wizScanCompleteMsg").textContent = d.message || "Scan complete";
-          wizardState.lastReport = d.result_file;
-          wizardMarkComplete(2);
-        } else if (d.status === "error" || d.status === "cancelled") {
-          window._onScanProgress = null;
-          document.getElementById("wizScanProgress").style.display = "none";
-          document.getElementById("wizScanActions").style.display = "block";
-          toast(d.message || "Scan failed", "error");
-        }
-      }
-      window._onScanProgress = _onWizScan;
-      window.pywebview.api.subscribe_scan_progress();
-    })
-    .catch(function(err) {
-      document.getElementById("wizScanProgress").style.display = "none";
-      document.getElementById("wizScanActions").style.display = "block";
-      toast("Scan error: " + err.message, "error");
-    });
+  // Start scan and navigate to the dedicated full-screen progress page
+  api("POST", "/api/scan/start", {
+    directory: wizardState.stagingDir, mode: mode,
+    threshold: threshold, recursive: recursive, resume: false
+  }).then(function() {
+    navigate("scan-progress");
+  }).catch(function(err) {
+    toast("Scan error: " + err.message, "error");
+  });
 }
 
 function wizardStartReview() {

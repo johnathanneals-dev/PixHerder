@@ -22,6 +22,18 @@ None currently known.
 - **Fix:** Restore now runs in a background thread (`_run_restore` in server.py) with progress dict updates. Frontend subscribes via `subscribe_restore_progress` and updates the bar in real-time.
 - **Files:** web/bridge.py, web/server.py, web/finish.js
 
+**"Scan Again" navigates to wizard step 3 instead of scan config**
+- **Found:** Testing, 2026-03-24
+- **Description:** After completing actions, clicking "Scan Again" called `_navToWizardStep(2)` which entered the wizard at step 3 (review) instead of scan config.
+- **Fix:** Changed to `navigate('scan-config')` for direct scan config navigation.
+- **Files:** web/actions.js
+
+**Wizard step 1 clickable when files exist**
+- **Found:** Testing, 2026-03-24
+- **Description:** Completed step 1 in wizard stepper was clickable, allowing users to re-enter migration while files were already in the system.
+- **Fix:** Step 1 locked (not clickable) once completed. Steps 2-4 remain clickable.
+- **Files:** web/wizard.js
+
 **Keyboard shortcuts bar overlaps nav menu**
 - **Found:** Testing, 2026-03-23
 - **Description:** kbd-hints was a flex child inside the topnav, competing for space with nav links. On narrow windows or when nav wrapped to two rows, shortcuts covered navigation buttons.
