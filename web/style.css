@@ -489,13 +489,14 @@
     display: flex; flex-direction: column; gap: 8px;
   }
   .toast {
-    padding: 12px 20px; border-radius: var(--radius-sm);
-    font-size: 13px; font-weight: 500; max-width: 400px;
-    animation: slideIn 0.25s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    padding: 15px 25px; border-radius: var(--radius-sm);
+    font-size: 16px; font-weight: 500; max-width: 500px;
+    animation: slideIn 0.25s ease, toast-blink 0.5s ease-in-out 0.25s 2;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
   .toast-success { background: var(--accent-bg); border: 1px solid var(--accent-dim); color: var(--accent); }
   .toast-error { background: var(--danger-bg); border: 1px solid var(--danger-dim); color: var(--danger); }
-  .toast-warning { background: var(--warning-bg); border: 1px solid #5c4a1a; color: var(--warning); }
+  .toast-warning { background: var(--danger-bg); border: 1px solid var(--danger-dim); color: var(--danger); }
   @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
   /* ---- Confirm dialog ---- */

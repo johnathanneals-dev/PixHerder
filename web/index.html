@@ -1009,6 +1009,11 @@
     <h1>Settings</h1>
     <p class="subtitle">Configure default scan and action preferences.</p>
 
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <button class="btn btn-primary" onclick="saveSettings()" data-tip="Save your settings">Save Settings</button>
+      <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
+    </div>
+
     <div class="card" style="max-width:700px;">
       <div class="settings-grid">
         <div class="form-group" style="border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:8px;">
@@ -1024,9 +1029,18 @@
 
         <div class="form-group">
           <label class="checkbox-label">
-            <input type="checkbox" id="setShowWelcome" checked data-tip="Show the welcome screen and mode selector when PixHerder starts">
+            <input type="checkbox" id="setShowWelcome" checked data-tip="Show the mode selector when PixHerder starts">
             Show welcome screen on startup
           </label>
+          <div class="form-hint">Shows the mode selector overlay when you launch PixHerder.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setShowTour" checked data-tip="Show the guided walkthrough before the welcome screen on startup">
+            Show walkthrough on startup
+          </label>
+          <div class="form-hint">Plays the intro tour before the mode selector on launch. Only applies when welcome screen is also enabled.</div>
         </div>
 
         <div class="form-group">
@@ -1088,6 +1102,14 @@
 
         <div class="form-group">
           <label class="checkbox-label">
+            <input type="checkbox" id="setShowKbdShortcuts" checked data-tip="Show keyboard shortcut reference bar during review">
+            Show keyboard shortcuts (Review)
+          </label>
+          <div class="form-hint">Display the keyboard shortcut reference in the hints bar during review.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
             <input type="checkbox" id="setShowTooltips" checked data-tip="Show these helpful descriptions when hovering over controls">
             Show tooltips on hover
           </label>
@@ -1126,7 +1148,10 @@
                data-tip="File types to include when scanning for duplicates">
       </div>
 
-      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px;" data-tip="Save your settings">Save Settings</button>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button class="btn btn-primary" onclick="saveSettings()" data-tip="Save your settings">Save Settings</button>
+        <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
+      </div>
     </div>
   </div>
 

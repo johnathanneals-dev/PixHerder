@@ -422,6 +422,21 @@ All future applications should use the same tooltip system with the same 0.5s de
 
 ---
 
+## Toasts (Locked Standard)
+
+All toasts follow this protocol with no exceptions:
+
+| Property | Value |
+|----------|-------|
+| **Size** | 16px font, 15px 25px padding, 500px max-width |
+| **Animation** | Slide in (0.25s), then blink twice (1s total), then solid until removal |
+| **Success** | Green (`--accent` family), white checkmark prepended to text |
+| **Warning** | Fire engine red (`--danger` family) |
+| **Error** | Fire engine red (`--danger` family) |
+| **Duration** | Success: 4s, Warning/Error: 6s |
+
+---
+
 ## Error Messages
 
 - **Never show raw Python errors** to users (no Errno, no tracebacks)

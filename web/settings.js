@@ -18,10 +18,12 @@ function initSettings() {
     document.getElementById("setPort").value = settings.port || 8787;
     document.getElementById("setBatchSize").value = settings.scan_batch_size || 2000;
     document.getElementById("setShowHints").checked = settings.show_hints !== false;
+    document.getElementById("setShowKbdShortcuts").checked = settings.show_kbd_shortcuts !== false;
     document.getElementById("setShowTooltips").checked = settings.show_tooltips !== false;
     document.getElementById("setShowExplanations").checked = settings.show_explanations !== false;
     document.getElementById("setShowOneDrivePrompts").checked = settings.show_onedrive_prompts !== false;
     document.getElementById("setShowWelcome").checked = settings.show_welcome !== false;
+    document.getElementById("setShowTour").checked = settings.show_tour !== false;
     document.getElementById("setOpenFullscreen").checked = settings.open_fullscreen !== false;
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
@@ -49,10 +51,12 @@ function saveSettings() {
     port: newPort,
     scan_batch_size: parseInt(document.getElementById("setBatchSize").value) || 2000,
     show_hints: document.getElementById("setShowHints").checked,
+    show_kbd_shortcuts: document.getElementById("setShowKbdShortcuts").checked,
     show_tooltips: document.getElementById("setShowTooltips").checked,
     show_explanations: document.getElementById("setShowExplanations").checked,
     show_onedrive_prompts: document.getElementById("setShowOneDrivePrompts").checked,
     show_welcome: document.getElementById("setShowWelcome").checked,
+    show_tour: document.getElementById("setShowTour").checked,
     open_fullscreen: document.getElementById("setOpenFullscreen").checked,
     persistent_logging: preserved.persistent_logging || false,
     debug_mode: preserved.debug_mode || false,

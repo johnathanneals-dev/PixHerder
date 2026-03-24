@@ -67,13 +67,15 @@ function toast(message, type) {
   var container = document.getElementById("toastContainer");
   var el = document.createElement("div");
   el.className = "toast toast-" + type;
-  el.textContent = message;
-  container.appendChild(el);
-  // Warning/error toasts blink and stay longer
-  var duration = (type === "warning" || type === "error") ? 6000 : 4000;
-  if (type === "warning" || type === "error") {
-    el.style.animation = "toast-blink 0.5s ease-in-out 3";
+  // Success toasts get a white checkmark
+  if (type === "success") {
+    el.textContent = "\u2713 " + message;
+  } else {
+    el.textContent = message;
   }
+  container.appendChild(el);
+  // All toasts blink (CSS handles it). Warning/error stay longer.
+  var duration = (type === "warning" || type === "error") ? 6000 : 4000;
   setTimeout(function() { el.remove(); }, duration);
 }
 
@@ -954,8 +956,9 @@ function route() {
   // Easy mode forces hints on regardless of setting
   if (_curMode === "easy") hintsOn = true;
   document.getElementById("hintsBar").style.display = hintsOn ? "block" : "none";
-  // Keyboard shortcuts only relevant in review
-  document.getElementById("kbdShortcuts").style.display = view === "review" ? "inline-flex" : "none";
+  // Keyboard shortcuts: only in review, and only if setting is on
+  var kbdOn = view === "review" && (!state.settings || state.settings.show_kbd_shortcuts !== false);
+  document.getElementById("kbdShortcuts").style.display = kbdOn ? "inline-flex" : "none";
   var _hbt = document.getElementById("hintsBarText");
   if (_hbt && view !== "dashboard") {
     // Check for mode-specific hint text first
@@ -1437,10 +1440,11 @@ function _appInit() {
     api("GET", "/api/settings").then(function(s) {
       state.settings = s;
       if (!s.workflow_mode) {
-        // First launch: show tour, then mode selector
+        // First launch: show tour then mode selector
         var _afterModeSelect = function(mode) {
           s.workflow_mode = mode;
           s.show_welcome = false;  // Auto-disable after first selection
+          s.show_tour = false;
           api("POST", "/api/settings", s).then(function(saved) {
             state.settings = saved;
             route();
@@ -1452,9 +1456,9 @@ function _appInit() {
         showTour(function() {
           showModeSelector(_afterModeSelect);
         });
-      } else if (s.show_welcome !== false && !s._welcomed) {
-        // Returning user with show_welcome enabled -- show mode selector (no tour)
-        showModeSelector(function(mode) {
+      } else if (s.show_welcome !== false) {
+        // Returning user with show_welcome enabled
+        var _modeSelectCb = function(mode) {
           s.workflow_mode = mode;
           api("POST", "/api/settings", s).then(function(saved) {
             state.settings = saved;
@@ -1463,7 +1467,14 @@ function _appInit() {
             state.settings.workflow_mode = mode;
             route();
           });
-        });
+        };
+        if (s.show_tour !== false) {
+          // Tour + welcome screen
+          showTour(function() { showModeSelector(_modeSelectCb); });
+        } else {
+          // Welcome screen only (no tour)
+          showModeSelector(_modeSelectCb);
+        }
       } else {
         route();
       }

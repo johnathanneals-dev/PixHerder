@@ -42,12 +42,14 @@ DEFAULTS = {
     "show_onedrive_prompts": True,
     "scan_batch_size": 2000,
     "show_hints": True,
+    "show_kbd_shortcuts": True,
     "show_tooltips": True,
     "show_explanations": True,
     "persistent_logging": False,
     "debug_mode": False,
     "workflow_mode": "",
     "show_welcome": True,
+    "show_tour": True,
     "open_fullscreen": True,
 }
 
