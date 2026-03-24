@@ -23,7 +23,7 @@ function initWorking() {
     if (spinner && spinner.style.display !== "none") {
       document.getElementById("workingStatus").innerHTML =
         'This is taking longer than expected. ' +
-        '<button class="btn btn-ghost btn-sm" onclick="_workingEscape()" style="margin-top:8px;">Return to Dashboard</button>';
+        '<button class="btn btn-warning btn-sm" onclick="_workingEscape()" style="margin-top:8px;">Return to Dashboard</button>';
     }
   }, 120000);
 

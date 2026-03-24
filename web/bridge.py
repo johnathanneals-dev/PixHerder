@@ -1122,7 +1122,20 @@ class Api:
         keepers_dir = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
         staging_path = _find_staging_subfolder()
         if not staging_path:
-            return {"error": "Staging folder not found"}
+            # Create a new staging subfolder when none exists
+            # (e.g., after Send Files Home + state validator cleanup)
+            import hashlib
+            staging_base = settings.get("staging_dir",
+                                        DEFAULTS["staging_dir"])
+            key = "consolidate_" + str(int(time.time()))
+            short_hash = hashlib.md5(
+                key.encode("utf-8")).hexdigest()[:10]
+            staging_path = os.path.join(staging_base, short_hash)
+            try:
+                os.makedirs(staging_path, exist_ok=True)
+            except OSError as e:
+                return {"error": "Could not create staging folder: "
+                        + str(e)}
 
         moved = 0
         errors_count = 0
@@ -1152,7 +1165,7 @@ class Api:
         _move_back(dupes_dir)
         _move_back(keepers_dir)
         _log_activity("consolidate", {"moved": moved})
-        return {"status": "consolidated", "moved": moved, "errors": errors_count}
+        return {"success": True, "moved": moved, "errors": errors_count}
 
     def browser_delete(self, params=None):
         if params is None:

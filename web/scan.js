@@ -387,8 +387,8 @@ function showScanComplete(d) {
         '<div style="margin-top:16px;text-align:center;">' +
         '<p style="color:var(--text-dim);margin-bottom:12px;">No duplicates found at this threshold. Try a different scan mode or a higher perceptual threshold.</p>' +
         '<div style="display:flex;gap:12px;justify-content:center;">' +
-        '<button class="btn btn-primary" onclick="navigate(\'scan-config\')">Rescan</button>' +
-        '<button class="btn btn-secondary" onclick="navigate(\'dashboard\')">Done</button>' +
+        '<button class="btn btn-warning" onclick="navigate(\'scan-config\')">Rescan</button>' +
+        '<button class="btn btn-warning" onclick="navigate(\'dashboard\')">Dashboard</button>' +
         '</div></div>';
     } else {
       var btn = document.getElementById("scanReviewBtn");

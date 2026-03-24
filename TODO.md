@@ -74,6 +74,12 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] BUG: "Rescan" from scan results -- fixed to navigate to scan-config directly
 - [x] BUG: "Complete migration first" toast -- caused by Rescan going through wizard, fixed
 - [x] BUG: Folder picker browsed to wrong Pictures folder (local vs OneDrive) -- fixed: default to detected path, drive-level navigation, post-selection image count toast
+- [x] BUG: Start Over fails after Send Files Home -- state validator cleaned up staging folder, consolidate now creates one
+- [x] BUG: Keyboard shortcuts bar overlaps nav menu -- moved to unified yellow hints bar at top
+- [x] Unified hints bar: yellow bar at top with flow hints + keyboard shortcuts (review only) + settings note
+- [x] Title bar / nav bar split: logo row separate from nav links row
+- [x] Show explanation text toggle: new show_explanations setting in Settings
+- [x] Button color standard applied across all views
 - [x] BUG: Send Files Home -- fixed bridge staging_status to read source_dir from manifest
 - [x] BUG: Recovery archive browse -- improved error message, edge case when archive empty
 - [x] BUG: Duplicate files in review -- exact dupes removed from perceptual scan input

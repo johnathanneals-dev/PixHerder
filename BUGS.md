@@ -8,6 +8,20 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 
 None currently known.
 
+## Fixed This Session (2026-03-23 evening, second commit)
+
+**Start Over fails with "Unknown error"**
+- **Found:** Testing, 2026-03-23
+- **Description:** State validator cleaned up empty staging folder and manifest after Send Files Home. `consolidate()` then failed because `_find_staging_subfolder()` returned empty. Also, response used `status` key but frontend checked `success`.
+- **Fix:** `consolidate()` creates a new staging subfolder when none exists. Fixed response key to `success: true`.
+- **Files:** web/bridge.py
+
+**Keyboard shortcuts bar overlaps nav menu**
+- **Found:** Testing, 2026-03-23
+- **Description:** kbd-hints was a flex child inside the topnav, competing for space with nav links. On narrow windows or when nav wrapped to two rows, shortcuts covered navigation buttons.
+- **Fix:** Moved to unified yellow hints bar at the very top of the page, above a new separate title bar. Nav links in their own row below.
+- **Files:** web/index.html, web/style.css, web/app.js
+
 ---
 
 ## Fixed Bugs

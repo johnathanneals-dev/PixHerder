@@ -945,8 +945,31 @@ function route() {
   }
   _refreshFolderPaths();  // Always refresh nav from filesystem
 
-  // Show kbd hints only in review
-  document.getElementById("kbdHints").style.display = view === "review" ? "flex" : "none";
+  // Show hints bar when hints enabled, with contextual flow text
+  var hintsOn = !state.settings || state.settings.show_hints !== false;
+  document.getElementById("hintsBar").style.display = hintsOn ? "block" : "none";
+  // Keyboard shortcuts only relevant in review
+  document.getElementById("kbdShortcuts").style.display = view === "review" ? "inline-flex" : "none";
+  var _hbt = document.getElementById("hintsBarText");
+  if (_hbt && view !== "dashboard") {
+    // Dashboard hint is set by _dashUpdateFlowGuide; other views set here
+    if (view === "review") _hbt.textContent = "Click images to toggle keep/dupe. Use the action bar to apply decisions.";
+    else if (view === "scan-config") _hbt.textContent = "Choose a scan mode and threshold, then click Start Scan.";
+    else if (view === "scan-progress") _hbt.textContent = "Scanning in progress. You can cancel at any time.";
+    else if (view === "finish") _hbt.textContent = "Review the summary, then click Finish Now to send files home and clean up.";
+    else if (view === "actions") _hbt.textContent = "Review pending operations, then click Execute to apply.";
+    else if (view === "browser") _hbt.textContent = "Browse your files. Click any image to zoom.";
+    else if (view === "settings") _hbt.textContent = "Adjust your preferences. Click Save Settings when done.";
+    else if (view === "wizard") _hbt.textContent = "Follow the steps to find and clean up duplicate images.";
+    else _hbt.textContent = "";
+  }
+
+  // Toggle explanation text visibility
+  var explainOn = !state.settings || state.settings.show_explanations !== false;
+  var explEls = document.querySelectorAll(".explanation-text");
+  for (var ei = 0; ei < explEls.length; ei++) {
+    explEls[ei].style.display = explainOn ? "" : "none";
+  }
 
   // Activate view
   var viewEl = document.getElementById("view-" + view);

@@ -8,28 +8,10 @@
 </head>
 <body>
 
-<!-- Top Navigation -->
-<div class="topnav" role="navigation" aria-label="Main navigation">
-  <div class="topnav-left">
-    <div class="logo">PixHerder</div>
-    <span id="persistentLogBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 2s ease-in-out infinite;">Persistent logging enabled</span>
-    <span id="debugModeBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 3s ease-in-out infinite;">Debug mode enabled</span>
-    <div class="nav-links" id="navLinks">
-      <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
-      <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into PixHerder staging area">Migrate to Staging</button>
-      <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToScan()" data-tip="Configure and start a scan">Scan</button>
-      <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()" data-tip="Review duplicate groups from last scan">Review</button>
-      <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')" data-tip="Finish up and send files home">Finalize</button>
-      <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')" data-tip="Browse your imported files">Staging</button>
-      <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Recovery</button>
-      <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Keepers</button>
-      <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Scan Logs</button>
-      <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure PixHerder preferences">Settings</button>
-      <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
-    </div>
-  </div>
-  <div class="company-mark"><span style="font-size:1.3em">S</span>addle<span style="font-size:1.3em">C</span>ode</div>
-  <div class="kbd-hints" id="kbdHints" style="display:none;">
+<!-- Hints bar: flow hints + keyboard shortcuts + settings note (hidden when hints off) -->
+<div class="hints-bar" id="hintsBar" style="display:none;">
+  <div id="hintsBarText" style="font-size:14px;font-weight:500;margin-bottom:4px;"></div>
+  <div class="kbd-hints" id="kbdShortcuts" style="display:none;">
     <span><kbd>&larr;</kbd> prev</span>
     <span><kbd>&rarr;</kbd> next</span>
     <span><kbd>S</kbd> keep</span>
@@ -38,11 +20,38 @@
     <span><kbd>E</kbd> apply</span>
     <span><kbd>Space</kbd> zoom</span>
   </div>
+  <div style="font-size:11px;margin-top:4px;opacity:0.6;">Hints can be turned off in Settings</div>
+</div>
 
+<!-- Title Bar -->
+<div class="title-bar">
+  <div class="logo">PixHerder</div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span id="persistentLogBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 2s ease-in-out infinite;">Persistent logging enabled</span>
+    <span id="debugModeBadge" style="display:none;font-size:13px;color:#e02020;font-weight:600;animation:slow-blink 3s ease-in-out infinite;">Debug mode enabled</span>
+  </div>
+  <div class="company-mark"><span style="font-size:1.3em">S</span>addle<span style="font-size:1.3em">C</span>ode</div>
+</div>
+
+<!-- Navigation -->
+<div class="topnav" role="navigation" aria-label="Main navigation">
+  <div class="nav-links" id="navLinks">
+    <button class="nav-link active" data-view="dashboard" onclick="navigate('dashboard')" data-tip="Main dashboard with file status and actions">Dashboard</button>
+    <button class="nav-link" data-view="wizard-migrate" id="navMigrate" onclick="_navToWizardStep(1)" data-tip="Import photos into PixHerder staging area">Migrate to Staging</button>
+    <button class="nav-link" data-view="wizard-scan" id="navScan" onclick="_navToScan()" data-tip="Configure and start a scan">Scan</button>
+    <button class="nav-link" data-view="review" id="navReview" onclick="_navToReview()" data-tip="Review duplicate groups from last scan">Review</button>
+    <button class="nav-link" data-view="finish" id="navFinalize" onclick="navigate('finish')" data-tip="Finish up and send files home">Finalize</button>
+    <button class="nav-link disabled" data-view="browser-staging" id="navMyFiles" onclick="openBrowserFromDashboard('staging')" data-tip="Browse your imported files">Staging</button>
+    <button class="nav-link disabled" data-view="browser-dupes" id="navDupes" onclick="openBrowserFromDashboard('dupes')" data-tip="Browse files marked as duplicates">Recovery</button>
+    <button class="nav-link disabled" data-view="browser-keepers" id="navKeepers" onclick="openBrowserFromDashboard('keepers')" data-tip="Browse files confirmed as keepers">Keepers</button>
+    <button class="nav-link" data-view="activity" onclick="navigate('activity')" data-tip="View scan history and logs">Scan Logs</button>
+    <button class="nav-link" data-view="settings" onclick="navigate('settings')" data-tip="Configure PixHerder preferences">Settings</button>
+    <button class="nav-link" data-view="help" onclick="navigate('help')" data-tip="In-app help topics and documentation">Help</button>
+  </div>
 </div>
 <!-- Browser toolbar row (visible only in folder browser view, sticky below nav) -->
 <div id="browserNavBar" style="display:none;padding:8px 32px;border-bottom:2px solid var(--accent-dim);align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg);position:fixed;top:56px;left:0;right:0;z-index:99;">
-  <button class="btn btn-ghost" id="browserBackBtn2" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back to Dashboard</button>
+  <button class="btn btn-warning" id="browserBackBtn2" onclick="closeBrowser()" data-tip="Return to the main dashboard">&larr; Back</button>
   <button class="btn btn-primary btn-sm" id="browserScanBtn2" onclick="scanFromBrowser()" data-tip="Scan the files in this folder for duplicates">Scan for Duplicates</button>
   <button class="btn btn-primary btn-sm" id="browserPromoteBtn2" onclick="promoteToKeepers()" style="display:none;" data-tip="Move all files to Keepers">Move All to Keepers</button>
   <button class="btn btn-secondary btn-sm" onclick="openInExplorer()" data-tip="Open this folder in Windows File Explorer">Open in Explorer</button>
@@ -103,11 +112,7 @@
   <div class="view active" id="view-dashboard">
     <!-- Flow guidance: progress stepper + smart hint -->
     <div id="dashFlowGuide" style="display:none;margin-bottom:24px;">
-      <div id="dashStepper" style="display:flex;align-items:center;gap:0;margin-bottom:12px;"></div>
-      <div id="dashHint" style="font-size:15px;color:#1a1a22;padding:14px 16px;background:#f5e6a3;border:1px solid #d4c476;border-radius:var(--radius-sm);text-align:center;font-weight:500;">
-        <span id="dashHintText"></span>
-        <div style="font-size:11px;color:#8a7a40;margin-top:6px;">Hints can be turned off in Settings</div>
-      </div>
+      <div id="dashStepper" style="display:flex;align-items:center;gap:0;"></div>
     </div>
     <div class="card-grid" id="dashboardStats" style="display:none;">
       <div class="stat-card" data-tip="Total number of files across all folders in the system" data-help="stats"><div class="num" id="dStatTotal">0</div><div class="label">Total Files</div></div>
@@ -149,7 +154,7 @@
         </div>
       </div>
       <div id="dashContinueAction" style="display:none;margin-bottom:24px;">
-        <button class="btn btn-secondary" onclick="_dashStagePicker()" data-tip="Navigate to any step of the guided cleanup wizard" data-help="wizard">Access Wizard Steps</button>
+        <button class="btn btn-warning" onclick="_dashStagePicker()" data-tip="Navigate to any step of the guided cleanup wizard" data-help="wizard">Access Wizard Steps</button>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;" id="dashContinueHint"></div>
       </div>
       <div id="dashAdvancedOptions" style="display:none;">
@@ -158,7 +163,7 @@
         <div id="dashStagingActions" style="display:none;margin-bottom:16px;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
             <div>
-              <button class="btn btn-danger btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
+              <button class="btn btn-primary btn-fixed" id="dashSendHomeBtn" onclick="sendFilesHome()" data-tip="Return all files to their original location. Nothing is recycled." data-help="send-home">Send Files Home</button>
               <div style="font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Put all your files back where they came from. Nothing gets deleted.</div>
             </div>
             <div>
@@ -200,7 +205,7 @@
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-secondary btn-sm" onclick="_showRecoveryFiles()">Browse Archive</button>
-            <button class="btn btn-ghost btn-sm" onclick="_clearRecoveryArchive()">Clear Archive</button>
+            <button class="btn btn-danger btn-sm" onclick="_clearRecoveryArchive()">Clear Archive</button>
           </div>
         </div>
       </div>
@@ -236,7 +241,7 @@
     <div class="wizard-panel" id="wizardStep1">
       <div class="card">
         <h2>Step 1: Migrate Files</h2>
-        <div class="wizard-explanation">
+        <div class="wizard-explanation explanation-text">
           First, PixHerder makes a working copy of your pictures so it can
           scan without interruption. Your originals stay exactly where
           they are -- nothing is changed or deleted.
@@ -255,7 +260,7 @@
         <div id="wizMigrateActions">
           <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to PixHerder for scanning">Begin Migration</button>
           <button class="btn btn-danger" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Back to Dashboard</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Dashboard</button>
         </div>
         <div id="wizMigrateProgress" style="display:none;margin-top:16px;">
           <div class="progress-container">
@@ -281,7 +286,7 @@
       <div class="card">
         <h2>Step 2: Configure &amp; Scan</h2>
         <div id="wizScanFileCount" style="margin-bottom:12px;font-size:14px;color:var(--text-dim);display:none;"></div>
-        <div class="wizard-explanation">
+        <div class="wizard-explanation explanation-text">
           Now choose how to look for duplicates. <strong>Exact</strong> finds
           identical copies (fast and accurate). <strong>Perceptual</strong> finds
           images that look similar even if they've been resized or edited.
@@ -309,7 +314,7 @@
         <div class="form-group">
           <label><input type="checkbox" id="wizRecursive" checked data-tip="Also scan images inside subfolders"> Include subfolders</label>
         </div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
+        <div class="explanation-text" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">
           <strong style="color:var(--text);">Exact (MD5)</strong> finds byte-for-byte identical files. Fast, zero false positives. Start here.<br>
           <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>
           <strong style="color:var(--text);">Both</strong> runs exact first, then perceptual on remaining files.
@@ -319,7 +324,7 @@
           <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
           <button class="btn btn-danger" onclick="navigate('dashboard')">Cancel</button>
         </div>
-        <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
+        <div class="explanation-text" style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
           <div style="margin-bottom:12px;">
             <strong style="color:var(--text);">Scan Modes</strong><br>
             <strong style="color:#fff;">Exact</strong> finds identical copies of the same file. Fast and accurate -- start here.<br>
@@ -358,7 +363,7 @@
     <div class="wizard-panel" id="wizardStep3">
       <div class="card">
         <h2>Step 3: Review &amp; Sort</h2>
-        <div class="wizard-explanation">
+        <div class="wizard-explanation explanation-text">
           Look through each group of duplicates side by side. For each group,
           you can keep everything, mark the duplicates for removal, or delete them.
           Click any image to zoom in. Use keyboard shortcuts for speed:
@@ -382,14 +387,14 @@
     <div class="wizard-panel" id="wizardStep4">
       <div class="card">
         <h2>Step 4: Explore &amp; Finalize</h2>
-        <div class="wizard-explanation">
+        <div class="wizard-explanation explanation-text">
           Take a look at your cleaned-up files and the duplicates that were removed.
           When you're happy with the results, click Finished to wrap everything up.
         </div>
         <h3 style="margin-top:20px;">Browse Files</h3>
         <div style="display:flex;gap:12px;margin:12px 0 24px;">
-          <button class="btn btn-primary" id="wizStagingBtn" onclick="openBrowser('staging')">Staging</button>
-          <button class="btn btn-secondary" id="wizDupesBtn" onclick="openBrowser('dupes')">Recovery</button>
+          <button class="btn btn-warning" id="wizStagingBtn" onclick="openBrowser('staging')">Staging</button>
+          <button class="btn btn-warning" id="wizDupesBtn" onclick="openBrowser('dupes')">Recovery</button>
         </div>
         <h3>Next Steps</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
@@ -488,8 +493,8 @@
 
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn btn-primary btn-lg" onclick="startScan()" data-tip="Begin scanning for duplicates with these settings">Start Scan</button>
-        <button class="btn btn-secondary" id="scanReturnFolderConfigBtn" onclick="_returnToScanFolder()" style="display:none;" data-tip="Go back to the folder you were browsing">Return to Folder</button>
-        <button class="btn btn-secondary" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Return to Dashboard</button>
+        <button class="btn btn-warning" id="scanReturnFolderConfigBtn" onclick="_returnToScanFolder()" style="display:none;" data-tip="Go back to the folder you were browsing">Return to Folder</button>
+        <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
       </div>
     </div>
 
@@ -538,7 +543,7 @@
           <h3 style="color:var(--accent);margin-bottom:12px;" id="stagingCompleteTitle">Migration Complete</h3>
           <p id="stagingCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
           <button class="btn btn-primary" id="stagingScanBtn">Start Scan</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" style="margin-left:8px;">Dashboard</button>
         </div>
       </div>
     </div>
@@ -563,7 +568,7 @@
             where they came from, use <strong>Send Files Home</strong> on the dashboard instead.
           </div>
           <button class="btn btn-danger" onclick="startSyncback()">Apply Cleanup Now</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Skip</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" style="margin-left:8px;">Skip</button>
         </div>
       </div>
 
@@ -584,7 +589,7 @@
           <h3 style="color:var(--accent);margin-bottom:12px;" id="syncbackCompleteTitle">Cleanup Complete</h3>
           <p id="syncbackCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
           <button class="btn btn-danger" onclick="cleanupStaging()">Clean Up Workspace</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;">Back</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" style="margin-left:8px;">Dashboard</button>
         </div>
       </div>
     </div>
@@ -621,10 +626,10 @@
           </div>
           <div style="display:flex;gap:8px;margin-top:16px;justify-content:space-between;align-items:center;">
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost" onclick="navigate('dashboard')" data-tip="Return to the dashboard without finishing">Go Back</button>
+              <button class="btn btn-danger" onclick="navigate('dashboard')" data-tip="Return to the dashboard without finishing">Cancel</button>
               <button class="btn btn-primary btn-lg" id="finishNowBtn" onclick="_finishConfirm()" data-tip="Send your files home and clean up" data-help="finishing">Finish Now</button>
             </div>
-            <button class="btn btn-danger btn-fixed" onclick="_finishSendHome()" data-tip="Return all files to their original folder without finishing">Send Files Home</button>
+            <button class="btn btn-warning btn-fixed" onclick="_finishSendHome()" data-tip="Return all files to their original folder without finishing">Send Files Home</button>
           </div>
         </div>
       </div>
@@ -706,8 +711,8 @@
           <div id="scanCompleteSummary" style="margin-bottom:16px;"></div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <button class="btn btn-primary" id="scanReviewBtn" onclick="" style="display:none;">Review Results</button>
-            <button class="btn btn-secondary" id="scanReturnFolderBtn" onclick="_returnToScanFolder()" style="display:none;">Return to Folder</button>
-            <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
+            <button class="btn btn-warning" id="scanReturnFolderBtn" onclick="_returnToScanFolder()" style="display:none;">Return to Folder</button>
+            <button class="btn btn-warning" onclick="navigate('dashboard')">Dashboard</button>
           </div>
         </div>
       </div>
@@ -719,7 +724,7 @@
     <h1>Review Duplicate Groups</h1>
     <div class="review-header">
       <div style="display:flex;align-items:center;gap:16px;">
-        <button class="btn btn-ghost" id="reviewBackBtn" onclick="navigate('dashboard')">&larr; Back</button>
+        <button class="btn btn-danger" id="reviewBackBtn" onclick="navigate('dashboard')">&larr; Back</button>
         <h2 style="margin:0;" id="reviewTitle">Review Duplicates</h2>
       </div>
       <div class="review-nav">
@@ -780,17 +785,17 @@
         <button class="btn btn-secondary btn-sm" onclick="reviewNav(1)" style="min-width:60px;" data-tip="Go to the next duplicate group">Next &rarr;</button>
       </div>
       <div class="action-buttons">
-        <button class="btn btn-secondary btn-sm" onclick="reviewMarkSkip()" data-tip="Keep all files in this group as they are">Keep This Group</button>
+        <button class="btn btn-primary btn-sm" onclick="reviewMarkSkip()" data-tip="Keep all files in this group as they are">Keep This Group</button>
         <button class="btn btn-danger btn-sm" id="reviewMoveSingleBtn" onclick="reviewMarkMove()" data-tip="Mark the duplicate files for removal">Mark as Duplicate</button>
         <button class="btn btn-danger btn-sm" onclick="reviewMarkDelete()" data-tip="Send duplicate files to the Recycle Bin">Send to Recycle Bin</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-warning btn-sm" id="reviewMoveBulkBtn" onclick="reviewBulkMove()" data-tip="Mark all unreviewed groups as duplicates">Mark All Remaining</button>
-        <button class="btn btn-sm btn-secondary" onclick="reviewBulkSkip()" data-tip="Keep all unreviewed groups as they are">Keep All Remaining</button>
+        <button class="btn btn-primary btn-sm" onclick="reviewBulkSkip()" data-tip="Keep all unreviewed groups as they are">Keep All Remaining</button>
         <button class="btn btn-danger btn-sm" onclick="reviewBulkDelete()" data-tip="Send all unreviewed duplicates to the Recycle Bin">Recycle All Remaining</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
         <button class="btn btn-primary btn-sm" onclick="goToActions()" data-tip="Execute your keep and remove decisions">Apply Decisions</button>
         <span style="width:1px;height:24px;background:var(--border);"></span>
-        <button class="btn btn-ghost btn-sm" onclick="navigate('dashboard')" data-tip="Leave the review and return to the dashboard">Exit</button>
+        <button class="btn btn-danger btn-sm" onclick="navigate('dashboard')" data-tip="Leave the review and return to the dashboard">Exit</button>
       </div>
     </div>
   </div>
@@ -817,7 +822,7 @@
 
         <div style="display:flex;gap:12px;margin-top:16px;">
           <button class="btn btn-primary" id="actExecuteBtn" onclick="executeActions()" data-tip="Move and recycle files based on your decisions">Execute</button>
-          <button class="btn btn-secondary" onclick="navigate('review')" data-tip="Return to the review screen to change decisions">Back to Review</button>
+          <button class="btn btn-warning" onclick="navigate('review')" data-tip="Return to the review screen to change decisions">Back to Review</button>
         </div>
       </div>
 
@@ -910,8 +915,8 @@
       <button class="btn btn-secondary" onclick="_loadLogContent('error')" data-tip="View error-only logs">Error Log</button>
       <button class="btn btn-secondary" onclick="_refreshLogs()" data-tip="Reload the log content">Refresh</button>
       <button class="btn btn-danger btn-sm" onclick="_clearLogs()" data-tip="Delete all log files">Clear Logs</button>
-      <button class="btn btn-primary btn-sm" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
-      <button class="btn btn-ghost" onclick="navigate('activity')" data-tip="Return to the Scan Logs page">Back to Scan Logs</button>
+      <button class="btn btn-warning btn-sm" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+      <button class="btn btn-warning btn-sm" onclick="navigate('activity')" data-tip="Return to the Scan Logs page">Scan Logs</button>
     </div>
 
     <div class="card" style="max-width:none;max-height:70vh;overflow-y:auto;padding:0;">
@@ -923,7 +928,7 @@
   <div class="view" id="view-help">
     <h1>Help</h1>
     <p class="subtitle">Coming soon. In-app help topics and documentation.</p>
-    <button class="btn btn-secondary" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
+    <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
   </div>
 
   <!-- Settings View -->
@@ -984,6 +989,14 @@
             Show tooltips on hover
           </label>
           <div class="form-hint">Display helpful descriptions when hovering over buttons and cards.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setShowExplanations" checked data-tip="Show detailed explanation text in the wizard and scan views">
+            Show explanation text
+          </label>
+          <div class="form-hint">Show verbose descriptions in the wizard steps, scan config, and review. Uncheck for a minimal interface once you know the workflow.</div>
         </div>
 
         <div class="form-group">

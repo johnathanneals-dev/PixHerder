@@ -71,12 +71,12 @@ function _showChunkCheckpoint() {
   msg.innerHTML = msg.textContent +
     '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;">' +
     '<button class="btn btn-warning" onclick="closeDialog(); reviewBulkMove()">Mark All Remaining</button>' +
-    '<button class="btn btn-secondary" onclick="closeDialog(); reviewBulkSkip()">Keep All Remaining</button>' +
+    '<button class="btn btn-primary" onclick="closeDialog(); reviewBulkSkip()">Keep All Remaining</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">' +
     '<button class="btn btn-danger" onclick="closeDialog()">Cancel</button>' +
     '<div style="display:flex;gap:8px;">' +
-    '<button class="btn btn-secondary" onclick="closeDialog(); _saveDecisionsNow(); navigate(\'dashboard\')">Take a Break</button>' +
+    '<button class="btn btn-warning" onclick="closeDialog(); _saveDecisionsNow(); navigate(\'dashboard\')">Take a Break</button>' +
     '<button class="btn btn-primary" onclick="closeDialog(); _showChunkCheckpoint_nextBatch()">Next Batch</button>' +
     '</div></div>';
   // Hide the default dialog buttons since we have custom layout
