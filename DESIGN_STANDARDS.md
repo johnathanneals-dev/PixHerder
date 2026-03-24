@@ -9,6 +9,7 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 1. **File security first.** No user file is ever permanently deleted by PixHerder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
 2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (Staging, Recovery, Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
+4. **Dashboard is the design baseline.** The current dashboard layout (stat cards, browse buttons, More Options) is the baseline for all future design changes. All workflow modes use the dashboard. Modes control what is visible or prominent on it, but the underlying structure does not change. No mode removes the dashboard.
 
 ---
 
@@ -464,6 +465,38 @@ The rolling recovery archive provides a safety net for recently recycled files. 
 - Recovery archive is informational on the dashboard -- never blocks the user's workflow
 - Restore operations use the `#working` blocking progress view like all other file operations
 - File counts update after every recycle or restore operation
+
+---
+
+## Workflow Modes
+
+PixHerder supports 4 workflow modes. These are locked for this version -- no additional modes.
+
+| Mode | Landing View | Nav Items | Dashboard Adjustments |
+|------|-------------|-----------|----------------------|
+| **Easy** (Guided) | Wizard | Dashboard, Migrate, Settings, Help only | Hides Direct Scan + More Options, enlarged Start button |
+| **Autonomous** (One-Click) | Autonomous view | Dashboard, Settings, Help only | "Run Duplicate Cleanup" replaces Start button, hides More Options |
+| **Hybrid** (Recommended) | Dashboard | All nav items | Current behavior unchanged |
+| **Manual** (Power User) | Dashboard | All nav items | Import Files replaces wizard, Direct Scan becomes primary |
+
+### Mode Selection
+
+- **First launch:** Welcome overlay with 4 mode cards (Hybrid marked "Recommended")
+- **Settings page:** Dropdown at top of settings, changeable anytime
+- **Mid-session change:** Confirmation dialog, resets UI flow, files untouched
+
+### Mode Behaviors
+
+- **Easy:** Forces hints/tooltips/explanations ON. Wizard cannot skip steps. Power loop button on scan complete. After migration, auto-advances to Step 2.
+- **Autonomous:** After folder selection, auto-pipeline: migrate > scan > move dupes to `PixHerder_Duplicates` subfolder at source. No Recycle Bin. Rescans reuse same folder.
+- **Hybrid:** Current wizard + dashboard workflow. Offramps at every wizard step.
+- **Manual:** Wizard step 1 only (migration). After migration, redirects to dashboard. User drives from nav menu and dashboard.
+
+### Implementation
+
+- Mode controller: `web/modes.js`
+- Setting: `workflow_mode` in `engine/config.py` DEFAULTS (empty string = not chosen)
+- Valid values: `"easy"`, `"autonomous"`, `"hybrid"`, `"manual"`
 
 ---
 

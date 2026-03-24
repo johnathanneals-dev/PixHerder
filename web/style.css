@@ -786,3 +786,53 @@
     .stat-card .num { font-size: 22px; }
     .card-grid { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* ---- Mode Selector Cards ---- */
+  .mode-card {
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .mode-card:hover {
+    border-color: var(--accent);
+    background: var(--surface-3);
+  }
+  .mode-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .mode-card-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .mode-card-subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .mode-card-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .mode-card-badge {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }

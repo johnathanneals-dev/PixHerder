@@ -394,6 +394,10 @@ function showScanComplete(d) {
       var btn = document.getElementById("scanReviewBtn");
       btn.style.display = "inline-flex";
       btn.onclick = function() { navigate("review", { report: d.result_file }); };
+      // Easy mode: add power loop quick-move button
+      if (typeof addPowerLoopButton === "function") {
+        addPowerLoopButton(d.result_file, "#scanCompleteSummary");
+      }
     }
   }
 }

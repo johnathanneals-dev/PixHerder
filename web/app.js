@@ -945,23 +945,35 @@ function route() {
   }
   _refreshFolderPaths();  // Always refresh nav from filesystem
 
+  // Apply workflow mode to UI (nav visibility, forced settings)
+  applyModeToUI(getCurrentMode());
+
   // Show hints bar when hints enabled, with contextual flow text
+  var _curMode = getCurrentMode();
   var hintsOn = !state.settings || state.settings.show_hints !== false;
+  // Easy mode forces hints on regardless of setting
+  if (_curMode === "easy") hintsOn = true;
   document.getElementById("hintsBar").style.display = hintsOn ? "block" : "none";
   // Keyboard shortcuts only relevant in review
   document.getElementById("kbdShortcuts").style.display = view === "review" ? "inline-flex" : "none";
   var _hbt = document.getElementById("hintsBarText");
   if (_hbt && view !== "dashboard") {
-    // Dashboard hint is set by _dashUpdateFlowGuide; other views set here
-    if (view === "review") _hbt.textContent = "Click images to toggle keep/dupe. Use the action bar to apply decisions.";
-    else if (view === "scan-config") _hbt.textContent = "Choose a scan mode and threshold, then click Start Scan.";
-    else if (view === "scan-progress") _hbt.textContent = "Scanning in progress. You can cancel at any time.";
-    else if (view === "finish") _hbt.textContent = "Review the summary, then click Finish Now to send files home and clean up.";
-    else if (view === "actions") _hbt.textContent = "Review pending operations, then click Execute to apply.";
-    else if (view === "browser") _hbt.textContent = "Browse your files. Click any image to zoom.";
-    else if (view === "settings") _hbt.textContent = "Adjust your preferences. Click Save Settings when done.";
-    else if (view === "wizard") _hbt.textContent = "Follow the steps to find and clean up duplicate images.";
-    else _hbt.textContent = "";
+    // Check for mode-specific hint text first
+    var modeHint = getModeHintText(_curMode, view);
+    if (modeHint !== null) {
+      _hbt.textContent = modeHint;
+    } else {
+      // Default hints (hybrid mode or fallback)
+      if (view === "review") _hbt.textContent = "Click images to toggle keep/dupe. Use the action bar to apply decisions.";
+      else if (view === "scan-config") _hbt.textContent = "Choose a scan mode and threshold, then click Start Scan.";
+      else if (view === "scan-progress") _hbt.textContent = "Scanning in progress. You can cancel at any time.";
+      else if (view === "finish") _hbt.textContent = "Review the summary, then click Finish Now to send files home and clean up.";
+      else if (view === "actions") _hbt.textContent = "Review pending operations, then click Execute to apply.";
+      else if (view === "browser") _hbt.textContent = "Browse your files. Click any image to zoom.";
+      else if (view === "settings") _hbt.textContent = "Adjust your preferences. Click Save Settings when done.";
+      else if (view === "wizard") _hbt.textContent = "Follow the steps to find and clean up duplicate images.";
+      else _hbt.textContent = "";
+    }
   }
 
   // Toggle explanation text visibility
@@ -980,9 +992,10 @@ function route() {
     view = "dashboard";
   }
 
-  // On fresh page load, redirect stateful views to dashboard
-  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity" && view !== "help") {
-    navigate("dashboard");
+  // On fresh page load, redirect stateful views to mode-appropriate landing
+  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity" && view !== "help" && view !== "autonomous") {
+    var _landing = getModeLandingView(getCurrentMode());
+    navigate(_landing);
     return;
   }
 
@@ -1002,6 +1015,7 @@ function route() {
   else if (view === "activity") loadActivity();
   else if (view === "logs") initLogs();
   else if (view === "settings") initSettings();
+  else if (view === "autonomous") initAutonomous();
 }
 
 window.onhashchange = route;
@@ -1415,6 +1429,32 @@ function _appInit() {
   // Note: right-click context menus and Ctrl+V/C/X/A are enabled natively
   // via debug=True in pixherder_app.py (WebView2 ties these to debug mode)
 
+  function _postValidateInit() {
+    _refreshFolderPaths();
+    _checkPersistentLogging();
+    // Load settings to check workflow mode
+    api("GET", "/api/settings").then(function(s) {
+      state.settings = s;
+      if (!s.workflow_mode) {
+        // First launch: show mode selector
+        showModeSelector(function(mode) {
+          s.workflow_mode = mode;
+          api("POST", "/api/settings", s).then(function(saved) {
+            state.settings = saved;
+            route();
+          }).catch(function() {
+            state.settings.workflow_mode = mode;
+            route();
+          });
+        });
+      } else {
+        route();
+      }
+    }).catch(function() {
+      route();
+    });
+  }
+
   if (window.pywebview) {
     window.addEventListener("pywebviewready", function() {
       // Validate state before anything else -- clean up stale artifacts
@@ -1424,14 +1464,10 @@ function _appInit() {
                     (r.recovery_slots_cleared || 0);
         if (total > 0) console.log("State validator cleaned " + total + " artifacts");
       }).catch(function() {}).finally(function() {
-        _refreshFolderPaths();
-        _checkPersistentLogging();
-        route();
+        _postValidateInit();
       });
     });
   } else {
-    _refreshFolderPaths();
-    _checkPersistentLogging();
-    route();
+    _postValidateInit();
   }
 }

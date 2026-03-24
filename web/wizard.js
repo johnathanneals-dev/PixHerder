@@ -182,6 +182,10 @@ function updateStepper() {
 function wizardMarkComplete(n) {
   wizardState.completedSteps[n] = true;
   updateStepper();
+  // Check if mode wants to handle navigation differently
+  if (typeof modeWizardComplete === "function" && modeWizardComplete(n)) {
+    return; // mode handled it (e.g., manual goes to dashboard after step 1)
+  }
   // Auto-advance to next step
   if (n < 4) wizardGoToStep(n + 1);
 }

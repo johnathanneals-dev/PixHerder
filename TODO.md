@@ -102,6 +102,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Power loop workflow: "Move All to Recovery" button on scan results page (skip review). Enables fast winnowing loop: scan > bulk-move dupes > rescan > repeat until clean > promote staging to Keepers > move Recovery back to staging > detailed review on concentrated dupes.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
+- [x] 4 workflow modes: Easy (guided), Autonomous (one-click), Hybrid (recommended), Manual (power user). Mode selector on first launch, changeable in Settings. Locked for this version -- no additional modes.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 
 ### Code Quality

@@ -94,6 +94,15 @@
   </div>
 </div>
 
+<!-- Mode Selector (First Launch) -->
+<div class="dialog-overlay" id="modeSelectOverlay" style="display:none;z-index:1001;">
+  <div class="dialog" style="max-width:700px;">
+    <h2 style="text-align:center;margin-bottom:4px;">Welcome to PixHerder</h2>
+    <p style="text-align:center;color:var(--text-dim);margin-bottom:24px;">How would you like to work? You can change this anytime in Settings.</p>
+    <div id="modeCards" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+  </div>
+</div>
+
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()" role="dialog" aria-label="Image zoom view">
   <img id="lightboxImg" src="">
@@ -122,8 +131,8 @@
     </div>
 
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
-      <button class="btn btn-primary btn-lg" id="dashWizardBtn" onclick="_dashStartWizard()" data-tip="Step-by-step wizard to find and remove duplicates" data-help="wizard">Start Guided Cleanup</button>
-      <button class="btn btn-secondary btn-lg" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard" data-help="scanning">Direct Scan</button>
+      <button class="btn btn-primary btn-lg" id="dashContinueBtn" onclick="_dashStartWizard()" data-tip="Step-by-step wizard to find and remove duplicates" data-help="wizard">Start Guided Cleanup</button>
+      <button class="btn btn-secondary btn-lg" id="dashDirectScanBtn" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard" data-help="scanning">Direct Scan</button>
     </div>
 
     <div id="dashFolders" style="margin-bottom:32px;">
@@ -924,6 +933,59 @@
     <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
   </div>
 
+  <!-- Autonomous Mode View -->
+  <div class="view" id="view-autonomous">
+    <h1>Automatic Duplicate Cleanup</h1>
+    <p class="subtitle">Select a folder and PixHerder will handle the rest.</p>
+
+    <!-- Setup phase -->
+    <div id="autoSetup">
+      <div class="card" style="max-width:600px;">
+        <div class="form-group">
+          <label class="form-label">Source folder</label>
+          <div style="display:flex;gap:8px;">
+            <input class="form-input" type="text" id="autoSourceDir" placeholder="Paste a path or browse">
+            <button class="btn btn-secondary" onclick="openFolderPicker('autoSourceDir')" data-tip="Browse for your photos folder">Browse</button>
+          </div>
+        </div>
+        <div class="explanation-text" style="margin:12px 0;">
+          PixHerder will scan this folder, find duplicates, and move them to a
+          <strong>PixHerder_Duplicates</strong> subfolder inside the source.
+          Your originals are never deleted.
+        </div>
+        <button class="btn btn-primary btn-lg" id="autoStartBtn" onclick="_startAutonomous()" data-tip="Start the automatic duplicate cleanup process">Find and Separate Duplicates</button>
+      </div>
+    </div>
+
+    <!-- Progress phase -->
+    <div id="autoProgress" style="display:none;">
+      <div class="card" style="max-width:600px;">
+        <div id="autoPhaseLabel" style="font-weight:600;margin-bottom:12px;font-size:16px;"></div>
+        <div class="progress-container">
+          <div class="progress-bar"><div class="progress-fill" id="autoProgressFill"></div></div>
+          <div class="progress-text">
+            <span id="autoProgressLeft"></span>
+            <span id="autoProgressPct">0%</span>
+          </div>
+        </div>
+        <div id="autoStageLabel" style="text-align:center;color:var(--text-dim);margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- Complete phase -->
+    <div id="autoComplete" style="display:none;">
+      <div class="card" style="max-width:600px;text-align:center;">
+        <h2 id="autoCompleteTitle" style="color:var(--accent);">Done!</h2>
+        <div id="autoCompleteSummary" style="margin:16px 0;"></div>
+        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="_autoRescan()" data-tip="Run the scan again to find more duplicates">Scan Again</button>
+          <button class="btn btn-secondary" onclick="_autoOpenDupesFolder()" data-tip="Open the duplicates folder in File Explorer">Open Duplicates Folder</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings View -->
   <div class="view" id="view-settings">
     <h1>Settings</h1>
@@ -931,6 +993,17 @@
 
     <div class="card" style="max-width:700px;">
       <div class="settings-grid">
+        <div class="form-group" style="border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:8px;">
+          <label class="form-label">Workflow Mode</label>
+          <select class="form-input" id="setWorkflowMode" onchange="onModeChange(this)" data-tip="Choose how you want to interact with PixHerder">
+            <option value="easy">Easy (Guided)</option>
+            <option value="autonomous">Autonomous (One-Click)</option>
+            <option value="hybrid">Hybrid (Recommended)</option>
+            <option value="manual">Manual (Power User)</option>
+          </select>
+          <div class="form-hint" id="setModeHint">Wizard for setup, dashboard for control. Our recommendation.</div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Default threshold</label>
           <div class="slider-container">
@@ -1035,6 +1108,7 @@
 <script src="/web/working.js"></script>
 <script src="/web/settings.js"></script>
 <script src="/web/oddball.js"></script>
+<script src="/web/modes.js"></script>
 <script>_appInit();</script>
 
 <!-- Status Bar -->

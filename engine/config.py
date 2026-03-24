@@ -46,6 +46,7 @@ DEFAULTS = {
     "show_explanations": True,
     "persistent_logging": False,
     "debug_mode": False,
+    "workflow_mode": "",
 }
 
 

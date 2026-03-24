@@ -265,7 +265,7 @@ function _dashUpdateFolders() {
     if (rescanKeepersBtn) rescanKeepersBtn.disabled = !hasKeepers;
 
     // Update wizard button label based on state
-    var wizBtn = document.getElementById("dashWizardBtn");
+    var wizBtn = document.getElementById("dashContinueBtn");
     if (wizBtn) {
       wizBtn.textContent = hasStaging ? "Continue Guided Cleanup" : "Start Guided Cleanup";
     }
@@ -662,9 +662,12 @@ function openBrowserFromDashboard(type) {
 }
 
 function initDashboard() {
-  // Load settings for later use
+  // Load settings for later use, then apply mode-aware layout
   api("GET", "/api/settings").then(function(s) {
     state.settings = s;
+    if (typeof modeAwareDashboard === "function") {
+      modeAwareDashboard(getCurrentMode());
+    }
   }).catch(function() {});
 
   // Fetch folder status for browse buttons

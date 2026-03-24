@@ -4,6 +4,12 @@
 function initSettings() {
   api("GET", "/api/settings").then(function(settings) {
     state.settings = settings;
+    // Workflow mode
+    var modeEl = document.getElementById("setWorkflowMode");
+    if (modeEl) {
+      modeEl.value = settings.workflow_mode || "hybrid";
+      onModeChange(modeEl);
+    }
     document.getElementById("setThreshold").value = settings.threshold || 5;
     document.getElementById("setThresholdVal").textContent = settings.threshold || 5;
     document.getElementById("setMoveDir").value = settings.move_destination || "";
@@ -33,6 +39,7 @@ function saveSettings() {
   // Preserve settings not shown in the UI (persistent_logging, debug_mode)
   var preserved = state.settings || {};
   var data = {
+    workflow_mode: document.getElementById("setWorkflowMode").value || "hybrid",
     threshold: parseInt(document.getElementById("setThreshold").value) || 5,
     move_destination: document.getElementById("setMoveDir").value.trim(),
     keep_strategy: document.getElementById("setKeepStrategy").value,
