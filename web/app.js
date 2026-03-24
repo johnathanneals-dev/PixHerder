@@ -1436,7 +1436,23 @@ function _appInit() {
     api("GET", "/api/settings").then(function(s) {
       state.settings = s;
       if (!s.workflow_mode) {
-        // First launch: show mode selector
+        // First launch: show tour, then mode selector
+        var _afterModeSelect = function(mode) {
+          s.workflow_mode = mode;
+          s.show_welcome = false;  // Auto-disable after first selection
+          api("POST", "/api/settings", s).then(function(saved) {
+            state.settings = saved;
+            route();
+          }).catch(function() {
+            state.settings.workflow_mode = mode;
+            route();
+          });
+        };
+        showTour(function() {
+          showModeSelector(_afterModeSelect);
+        });
+      } else if (s.show_welcome !== false && !s._welcomed) {
+        // Returning user with show_welcome enabled -- show mode selector (no tour)
         showModeSelector(function(mode) {
           s.workflow_mode = mode;
           api("POST", "/api/settings", s).then(function(saved) {

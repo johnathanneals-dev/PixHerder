@@ -20,6 +20,7 @@ function initSettings() {
     document.getElementById("setShowTooltips").checked = settings.show_tooltips !== false;
     document.getElementById("setShowExplanations").checked = settings.show_explanations !== false;
     document.getElementById("setShowOneDrivePrompts").checked = settings.show_onedrive_prompts !== false;
+    document.getElementById("setShowWelcome").checked = settings.show_welcome !== false;
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
   });
@@ -49,6 +50,7 @@ function saveSettings() {
     show_tooltips: document.getElementById("setShowTooltips").checked,
     show_explanations: document.getElementById("setShowExplanations").checked,
     show_onedrive_prompts: document.getElementById("setShowOneDrivePrompts").checked,
+    show_welcome: document.getElementById("setShowWelcome").checked,
     persistent_logging: preserved.persistent_logging || false,
     debug_mode: preserved.debug_mode || false,
     extensions: exts

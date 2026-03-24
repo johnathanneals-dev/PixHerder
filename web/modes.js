@@ -222,6 +222,7 @@ function modeWizardComplete(stepNum) {
 // ---- Mode Selector (First Launch) ----
 
 function showModeSelector(onSelect) {
+  _modeSelectorCallback = onSelect;
   var overlay = document.getElementById("modeSelectOverlay");
   if (!overlay) return;
   overlay.style.display = "flex";
@@ -263,18 +264,23 @@ function showModeSelector(onSelect) {
   var html = "";
   for (var i = 0; i < modes.length; i++) {
     var m = modes[i];
-    var recommended = m.id === "hybrid" ? ' style="border-color:var(--accent);"' : "";
+    var recommended = m.id === "easy" ? ' style="border-color:var(--accent);"' : "";
     html += '<div class="mode-card" data-mode="' + m.id + '"' + recommended + '>';
     html += '<div class="mode-card-header">';
     html += '<span class="mode-card-name">' + m.name + '</span>';
     html += '<span class="mode-card-subtitle">' + m.subtitle + '</span>';
     html += '</div>';
     html += '<div class="mode-card-desc">' + m.desc + '</div>';
-    if (m.id === "hybrid") {
+    if (m.id === "easy") {
       html += '<div class="mode-card-badge">Recommended</div>';
     }
     html += '</div>';
   }
+  // Bypass button -- subtle, below the mode cards
+  html += '<div style="text-align:center;margin-top:20px;">';
+  html += '<button class="btn btn-ghost" style="font-size:12px;color:var(--text-dim);" ';
+  html += 'onclick="_bypassModeSelector()">Continue to Dashboard</button>';
+  html += '</div>';
   cards.innerHTML = html;
 
   // Attach click handlers
@@ -639,4 +645,167 @@ function onModeChange(selectEl) {
     manual: "Import files, then do everything from the dashboard. Maximum flexibility."
   };
   if (hintEl) hintEl.textContent = hints[newMode] || "";
+}
+
+// ---- Mode Selector Bypass ----
+
+var _modeSelectorCallback = null;
+
+function _bypassModeSelector() {
+  var overlay = document.getElementById("modeSelectOverlay");
+  if (overlay) overlay.style.display = "none";
+  // Default to hybrid when bypassing
+  if (_modeSelectorCallback) {
+    _modeSelectorCallback("hybrid");
+    _modeSelectorCallback = null;
+  }
+}
+
+// ---- Replay Functions (Dashboard + Settings) ----
+
+function replayWelcome() {
+  showModeSelector(function(mode) {
+    state.settings.workflow_mode = mode;
+    api("POST", "/api/settings", state.settings).then(function(saved) {
+      state.settings = saved;
+      toast("Mode changed to " + mode);
+      navigate("dashboard");
+    }).catch(function() {
+      state.settings.workflow_mode = mode;
+      navigate("dashboard");
+    });
+  });
+}
+
+function replayTour() {
+  showTour(function() {
+    replayWelcome();
+  });
+}
+
+// ---- Guided Tour ----
+
+var _tourCurrentStep = 0;
+var _tourOnComplete = null;
+
+var _tourSteps = [
+  {
+    title: "Welcome to PixHerder",
+    body: "PixHerder finds and cleans up duplicate photos on your computer. " +
+          "It keeps your originals safe and never permanently deletes anything."
+  },
+  {
+    title: "How It Works",
+    body: '<div style="display:flex;flex-direction:column;gap:12px;margin:8px 0;">' +
+      '<div style="display:flex;align-items:center;gap:12px;">' +
+        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</span>' +
+        '<span><strong>Import</strong> your photos into a safe workspace</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;">' +
+        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</span>' +
+        '<span><strong>Scan</strong> for exact and visual duplicates</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;">' +
+        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</span>' +
+        '<span><strong>Review</strong> matches side by side and pick keepers</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;">' +
+        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</span>' +
+        '<span><strong>Clean up</strong> and send your files home</span>' +
+      '</div>' +
+    '</div>'
+  },
+  {
+    title: "Choose Your Style",
+    body: '<div style="margin:8px 0;line-height:1.7;">' +
+      '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Easy</strong> -- Full guided wizard. Best for first-time users.</div>' +
+      '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Autonomous</strong> -- One click. PixHerder does everything automatically.</div>' +
+      '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Hybrid</strong> -- Wizard to start, then take the wheel from the dashboard.</div>' +
+      '<div><strong style="color:var(--accent);">Manual</strong> -- Import your files, then do everything yourself. Full control.</div>' +
+    '</div>'
+  },
+  {
+    title: "Your Files Are Safe",
+    body: "PixHerder never permanently deletes your photos. " +
+          "All removals go to the Windows Recycle Bin, so you can always get them back. " +
+          "Your original files are never touched until you say so."
+  },
+  {
+    title: "Ready to Go",
+    body: "Pick a mode on the next screen to get started. " +
+          "You can change your mode anytime in Settings, and replay this tour from the dashboard."
+  }
+];
+
+function showTour(onComplete) {
+  _tourCurrentStep = 0;
+  _tourOnComplete = onComplete;
+  var overlay = document.getElementById("tourOverlay");
+  if (!overlay) {
+    if (onComplete) onComplete();
+    return;
+  }
+  overlay.style.display = "flex";
+  _tourRender();
+}
+
+function _tourRender() {
+  var step = _tourSteps[_tourCurrentStep];
+  var content = document.getElementById("tourContent");
+  var dots = document.getElementById("tourDots");
+  var backBtn = document.getElementById("tourBackBtn");
+  var nextBtn = document.getElementById("tourNextBtn");
+
+  // Content
+  content.innerHTML =
+    '<h2 style="margin-bottom:12px;">' + step.title + '</h2>' +
+    '<div style="color:var(--text-dim);font-size:14px;line-height:1.6;">' + step.body + '</div>';
+
+  // Dots
+  var dotsHtml = "";
+  for (var i = 0; i < _tourSteps.length; i++) {
+    var active = i === _tourCurrentStep;
+    dotsHtml += '<span class="tour-dot' + (active ? " active" : "") + '"></span> ';
+  }
+  dots.innerHTML = dotsHtml;
+
+  // Back button
+  backBtn.style.visibility = _tourCurrentStep === 0 ? "hidden" : "visible";
+
+  // Next button
+  if (_tourCurrentStep === _tourSteps.length - 1) {
+    nextBtn.textContent = "Choose Your Mode";
+  } else {
+    nextBtn.textContent = "Next";
+  }
+}
+
+function _tourNext() {
+  if (_tourCurrentStep < _tourSteps.length - 1) {
+    _tourCurrentStep++;
+    _tourRender();
+  } else {
+    _tourClose();
+  }
+}
+
+function _tourBack() {
+  if (_tourCurrentStep > 0) {
+    _tourCurrentStep--;
+    _tourRender();
+  }
+}
+
+function _tourSkip() {
+  _tourClose();
+}
+
+function _tourClose() {
+  var overlay = document.getElementById("tourOverlay");
+  if (overlay) overlay.style.display = "none";
+  if (_tourOnComplete) {
+    var cb = _tourOnComplete;
+    _tourOnComplete = null;
+    cb();
+  }
 }

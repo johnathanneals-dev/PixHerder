@@ -823,6 +823,22 @@
     color: var(--text-dim);
     line-height: 1.5;
   }
+  /* ---- Tour Dots ---- */
+  .tour-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    margin: 0 4px;
+    transition: background 0.2s;
+  }
+  .tour-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
   .mode-card-badge {
     position: absolute;
     top: -10px;

@@ -94,6 +94,19 @@
   </div>
 </div>
 
+<!-- Tour Overlay (First Launch Walkthrough) -->
+<div class="dialog-overlay" id="tourOverlay" style="display:none;z-index:1002;">
+  <div class="dialog" style="max-width:650px;position:relative;">
+    <button class="btn btn-ghost" id="tourSkipBtn" onclick="_tourSkip()" style="position:absolute;top:12px;right:16px;font-size:12px;color:var(--text-dim);">Skip</button>
+    <div id="tourContent" style="min-height:180px;padding:8px 0;"></div>
+    <div id="tourDots" style="text-align:center;margin:16px 0 12px;"></div>
+    <div style="display:flex;justify-content:space-between;">
+      <button class="btn btn-secondary" id="tourBackBtn" onclick="_tourBack()">Back</button>
+      <button class="btn btn-primary" id="tourNextBtn" onclick="_tourNext()">Next</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mode Selector (First Launch) -->
 <div class="dialog-overlay" id="modeSelectOverlay" style="display:none;z-index:1001;">
   <div class="dialog" style="max-width:700px;">
@@ -193,6 +206,12 @@
           <div>
             <button class="btn btn-danger btn-fixed" id="dashPurgeBtn" onclick="purgeAllDupes()" disabled data-tip="Send all removed duplicates to the Recycle Bin" data-help="recycling">Recycle All Remaining</button>
             <div class="dash-btn-desc explanation-text" id="dashPurgeDesc" style="display:none;font-size:11px;color:var(--text-dim);margin-top:4px;max-width:260px;">Send everything in Recovery to the Recycle Bin.</div>
+          </div>
+          <div>
+            <button class="btn btn-warning btn-fixed" onclick="replayWelcome()" data-tip="Reopen the mode selector to change your workflow">Welcome Screen</button>
+          </div>
+          <div>
+            <button class="btn btn-warning btn-fixed" onclick="replayTour()" data-tip="Watch the intro walkthrough again">App Tour</button>
           </div>
         </div>
       </div>
@@ -1005,6 +1024,18 @@
         </div>
 
         <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setShowWelcome" checked data-tip="Show the welcome screen and mode selector when PixHerder starts">
+            Show welcome screen on startup
+          </label>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <button class="btn btn-secondary" onclick="replayTour()" style="font-size:13px;" data-tip="Watch the intro tour again">Replay Tour</button>
+        </div>
+        </div>
+
+        <div class="form-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px;">
           <label class="form-label">Default threshold</label>
           <div class="slider-container">
             <input type="range" id="setThreshold" min="0" max="20" value="5"

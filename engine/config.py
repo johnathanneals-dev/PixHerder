@@ -47,6 +47,7 @@ DEFAULTS = {
     "persistent_logging": False,
     "debug_mode": False,
     "workflow_mode": "",
+    "show_welcome": True,
 }
 
 

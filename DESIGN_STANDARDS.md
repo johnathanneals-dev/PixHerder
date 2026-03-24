@@ -481,9 +481,36 @@ PixHerder supports 4 workflow modes. These are locked for this version -- no add
 
 ### Mode Selection
 
-- **First launch:** Welcome overlay with 4 mode cards (Hybrid marked "Recommended")
+- **First launch:** Welcome overlay with 4 mode cards (Hybrid marked "Recommended"). This design is locked -- do not modify the layout, card structure, or overlay behavior.
 - **Settings page:** Dropdown at top of settings, changeable anytime
 - **Mid-session change:** Confirmation dialog, resets UI flow, files untouched
+
+### Mode Selector Design (Locked)
+
+The first-launch "Welcome to PixHerder" overlay is a 2x2 grid of mode cards inside a centered dialog (max-width 700px). Each card has:
+- Name (18px bold) and subtitle (12px uppercase dim) in a header row
+- Description (13px dim, 1.5 line-height)
+- Easy card has a green "Recommended" badge (top-right) on first launch
+- Hover: border turns accent green, background elevates
+- Click: selects mode, closes overlay, saves to settings, proceeds to routing
+- Small "Continue to Dashboard" bypass button centered below the cards (ghost style, subtle)
+- No close/X button -- user picks a mode or uses the bypass
+
+### First-Launch Tour
+
+A 5-step slideshow overlay plays before the mode selector on first launch:
+1. Welcome -- what PixHerder does
+2. How it works -- 4-step workflow (Import > Scan > Review > Clean up)
+3. Choose your style -- overview of the 4 modes
+4. Safety -- Recycle Bin, originals never deleted
+5. Ready -- prompts user to pick a mode
+
+Tour UI: dark card (max-width 650px), step dots at bottom, Skip (top-right ghost), Back/Next buttons. Last step's Next says "Choose Your Mode". Always skippable. Replayable from Settings and Dashboard More Options.
+
+### Welcome/Tour Bypass
+
+- Settings checkbox: "Show welcome screen on startup" (auto-set to false after first mode selection)
+- Dashboard More Options: "Welcome Screen" (amber) and "App Tour" (amber) buttons for replaying
 
 ### Mode Behaviors
 
