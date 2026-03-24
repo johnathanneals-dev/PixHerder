@@ -792,7 +792,7 @@
     background: var(--surface-2);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 14px 16px;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
     position: relative;

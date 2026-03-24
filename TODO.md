@@ -103,6 +103,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
 - [x] 4 workflow modes: Easy (guided), Autonomous (one-click), Hybrid (recommended), Manual (power user). Mode selector on first launch, changeable in Settings. Locked for this version -- no additional modes.
+- [ ] Adaptive resolution: detect screen resolution on startup, define display profiles (full/compact/minimal), adjust layouts per profile. Extend existing CSS breakpoints (1024/768/480). Toast warning if below 1280x720.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 
 ### Code Quality

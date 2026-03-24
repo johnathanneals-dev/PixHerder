@@ -276,9 +276,9 @@ function showModeSelector(onSelect) {
     }
     html += '</div>';
   }
-  // Bypass button -- subtle, below the mode cards
-  html += '<div style="text-align:center;margin-top:20px;">';
-  html += '<button class="btn btn-ghost" style="font-size:12px;color:var(--text-dim);" ';
+  // Bypass button -- subtle, below the mode cards, spans full grid width
+  html += '<div style="text-align:center;margin-top:8px;margin-bottom:-14px;grid-column:1/-1;">';
+  html += '<button class="btn btn-ghost" style="font-size:12px;color:var(--text-dim);padding:4px 10px;" ';
   html += 'onclick="_bypassModeSelector()">Continue to Dashboard</button>';
   html += '</div>';
   cards.innerHTML = html;
@@ -692,7 +692,8 @@ var _tourSteps = [
   {
     title: "Welcome to PixHerder",
     body: "PixHerder finds and cleans up duplicate photos on your computer. " +
-          "It keeps your originals safe and never permanently deletes anything."
+          "It keeps your originals safe and never permanently deletes anything." +
+          '<div style="margin-top:12px;font-size:12px;color:var(--text-muted);">For the best experience, maximize the PixHerder window.</div>'
   },
   {
     title: "How It Works",
