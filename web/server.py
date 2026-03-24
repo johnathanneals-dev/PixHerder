@@ -758,10 +758,15 @@ def _find_staging_subfolder():
     settings = load_settings()
     staging_base = settings.get("staging_dir", DEFAULTS["staging_dir"])
     search_paths = [staging_base]
-    # Also check C:\Temp\PixHerder_Staging (common alternative)
+    # Also check common alternative locations
     alt_base = os.path.join("C:\\Temp", "PixHerder_Staging")
     if alt_base != staging_base and os.path.isdir(alt_base):
         search_paths.append(alt_base)
+    # Also check system temp directory (staging may have been created there)
+    import tempfile as _tf
+    temp_base = os.path.join(_tf.gettempdir(), "PixHerder_Staging")
+    if temp_base != staging_base and temp_base != alt_base and os.path.isdir(temp_base):
+        search_paths.append(temp_base)
 
     best_path = ""
     best_count = 0
