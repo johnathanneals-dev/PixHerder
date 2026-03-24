@@ -2246,6 +2246,22 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
 
     def _handle_browse_folders(self, dirpath):
         """List subfolders for the folder picker. No file listing."""
+        # Drive listing: enumerate available Windows drives
+        if dirpath == "__drives__":
+            import string
+            drives = []
+            for letter in string.ascii_uppercase:
+                drive = letter + ":\\"
+                if os.path.isdir(drive):
+                    drives.append(drive)
+            self.send_json({
+                "path": "My Computer",
+                "parent": "",
+                "folders": drives,
+                "is_drives": True,
+            })
+            return
+
         if not dirpath:
             # Default to user home
             dirpath = os.path.expanduser("~")
@@ -2284,7 +2300,7 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
         # Get parent directory (for "up" navigation)
         parent = os.path.dirname(dirpath)
         if parent == dirpath:
-            parent = ""  # at root
+            parent = "__drives__"  # navigate up to drive list
 
         self.send_json({
             "path": dirpath,

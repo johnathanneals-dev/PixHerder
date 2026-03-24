@@ -572,15 +572,12 @@ function openFolderPicker(targetInputId) {
   _folderPickerTarget = targetInputId;
   var startPath = document.getElementById(targetInputId).value.trim();
   if (!startPath) {
-    // Default to user's home directory via settings
+    // Default to detected pictures path (OneDrive\Pictures if it exists)
     api("GET", "/api/settings").then(function(s) {
       var home = s.default_pictures_path || "";
-      // Go up to USERPROFILE level
-      var userDir = home.replace(/\\OneDrive\\Pictures$/i, "")
-                        .replace(/\\Pictures$/i, "");
-      _loadFolderPicker(userDir || "C:\\");
+      _loadFolderPicker(home || "__drives__");
     }).catch(function() {
-      _loadFolderPicker("C:\\");
+      _loadFolderPicker("__drives__");
     });
   } else {
     _loadFolderPicker(startPath);
@@ -594,8 +591,23 @@ function closeFolderPicker() {
 }
 
 function selectFolder() {
+  if (_folderPickerPath === "My Computer") {
+    toast("Please select a folder, not the drive list", "warning");
+    return;
+  }
   if (_folderPickerTarget && _folderPickerPath) {
     document.getElementById(_folderPickerTarget).value = _folderPickerPath;
+    // Check for image files and show feedback
+    var path = _folderPickerPath;
+    api("POST", "/api/staging/check", { directory: path }).then(function(r) {
+      var count = r.source_count;
+      if (typeof count === "object") count = count[0] || 0;
+      if (count === 0) {
+        toast("No image files found in " + path.split("\\").pop(), "warning");
+      } else {
+        toast(count.toLocaleString() + " image" + (count !== 1 ? "s" : "") + " found", "success");
+      }
+    }).catch(function() {});
   }
   closeFolderPicker();
 }
@@ -605,8 +617,33 @@ function _loadFolderPicker(path) {
     .then(function(data) {
       _folderPickerPath = data.path;
 
-      // Breadcrumb
-      document.getElementById("folderPickerBreadcrumb").textContent = data.path;
+      // Breadcrumb with clickable path segments
+      var bcEl = document.getElementById("folderPickerBreadcrumb");
+      if (data.is_drives) {
+        bcEl.innerHTML = "My Computer";
+      } else {
+        var crumbs = '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
+          'onclick="_loadFolderPicker(\'__drives__\')" ' +
+          'title="Show all drives">My Computer</span>';
+        // Split path into clickable segments: C:\Users\foo -> [C:, Users, foo]
+        var parts = data.path.split("\\");
+        var built = "";
+        for (var ci = 0; ci < parts.length; ci++) {
+          if (!parts[ci]) continue;
+          built += (ci === 0) ? parts[ci] : ("\\" + parts[ci]);
+          // Add trailing backslash for drive root (C: -> C:\)
+          var segPath = (ci === 0 && parts[ci].length === 2 && parts[ci][1] === ":") ? built + "\\" : built;
+          if (ci < parts.length - 1) {
+            crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' +
+              '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
+              'onclick="_loadFolderPicker(\'' + escAttr(segPath) + '\')">' + parts[ci] + '</span>';
+          } else {
+            // Current folder -- not clickable
+            crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' + parts[ci];
+          }
+        }
+        bcEl.innerHTML = crumbs;
+      }
 
       // Build folder list
       var html = "";
@@ -619,12 +656,13 @@ function _loadFolderPicker(path) {
       }
       for (var i = 0; i < data.folders.length; i++) {
         var name = data.folders[i];
-        var full = data.path + "\\" + name;
+        var full = data.is_drives ? name : (data.path + "\\" + name);
+        var icon = data.is_drives ? "&#128187;" : "&#128193;";
         html += '<div style="padding:6px 10px;cursor:pointer;border-radius:4px;" ' +
           'onmouseover="this.style.background=\'var(--surface-2)\'" ' +
           'onmouseout="this.style.background=\'none\'" ' +
           'onclick="_loadFolderPicker(\'' + escAttr(full) + '\')">' +
-          '<span style="margin-right:6px;">&#128193;</span> ' + name + '</div>';
+          '<span style="margin-right:6px;">' + icon + '</span> ' + name + '</div>';
       }
       if (!data.folders.length && !data.parent) {
         html = '<div style="padding:12px;color:var(--text-dim);">No subfolders found</div>';

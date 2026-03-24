@@ -180,8 +180,14 @@ function initReview(report, returnTo) {
     }).catch(function() { /* ignore load errors */ });
   }).then(function() {
     document.getElementById("reviewTotalLabel").textContent = state.groups.length;
+    // Count total files across all groups
+    var totalFiles = 0;
+    for (var gi = 0; gi < state.groups.length; gi++) {
+      var g = state.groups[gi];
+      totalFiles += g.files || ((g.duplicates || []).length + 1);
+    }
     document.getElementById("reviewTitle").textContent =
-      "Review: " + report + " (" + state.groups.length + " groups)";
+      "Review: " + state.groups.length + " groups, " + totalFiles.toLocaleString() + " files";
 
     // Hide Move buttons if scan was on the dupes folder (move would be circular)
     var scanDir = (state._scanMetadata.directory || "").replace(/\\/g, "/").toLowerCase();

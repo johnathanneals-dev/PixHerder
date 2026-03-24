@@ -96,6 +96,20 @@ function wizardGoToStep(n) {
       document.getElementById("wizThreshold").value = s.threshold || 5;
       document.getElementById("wizThresholdVal").textContent = s.threshold || 5;
     }).catch(function() {});
+    // Show file count for staging folder
+    var countEl = document.getElementById("wizScanFileCount");
+    if (wizardState.stagingDir) {
+      api("POST", "/api/staging/check", { directory: wizardState.stagingDir }).then(function(r) {
+        var count = r.source_count;
+        if (typeof count === "object") count = count[0] || 0;
+        if (count > 0) {
+          countEl.textContent = count.toLocaleString() + " images ready to scan";
+          countEl.style.display = "block";
+        } else {
+          countEl.style.display = "none";
+        }
+      }).catch(function() { countEl.style.display = "none"; });
+    }
   }
   if (n === 3 && wizardState.lastReport) {
     document.getElementById("wizReviewInfoText").textContent =

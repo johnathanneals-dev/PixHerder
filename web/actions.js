@@ -35,8 +35,15 @@ function initActions() {
   var moveFileCount = Object.keys(moveFileSet).length;
   var deleteFileCount = Object.keys(deleteFileSet).length;
 
-  document.getElementById("actMoveCount").textContent = moveFileCount;
-  document.getElementById("actDeleteCount").textContent = deleteFileCount;
+  // Count total files across all scanned groups for context
+  var totalFiles = 0;
+  for (var ti = 0; ti < state.groups.length; ti++) {
+    var tg = state.groups[ti];
+    totalFiles += tg.files || ((tg.duplicates || []).length + 1);
+  }
+
+  document.getElementById("actMoveCount").textContent = moveFileCount + " of " + totalFiles.toLocaleString();
+  document.getElementById("actDeleteCount").textContent = deleteFileCount + " of " + totalFiles.toLocaleString();
   document.getElementById("actSpaceCount").textContent = formatBytes(moveBytes + deleteBytes);
 
   var settings = state.settings || {};
@@ -118,9 +125,12 @@ function showActionResult(d) {
   var errors = result.errors || [];
 
   document.getElementById("actResultTitle").textContent = "Actions Complete";
-  var msg = "Moved: " + moved + " files. Recycled: " + deleted + " files.";
-  if (skipped > 0) msg += " Skipped: " + skipped + " (already processed).";
-  if (errors.length > 0) msg += " Errors: " + errors.length + ".";
+  var parts = [];
+  if (moved > 0) parts.push(moved + " files moved to Recovery");
+  if (deleted > 0) parts.push(deleted + " files sent to Recycle Bin");
+  if (skipped > 0) parts.push(skipped + " skipped (already processed)");
+  if (errors.length > 0) parts.push(errors.length + " errors");
+  var msg = parts.join(". ") + ".";
   document.getElementById("actResultMsg").textContent = msg;
 
   if (errors.length > 0) {
@@ -143,10 +153,10 @@ function showActionResult(d) {
     '<div style="margin-top:24px;padding:20px;border:1px solid var(--border);border-radius:var(--radius);text-align:center;">'
     + '<p style="color:var(--text);font-weight:600;margin-bottom:12px;">What would you like to do next?</p>'
     + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
-    + '<button class="btn btn-secondary" onclick="navigate(\'dashboard\')">Dashboard</button>'
-    + '<button class="btn btn-secondary" onclick="_navToWizardStep(2)">Scan Again</button>'
-    + '<button class="btn btn-secondary" onclick="_navToReview()">Review</button>'
-    + '<button class="btn btn-secondary" onclick="navigate(\'finish\')">Finalize</button>'
+    + '<button class="btn btn-primary" onclick="navigate(\'finish\')">Finalize</button>'
+    + '<button class="btn btn-warning" onclick="_navToWizardStep(2)">Scan Again</button>'
+    + '<button class="btn btn-warning" onclick="_navToReview()">Review</button>'
+    + '<button class="btn btn-warning" onclick="navigate(\'dashboard\')">Dashboard</button>'
     + '<button class="btn btn-secondary" onclick="_openRecycleBin()">Open Recycle Bin</button>'
     + '</div></div>';
 

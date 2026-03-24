@@ -73,6 +73,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Tooltips on Execute Actions view (batch dialog is known limitation — z-index overlap)
 - [x] BUG: "Rescan" from scan results -- fixed to navigate to scan-config directly
 - [x] BUG: "Complete migration first" toast -- caused by Rescan going through wizard, fixed
+- [x] BUG: Folder picker browsed to wrong Pictures folder (local vs OneDrive) -- fixed: default to detected path, drive-level navigation, post-selection image count toast
 - [x] BUG: Send Files Home -- fixed bridge staging_status to read source_dir from manifest
 - [x] BUG: Recovery archive browse -- improved error message, edge case when archive empty
 - [x] BUG: Duplicate files in review -- exact dupes removed from perceptual scan input
@@ -93,6 +94,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in Staging browser
 - [ ] Move to Keepers source picker: choose Staging, Recovery, or both
 - [ ] Multiple source folder support (import from several directories)
+- [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 
 ### Code Quality

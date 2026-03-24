@@ -73,7 +73,11 @@ The recommended way to use PixHerder. Click **Start Guided Cleanup** on the dash
 PixHerder makes a working copy of your pictures so it can scan without interruption. Your originals stay exactly where they are -- nothing is changed or deleted.
 
 - Click **Browse** to select your source folder, or paste a folder path directly into the text field
-- Click **Begin Migration** (or **Cancel** to return to the dashboard)
+  - Browse opens at your detected Pictures folder (OneDrive\Pictures if you use OneDrive)
+  - Click any path segment in the breadcrumb to jump to that level
+  - Click **My Computer** to see all available drives (C:\, D:\, USB drives, etc.)
+  - After selecting a folder, a toast shows how many images were found (or warns if none)
+- Click **Begin Migration** (green, proceeds forward) or **Cancel** (red, returns to dashboard)
 - Watch the progress bar as files are copied locally
 - When complete, the step shows a checkmark and Step 2 opens
 
@@ -94,7 +98,7 @@ Choose how to scan for duplicates:
 - **Auto-recycle exact duplicates**: when checked, byte-for-byte identical files are automatically sent to the Recycle Bin without going through review. Keeps the largest file in each group. This is completely safe -- exact matches have zero false positives. Leave unchecked if you want to review everything yourself. Default: unchecked.
 - **Scan batch size**: how many files to scan at once (All, 500, 1000, 2000, 5000). Default: 2000. After you review and act on one batch, the next scan picks up where it left off. Recommended for large collections.
 
-Click **Start Scan** and watch progress. When complete, Step 3 opens.
+The page shows how many images are ready to scan. Click **Start Scan** (green) and watch progress. Use **Dashboard** (amber) to navigate away or **Cancel** (red) to leave. When complete, Step 3 opens.
 
 **Recommended progressive approach for large collections:**
 
@@ -170,9 +174,10 @@ Browse your files and decide next steps:
 
 - **Staging** -- browse the files you're keeping
 - **Recovery** -- check that nothing was wrongly removed
-- **Rescan** -- return to Step 2 for another pass with different settings
-- **Finished with Scanning** -- wraps everything up (see "Finishing Up" below)
-- **Back to Dashboard** -- return to the dashboard for more options
+- **Rescan** (amber) -- return to Step 2 for another pass with different settings
+- **Finished with Scanning** (green) -- wraps everything up (see "Finishing Up" below)
+- **Dashboard** (amber) -- return to the dashboard for more options
+- **Cancel** (red) -- leave the wizard
 
 ---
 

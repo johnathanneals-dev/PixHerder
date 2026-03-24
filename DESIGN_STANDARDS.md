@@ -72,13 +72,15 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 
 ### Color by Intent
 
-| Class | Color | Meaning | Examples |
-|-------|-------|---------|----------|
-| `btn-primary` | Green (`--accent`) | Safe, forward, positive | Send Files Home, Move to Keepers, Finish Now, Apply Decisions |
-| `btn-danger` | Red (`--danger`) | Destructive or Cancel | Delete, Delete All Remaining, Remove Workspace, Cancel |
-| `btn-warning` | Amber (`--warning`) | Caution, significant action | Rescue & Review, Start Over, Mark All Remaining |
-| `btn-secondary` | Dark surface + dim border | Alternative, neutral | Browse buttons, Return/Reload, alternative options |
-| `btn-ghost` | Transparent, dim text | Dismiss, minor | Exit, Go Back, Continue without pausing |
+| Class | Color | Meaning | Usage |
+|-------|-------|---------|-------|
+| `btn-primary` | Green (`--accent`) | Proceed forward (next step) | Begin Migration, Start Scan, Apply Decisions, Finish, Continue |
+| `btn-danger` | Red (`--danger`) | Cancel or leave current context | Cancel, Exit, Close, Back to Dashboard (from active workflow) |
+| `btn-warning` | Amber (`--warning`) | Navigate within the system | Return to Dashboard, Rescan, Browse folders, Start Over, Rescue & Review |
+| `btn-secondary` | Dark surface + dim border | Neutral alternative | Secondary options, alternative paths, toggles |
+| `btn-ghost` | Transparent, dim text | Subtle dismiss | Close lightweight overlays, minor navigation |
+
+**Rule of thumb:** If clicking the button moves the user closer to finishing their goal, it's green. If it abandons or cancels the current task, it's red. If it navigates somewhere else in the app without losing progress, it's amber.
 
 ### Sizes
 

@@ -280,6 +280,7 @@
     <div class="wizard-panel" id="wizardStep2">
       <div class="card">
         <h2>Step 2: Configure &amp; Scan</h2>
+        <div id="wizScanFileCount" style="margin-bottom:12px;font-size:14px;color:var(--text-dim);display:none;"></div>
         <div class="wizard-explanation">
           Now choose how to look for duplicates. <strong>Exact</strong> finds
           identical copies (fast and accurate). <strong>Perceptual</strong> finds
@@ -313,10 +314,10 @@
           <strong style="color:var(--text);">Perceptual</strong> finds visually similar images even if resized or recompressed. Slower, may need review.<br>
           <strong style="color:var(--text);">Both</strong> runs exact first, then perceptual on remaining files.
         </div>
-        <div id="wizScanActions">
+        <div id="wizScanActions" style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="wizardStartScan()" data-tip="Begin scanning for duplicates with these settings">Start Scan</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Return to Dashboard</button>
-          <button class="btn btn-danger" onclick="navigate('dashboard')" style="margin-left:8px;">Cancel</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+          <button class="btn btn-danger" onclick="navigate('dashboard')">Cancel</button>
         </div>
         <div style="margin-top:20px;padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px;color:var(--text-dim);line-height:1.7;">
           <div style="margin-bottom:12px;">
@@ -368,7 +369,8 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-primary" id="wizReviewBtn" onclick="wizardStartReview()">Open Review</button>
-          <button class="btn btn-secondary" onclick="navigate('dashboard')">Back to Dashboard</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')">Dashboard</button>
+          <button class="btn btn-danger" onclick="navigate('dashboard')">Cancel</button>
         </div>
         <div id="wizReviewComplete" style="display:none;margin-top:16px;">
           <div style="color:var(--accent);font-weight:600;" id="wizReviewCompleteMsg"></div>
@@ -391,9 +393,10 @@
         </div>
         <h3>Next Steps</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <button class="btn btn-secondary" onclick="wizardGoToStep(2)" data-tip="Run another scan with different settings">Rescan</button>
           <button class="btn btn-primary btn-lg" onclick="navigate('finish')" data-tip="Send your files home and clean up">Finished with Scanning</button>
-          <button class="btn btn-ghost" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
+          <button class="btn btn-warning" onclick="wizardGoToStep(2)" data-tip="Run another scan with different settings">Rescan</button>
+          <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+          <button class="btn btn-danger" onclick="navigate('dashboard')" data-tip="Leave the wizard">Cancel</button>
         </div>
       </div>
     </div>

@@ -478,6 +478,22 @@ class Api:
         if params is None:
             params = {}
         dirpath = params.get("path", "")
+
+        # Drive listing: enumerate available Windows drives
+        if dirpath == "__drives__":
+            import string
+            drives = []
+            for letter in string.ascii_uppercase:
+                drive = letter + ":\\"
+                if os.path.isdir(drive):
+                    drives.append(drive)
+            return {
+                "path": "My Computer",
+                "parent": "",
+                "folders": drives,
+                "is_drives": True,
+            }
+
         if not dirpath or not os.path.isdir(dirpath):
             return {"folders": [], "error": "Invalid path"}
         # Block system directories
@@ -506,7 +522,7 @@ class Api:
 
         parent = os.path.dirname(dirpath)
         if parent == dirpath:
-            parent = ""
+            parent = "__drives__"
         return {"path": dirpath, "parent": parent, "folders": folders}
 
     # ---- POST equivalents ----
