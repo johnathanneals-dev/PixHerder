@@ -114,6 +114,9 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] **Migration manifest for large folders** -- Track source file paths already copied in a manifest alongside the staging manifest. Repeat migrations skip files already in the list. Filesystem fallback if manifest lost (check if file exists at destination). Enables processing folders with more files than one session's worth without duplicating work. No hard cap on migration size -- migration is I/O bound, not resource intensive.
 - [ ] **Power loop workflow** -- "Move All to Recovery" button on scan results page (skip review). Enables fast winnowing loop: scan > bulk-move dupes > rescan > repeat until clean > promote staging to Keepers > move Recovery back to staging > detailed review on concentrated dupes.
+- [x] **Scan batch dropdown update** -- Options: 500/1000/2000/5000/7500/10000 (removed "All" to avoid resource exhaustion). Default: 2000.
+- [x] **Finalize button on scan complete** -- Green "Finalize" button on scan complete card, only visible when Recovery or Keepers have files.
+- [ ] **Scan from Recovery review** -- Currently clicking Recovery opens file browser only. User should be able to trigger review from Recovery browser directly (scan + review in one flow). For now, "Scan Recovery" on dashboard handles this.
 
 ### Priority 5: Polish & Features
 
@@ -132,8 +135,16 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Adaptive resolution: detect screen resolution on startup, define display profiles (full/compact/minimal), adjust layouts per profile. Extend existing CSS breakpoints (1024/768/480). Toast warning if below 1280x720.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 
-### Code Quality
+### Code Quality (Pike's Rules Audit -- 2026-03-24)
 
+- [ ] Unify server.py progress globals -- 6 identical dicts into one dict-of-dicts. Cuts ~50 lines. Rule 5 violation. HIGH BLAST RADIUS: bridge.py imports all 6 by name, plus every runner function references them directly. Do in a fresh session with full testing.
+- [ ] Extract inline styles from index.html to CSS classes -- 100+ inline style attributes. Biggest single frontend issue. Rule 5.
+- [ ] Refactor dialog building -- Replace inline HTML string generation in app.js, review.js, finish.js with template helpers or data-driven builders. Rule 5.
+- [ ] Split _dashUpdateFlowGuide() -- 70-line function doing 4 things (step states, stepper HTML, hint text, continue logic). Should be 3-4 functions. Rule 4.
+- [ ] Data-drive scan context configs -- Replace if/else chains in scan.js initScanConfig() with a context config object. Rule 4.
+- [ ] Data-drive wizard step init -- Replace 4 if-branches in wizardGoToStep() with a step handler map. Rule 4.
+- [ ] Evaluate LSH threshold -- comparator.py uses 500-file threshold for LSH bucketing. Unmeasured. Either measure it or document why 500. Rule 1.
+- [ ] Collapse hybrid/manual mode nav configs -- Identical in modes.js. Rule 4.
 - [ ] Server modularization -- split server.py into route modules
 
 ### OneDrive Integration
