@@ -117,14 +117,17 @@ function _executeFinish() {
       }
     }
     window._onRestoreProgress = _onRestore;
-    if (window.pywebview && window.pywebview.api) {
-      window.pywebview.api.subscribe_restore_progress();
-    }
 
+    // Start restore FIRST so progress dict leaves "idle" state,
+    // THEN subscribe so the poller doesn't exit on "idle" immediately.
     api("POST", "/api/staging/restore", {
       staging_dir: _stagingSession.staging_dir,
       source_dir: _stagingSession.source_dir,
       include_keepers: true
+    }).then(function() {
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.subscribe_restore_progress();
+      }
     }).catch(function(err) {
       window._onRestoreProgress = null;
       _finishError("Restore failed: " + err.message);

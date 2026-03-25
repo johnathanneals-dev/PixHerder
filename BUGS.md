@@ -373,6 +373,13 @@ None currently known.
 - **Fix:** Use `getBoundingClientRect().bottom` on the topnav to calculate actual position.
 - **Files:** web/browser.js
 
+**Finish progress subscription exits immediately on "idle" (race condition)**
+- **Found:** Testing, 2026-03-24
+- **Commit:** (this commit)
+- **Description:** `subscribe_restore_progress()` was called BEFORE the restore API. The progress dict was still "idle" (a terminal state), so the poller exited immediately on first poll. Progress bar never updated, completion callback never fired, recycle/cleanup phases never ran. Root cause of finish appearing to stall/freeze.
+- **Fix:** Start the restore API call first (sets progress to "running"), then subscribe in the `.then()` callback. Poller now sees "running" and keeps polling until "complete".
+- **Files:** web/finish.js
+
 **Finalize recycles clean Recovery files (FLOW BUG -- OPEN)**
 - **Found:** Testing, 2026-03-24
 - **Description:** After scanning Recovery and deleting actual dupes, 248 survivor files remained that passed 5 scans with 0 groups. Finalize recycled them all because it treats everything in Recovery as "dupes to recycle." No distinction between unreviewed files and files that survived review.
