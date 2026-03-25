@@ -75,7 +75,7 @@ function toast(message, type) {
   }
   container.appendChild(el);
   // All toasts blink (CSS handles it). Warning/error stay longer.
-  var duration = (type === "warning" || type === "error") ? 6000 : 4000;
+  var duration = (type === "warning" || type === "error") ? 7000 : 5000;
   setTimeout(function() { el.remove(); }, duration);
 }
 
@@ -955,9 +955,11 @@ function route() {
   var hintsOn = !state.settings || state.settings.show_hints !== false;
   // Easy mode forces hints on regardless of setting
   if (_curMode === "easy") hintsOn = true;
-  document.getElementById("hintsBar").style.display = hintsOn ? "block" : "none";
   // Keyboard shortcuts: only in review, and only if setting is on
   var kbdOn = view === "review" && (!state.settings || state.settings.show_kbd_shortcuts !== false);
+  // If kbd shortcuts should show, force hints bar visible even if hints are off
+  if (kbdOn) hintsOn = true;
+  document.getElementById("hintsBar").style.display = hintsOn ? "block" : "none";
   document.getElementById("kbdShortcuts").style.display = kbdOn ? "inline-flex" : "none";
   var _hbt = document.getElementById("hintsBarText");
   if (_hbt && view !== "dashboard") {

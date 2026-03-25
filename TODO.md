@@ -88,9 +88,27 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] Clear archive shows confirmation dialog with OK button
 - [x] Help link in nav menu (placeholder view added)
 
-### Current App Features (build next)
+### Priority 1: Fix Now
+
+- [ ] **Easy mode routing** -- Easy mode lands on blank dashboard instead of wizard. The fresh-load redirect in route() doesn't trigger because the default hash resolves to "dashboard" before the redirect logic runs. Need to detect Easy mode in route() and redirect to wizard view on load. Files: web/app.js route() function.
+
+### Priority 2: Safety & Protection
+
+- [ ] **Path safety guards** -- 3 tiers: (1) Hard block C:\Windows with dialog explaining why and suggesting File Explorer to manually extract images. (2) Warning dialog for Program Files and any drive root (C:\, E:\, USB volumes) showing image count, user decides. (3) Everything else proceeds normally. Add `is_safe_source_path()` to engine/config.py. Apply in web/bridge.py staging_start(), web/server.py _handle_staging_start(), web/wizard.js, web/modes.js autonomous pipeline.
+
+### Priority 3: Enhanced Mode
+
+- [ ] **Enhanced Mode** -- Opt-in checkbox in Settings: "Enable Enhanced Mode" with a ? button next to it (tooltip: "Explanation", links to help manual section). When checked, navigates to walkthrough screen with editable fields for CPU cores, RAM (GB), disk space (GB). "Auto-detect" button fills fields automatically (use ctypes kernel32 GlobalMemoryStatusEx for RAM, os.cpu_count(), shutil.disk_usage() -- no external deps). User can manually enter values instead (avoids antivirus concerns). "Save for Enhancement" applies profile and adjusts recommended scan batch. Profile stored in settings.json as system_profile: { cores, ram_gb, disk_free_gb, recommended_batch }. Recommendation formula: RAM <4GB=2000, 4-8GB=5000, 8-16GB=7500, 16GB+=10000. Advisory only -- user picks from dropdown, recommendation highlighted. Leave decent resource buffer so PixHerder never hogs the system. Cancel unchecks box and returns to Settings. Back to Dashboard unchecks box and returns to dashboard. Later unchecking shows "Revert to default settings?" confirmation. Help manual section needed: thorough explanation of what Enhanced Mode does, what to expect enabling/disabling, methodology. Files: engine/config.py, web/index.html, web/settings.js, web/modes.js, USERS_MANUAL.md.
+
+### Priority 4: Migration & Workflow
+
+- [ ] **Migration manifest for large folders** -- Track source file paths already copied in a manifest alongside the staging manifest. Repeat migrations skip files already in the list. Filesystem fallback if manifest lost (check if file exists at destination). Enables processing folders with more files than one session's worth without duplicating work. No hard cap on migration size -- migration is I/O bound, not resource intensive.
+- [ ] **Power loop workflow** -- "Move All to Recovery" button on scan results page (skip review). Enables fast winnowing loop: scan > bulk-move dupes > rescan > repeat until clean > promote staging to Keepers > move Recovery back to staging > detailed review on concentrated dupes.
+
+### Priority 5: Polish & Features
 
 - [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
+- [x] 4 workflow modes: Easy (guided), Autonomous (one-click), Hybrid (recommended), Manual (power user). Mode selector on first launch, changeable in Settings. Locked for this version -- no additional modes.
 - [ ] Restart button: green button in status bar bottom-left, shifts server info toward middle. Tooltip, small confirmation dialog, force-closes and relaunches app with no further interaction.
 - [ ] Double-launch protection: second instance via shortcut leaves orphaned pythonw.exe process. Current single-instance check (port bind) exits silently but process may linger. Investigate mutex or PID file approach.
 - [ ] Wizard walkthrough: thorough end-to-end review of the 4-step wizard flow, verify all states and transitions
@@ -99,10 +117,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Recycle Bin capacity indicator before bulk recycle operations
 - [ ] Browser file management: "Move to Keepers" and "Move to Be Reviewed" buttons in Staging browser
 - [ ] Move to Keepers source picker: choose Staging, Recovery, or both
-- [ ] Power loop workflow: "Move All to Recovery" button on scan results page (skip review). Enables fast winnowing loop: scan > bulk-move dupes > rescan > repeat until clean > promote staging to Keepers > move Recovery back to staging > detailed review on concentrated dupes.
 - [ ] Multiple source folder support (import from several directories)
 - [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
-- [x] 4 workflow modes: Easy (guided), Autonomous (one-click), Hybrid (recommended), Manual (power user). Mode selector on first launch, changeable in Settings. Locked for this version -- no additional modes.
 - [ ] Adaptive resolution: detect screen resolution on startup, define display profiles (full/compact/minimal), adjust layouts per profile. Extend existing CSS breakpoints (1024/768/480). Toast warning if below 1280x720.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
 

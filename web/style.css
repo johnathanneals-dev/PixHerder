@@ -491,7 +491,7 @@
   .toast {
     padding: 15px 25px; border-radius: var(--radius-sm);
     font-size: 16px; font-weight: 500; max-width: 500px;
-    animation: slideIn 0.25s ease, toast-blink 0.5s ease-in-out 0.25s 2;
+    animation: slideIn 0.25s ease, toast-blink 0.75s ease-in-out 0.25s 2;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
   .toast-success { background: var(--accent-bg); border: 1px solid var(--accent-dim); color: var(--accent); }
