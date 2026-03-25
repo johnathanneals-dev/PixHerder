@@ -732,10 +732,12 @@
           <h3 style="color:var(--accent);margin-bottom:12px;" id="scanCompleteTitle">Scan Complete</h3>
           <p id="scanCompleteMsg" style="color:var(--text-dim);margin-bottom:16px;"></p>
           <div id="scanCompleteSummary" style="margin-bottom:16px;"></div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;gap:12px;flex-wrap:nowrap;justify-content:space-evenly;">
             <button class="btn btn-primary" id="scanReviewBtn" onclick="" style="display:none;">Review Results</button>
+            <button class="btn btn-primary" id="scanFinalizeBtn" onclick="navigate('finish')" style="display:none;" data-tip="Finish up and send files home">Finalize</button>
             <button class="btn btn-warning" id="scanReturnFolderBtn" onclick="_returnToScanFolder()" style="display:none;">Return to Folder</button>
-            <button class="btn btn-warning" onclick="navigate('dashboard')">Dashboard</button>
+            <button class="btn btn-warning" onclick="navigate('scan-config')">Rescan</button>
+            <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
           </div>
         </div>
       </div>

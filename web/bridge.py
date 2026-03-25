@@ -40,12 +40,12 @@ from engine.state_validator import validate_state
 # Import shared state and runners from server module
 from web.server import (
     scan_progress, action_progress, oddball_progress,
-    staging_progress, syncback_progress,
+    staging_progress, syncback_progress, restore_progress,
     scan_cancel, action_cancel, oddball_cancel,
     staging_cancel, syncback_cancel,
     _log_activity, _read_activity, _find_staging_subfolder,
     _run_scan, _run_action, _run_oddball, _run_staging, _run_syncback,
-    _reset_all_progress,
+    _run_restore, _reset_all_progress,
 )
 
 # Thread references (mirrors server.py globals)

@@ -338,6 +338,13 @@ function showScanComplete(d) {
   document.getElementById("scanCompleteBox").style.display = "block";
   document.getElementById("scanProgressPct").textContent = d.status === "complete" ? "Done" : d.status;
 
+  // Show Finalize button if there are files to finalize (dupes or keepers)
+  var finalizeBtn = document.getElementById("scanFinalizeBtn");
+  if (finalizeBtn) {
+    var hasDupesOrKeepers = !!(_dashFolderPaths.dupes || _dashFolderPaths.keepers);
+    finalizeBtn.style.display = hasDupesOrKeepers ? "inline-flex" : "none";
+  }
+
   if (d.status === "complete") {
     _sessionScanCompleted = true;
     document.getElementById("scanCompleteTitle").textContent = "Scan Complete";
@@ -381,15 +388,12 @@ function showScanComplete(d) {
   if (d.result_file) {
     var totalGroups = (d.summary && d.summary.total_groups) || 0;
     if (totalGroups === 0) {
-      // No dupes found — show rescan/done options instead of review
+      // No dupes found — hide review, show message. Rescan/Dashboard already in static buttons.
       document.getElementById("scanReviewBtn").style.display = "none";
       document.getElementById("scanCompleteSummary").innerHTML +=
         '<div style="margin-top:16px;text-align:center;">' +
-        '<p style="color:var(--text-dim);margin-bottom:12px;">No duplicates found at this threshold. Try a different scan mode or a higher perceptual threshold.</p>' +
-        '<div style="display:flex;gap:12px;justify-content:center;">' +
-        '<button class="btn btn-warning" onclick="navigate(\'scan-config\')">Rescan</button>' +
-        '<button class="btn btn-warning" onclick="navigate(\'dashboard\')">Dashboard</button>' +
-        '</div></div>';
+        '<p style="color:var(--text-dim);">No duplicates found at this threshold. Try a different scan mode or a higher perceptual threshold.</p>' +
+        '</div>';
     } else {
       var btn = document.getElementById("scanReviewBtn");
       btn.style.display = "inline-flex";

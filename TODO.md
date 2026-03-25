@@ -92,6 +92,16 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] **Easy mode routing** -- Easy mode lands on blank dashboard instead of wizard. The fresh-load redirect in route() doesn't trigger because the default hash resolves to "dashboard" before the redirect logic runs. Need to detect Easy mode in route() and redirect to wizard view on load. Files: web/app.js route() function.
 
+### Priority 1b: Finalize Flow Fixes
+
+- [ ] **Finalize warning for clean Recovery files** -- Before recycling Recovery, check if the most recent scan of Recovery found 0 duplicate groups. If so, show warning dialog: "Recovery has X files that weren't found as duplicates. These may be keepers. Send them home instead of recycling?" Options: Send Home (green), Recycle Anyway (red), Cancel. Prevents accidental loss of reviewed survivors. Files: web/finish.js _executeFinish(), needs scan history check.
+
+- [ ] **Auto-promote after clean Recovery scan** -- When scanning Recovery returns 0 groups, show dialog on the scan complete screen: "No duplicates found. These X files appear to be keepers. Move them to Keepers?" Options: Move to Keepers (green), Leave in Recovery (amber), Send Home (green). This gives the user an immediate exit instead of leaving clean files stranded in Recovery. Files: web/scan.js showScanComplete(), needs folder context check.
+
+- [ ] **Finalize view title/description rewrite** -- "Finalize" is vague. Keep button labels short but make the view title and description explicit about what will happen. Title: "Send Files Home & Clean Up" or similar. Description should clearly state: "Your kept files will be copied back to [source]. Files in Recovery will be sent to the Recycle Bin. Your originals are never deleted." Files: web/finish.js, web/index.html finish view.
+
+- [ ] **Finish progress bar race condition** -- Progress bar shows 0% until completion. Subscription now starts before restore API call (fix applied this session) but needs testing with a real file set to verify. Files: web/finish.js.
+
 ### Priority 2: Safety & Protection
 
 - [ ] **Path safety guards** -- 3 tiers: (1) Hard block C:\Windows with dialog explaining why and suggesting File Explorer to manually extract images. (2) Warning dialog for Program Files and any drive root (C:\, E:\, USB volumes) showing image count, user decides. (3) Everything else proceeds normally. Add `is_safe_source_path()` to engine/config.py. Apply in web/bridge.py staging_start(), web/server.py _handle_staging_start(), web/wizard.js, web/modes.js autonomous pipeline.
