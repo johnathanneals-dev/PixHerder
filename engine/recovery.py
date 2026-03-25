@@ -65,8 +65,8 @@ def start_new_operation(operation_name="recycle"):
         "started": datetime.now().isoformat(),
         "files": [],
     }
-    with open(_manifest_path(active_slot), "w") as f:
-        json.dump(manifest, f, indent=2)
+    from engine.config import safe_json_write
+    safe_json_write(_manifest_path(active_slot), manifest)
 
     return active_slot
 
@@ -111,8 +111,8 @@ def archive_file(slot_num, filepath):
             "timestamp": datetime.now().isoformat(),
         })
 
-        with open(manifest_file, "w") as f:
-            json.dump(manifest, f, indent=2)
+        from engine.config import safe_json_write
+        safe_json_write(manifest_file, manifest)
 
         return True
     except Exception:

@@ -3,6 +3,7 @@ scans/
 logs/
 checkpoints/
 settings.json
+_system_recovery/
 
 # Legacy reports
 dupes_report.json

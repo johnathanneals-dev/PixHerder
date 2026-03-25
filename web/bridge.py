@@ -711,8 +711,8 @@ class Api:
         safe_name = os.path.basename(report).replace(".json", "")
         dec_path = scans_dir / ("decisions_" + safe_name + ".json")
         try:
-            with open(str(dec_path), "w", encoding="utf-8") as f:
-                json.dump({"report": report, "decisions": decisions}, f)
+            from engine.config import safe_json_write
+            safe_json_write(dec_path, {"report": report, "decisions": decisions})
             return {"success": True}
         except Exception as e:
             return {"error": "Failed to save decisions: " + str(e)}
@@ -904,6 +904,9 @@ class Api:
         if not staging_dir:
             return {"error": "Missing staging_dir"}
         result = cleanup_staging(staging_dir)
+        # Clean up system recovery backups on session finish
+        from engine.config import cleanup_system_recovery
+        cleanup_system_recovery()
         _log_activity("staging_cleanup", {
             "staging_dir": staging_dir,
             "result": result.get("status"),

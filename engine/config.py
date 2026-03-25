@@ -18,6 +18,85 @@ SCANS_DIR = PROJECT_ROOT / "scans"
 LOGS_DIR = PROJECT_ROOT / "logs"
 CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
 ACTIVITY_LOG = LOGS_DIR / "activity.log"
+SYSTEM_RECOVERY_DIR = PROJECT_ROOT / "_system_recovery"
+
+# ---- System Recovery: backup-before-write for critical files ----
+
+def _ensure_system_recovery_dir():
+    """Create the _system_recovery folder if it doesn't exist."""
+    SYSTEM_RECOVERY_DIR.mkdir(exist_ok=True)
+
+
+def backup_before_write(filepath):
+    """Copy a critical file to _system_recovery before overwriting.
+
+    Keeps only the most recent backup of each file.
+    Silent on failure -- backup is best-effort, never blocks the write.
+    """
+    try:
+        src = Path(filepath)
+        if not src.exists():
+            return
+        _ensure_system_recovery_dir()
+        dest = SYSTEM_RECOVERY_DIR / src.name
+        import shutil
+        shutil.copy2(str(src), str(dest))
+    except Exception:
+        pass  # Best-effort -- never block the actual write
+
+
+def restore_from_backup(filepath):
+    """Restore a critical file from _system_recovery if the primary is missing/corrupt.
+
+    Returns True if restored, False if no backup available.
+    """
+    try:
+        src = Path(filepath)
+        backup = SYSTEM_RECOVERY_DIR / src.name
+        if backup.exists() and backup.stat().st_size > 0:
+            import shutil
+            shutil.copy2(str(backup), str(src))
+            logger.info("Restored %s from system recovery backup", src.name)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def safe_json_write(filepath, data):
+    """Atomic JSON write: backup existing, write to temp, replace.
+
+    Combines backup-before-write with atomic temp+replace pattern.
+    """
+    filepath = Path(filepath)
+    backup_before_write(filepath)
+    tmp_path = str(filepath) + ".tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, str(filepath))
+    except Exception:
+        # Clean up temp file on failure
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+def cleanup_system_recovery():
+    """Remove all files from the _system_recovery folder.
+
+    Called during session finish / cleanup operations.
+    """
+    try:
+        if SYSTEM_RECOVERY_DIR.is_dir():
+            import shutil
+            shutil.rmtree(str(SYSTEM_RECOVERY_DIR), ignore_errors=True)
+            logger.info("System recovery folder cleaned up")
+    except Exception:
+        pass
+
 
 # Canonical image extension list -- import this everywhere, do not duplicate
 IMAGE_EXTENSIONS = {
@@ -77,17 +156,41 @@ def ensure_dirs():
 
 
 def load_settings():
-    """Load settings from disk, merging with defaults for missing keys."""
+    """Load settings from disk, merging with defaults for missing keys.
+
+    If settings.json is missing or corrupt, tries to restore from system recovery.
+    """
     settings = dict(DEFAULTS)
+    loaded = False
     if SETTINGS_PATH.exists():
         try:
             with open(str(SETTINGS_PATH), "r") as f:
                 saved = json.load(f)
             if isinstance(saved, dict):
                 settings.update(saved)
+                loaded = True
             logger.info("Settings loaded from %s", SETTINGS_PATH)
         except Exception:
-            pass
+            logger.warning("Settings file corrupt, attempting recovery")
+            if restore_from_backup(SETTINGS_PATH):
+                try:
+                    with open(str(SETTINGS_PATH), "r") as f:
+                        saved = json.load(f)
+                    if isinstance(saved, dict):
+                        settings.update(saved)
+                        loaded = True
+                except Exception:
+                    pass
+    elif not loaded:
+        # File missing entirely -- try restore
+        if restore_from_backup(SETTINGS_PATH):
+            try:
+                with open(str(SETTINGS_PATH), "r") as f:
+                    saved = json.load(f)
+                if isinstance(saved, dict):
+                    settings.update(saved)
+            except Exception:
+                pass
     return settings
 
 
@@ -122,8 +225,7 @@ def save_settings(data):
         if pk in settings and _is_system_path(settings[pk]):
             settings[pk] = DEFAULTS[pk]
 
-    with open(str(SETTINGS_PATH), "w") as f:
-        json.dump(settings, f, indent=2)
+    safe_json_write(SETTINGS_PATH, settings)
     logger.info("Settings saved to %s", SETTINGS_PATH)
     return settings
 

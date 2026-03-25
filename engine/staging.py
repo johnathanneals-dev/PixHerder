@@ -371,8 +371,8 @@ def _build_manifest(source_dir, staging_dir):
         "bytes_total": staged_bytes,
     }
 
-    with open(str(mpath), "w", encoding="utf-8") as f:
-        json.dump(manifest, f, indent=2)
+    from engine.config import safe_json_write
+    safe_json_write(mpath, manifest)
 
     return mpath
 
