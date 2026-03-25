@@ -690,46 +690,58 @@ var _tourOnComplete = null;
 
 var _tourSteps = [
   {
-    title: "Welcome to PixHerder",
-    body: "PixHerder finds and cleans up duplicate photos on your computer. " +
-          "It keeps your originals safe and never permanently deletes anything." +
+    title: "Welcome",
+    body: "Welcome to the walkthrough which will help to get you familiar with what you've gotten yourself into!" +
+          '<div style="margin-top:12px;">Jokes aside, this software will help you look through your images and find all the ones of which you have more than one copy. Cleaning up your collection.</div>' +
+          '<div style="margin-top:12px;">Thank you for your purchase.</div>' +
           '<div style="margin-top:12px;font-size:12px;color:var(--text-muted);">For the best experience, maximize the PixHerder window.</div>'
   },
   {
-    title: "How It Works",
-    body: '<div style="display:flex;flex-direction:column;gap:12px;margin:8px 0;">' +
-      '<div style="display:flex;align-items:center;gap:12px;">' +
-        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</span>' +
-        '<span><strong>Import</strong> your photos into a safe workspace</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:12px;">' +
-        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</span>' +
-        '<span><strong>Scan</strong> for exact and visual duplicates</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:12px;">' +
-        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</span>' +
-        '<span><strong>Review</strong> matches side by side and pick keepers</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:12px;">' +
-        '<span style="background:var(--accent);color:var(--bg);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</span>' +
-        '<span><strong>Clean up</strong> and send your files home</span>' +
-      '</div>' +
-    '</div>'
+    title: "Data Safety",
+    body: "Your files are always protected. PixHerder works on copies -- your originals are never moved, changed, or deleted until you explicitly say so." +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Recycle Bin only</strong> -- All removals go to the Windows Recycle Bin. Nothing is ever permanently deleted. You can always recover.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Send Files Home</strong> -- At any time, put all your files back exactly where they came from. One click, full refund.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Recycle All Remaining</strong> -- Send everything marked as duplicates to the Recycle Bin. Still recoverable.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Remove Workspace</strong> -- Done working? Clean up the local copies. Your originals are untouched.</div>' +
+          '<div style="margin-top:12px;">You are always in control. Every operation can be undone, and you can exit at any point without losing anything.</div>'
   },
   {
-    title: "Choose Your Style",
+    title: "Step 1: Import",
+    body: "First, you'll choose a folder of photos to work with. PixHerder makes a safe working copy of your files -- your originals are never moved or changed." +
+          '<div style="margin-top:12px;">You can browse to any folder on any drive, including USB drives. The import progress shows exactly how many files are being copied.</div>'
+  },
+  {
+    title: "Step 2: Scan",
+    body: "PixHerder scans your imported photos looking for duplicates. It can find exact copies (byte-for-byte identical) and visually similar images (resized, recompressed, or lightly edited)." +
+          '<div style="margin-top:12px;">You control how aggressive the scan is with a threshold slider. Lower means stricter matching. You can scan in batches for large collections.</div>'
+  },
+  {
+    title: "Step 3: Review",
+    body: "After scanning, you review the matches side by side. Click images to toggle between Keep and Duplicate. PixHerder picks a default keeper, but you have the final say." +
+          '<div style="margin-top:12px;">Keyboard shortcuts make review fast: arrow keys to navigate, S to keep, M to mark, D to recycle. Or use the bulk actions to handle everything at once.</div>'
+  },
+  {
+    title: "Step 4: Clean Up",
+    body: "When you're satisfied, send your kept files home and clean up the duplicates. Duplicates go to the Windows Recycle Bin -- you can always recover them." +
+          '<div style="margin-top:12px;">Your originals are never deleted. PixHerder only removes the working copies it made. The finish process shows exactly what will happen before you confirm.</div>'
+  },
+  {
+    title: "The Dashboard",
+    body: "The dashboard is your home base. Everything you need is here at a glance." +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Stat cards</strong> -- See your total files, duplicate groups, duplicate files, and reclaimable space.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Browse files</strong> -- Open Staging, Recovery, or Keepers to see what is in each folder.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">Scan buttons</strong> -- Start a new scan or rescan any folder with different settings.</div>' +
+          '<div style="margin-top:12px;"><strong style="color:var(--accent);">More Options</strong> -- Send Files Home, Start Over, Rescue and Review, Move to Keepers, and more. All the tools to manage your workflow.</div>' +
+          '<div style="margin-top:12px;">The flow stepper at the top tracks where you are in the process. The dashboard updates automatically as your files move through the system.</div>'
+  },
+  {
+    title: "Choose Your Mode",
     body: '<div style="margin:8px 0;line-height:1.7;">' +
       '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Easy</strong> -- Full guided wizard. Best for first-time users.</div>' +
       '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Autonomous</strong> -- One click. PixHerder does everything automatically.</div>' +
       '<div style="margin-bottom:8px;"><strong style="color:var(--accent);">Hybrid</strong> -- Wizard to start, then take the wheel from the dashboard.</div>' +
-      '<div><strong style="color:var(--accent);">Manual</strong> -- Import your files, then do everything yourself. Full control.</div>' +
+      '<div><strong style="color:var(--accent);">Manual</strong> -- Import your files, then do everything yourself. You have full control from the dashboard.</div>' +
     '</div>'
-  },
-  {
-    title: "Your Files Are Safe",
-    body: "PixHerder never permanently deletes your photos. " +
-          "All removals go to the Windows Recycle Bin, so you can always get them back. " +
-          "Your original files are never touched until you say so."
   },
   {
     title: "Ready to Go",

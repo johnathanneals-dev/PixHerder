@@ -116,7 +116,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ### Help System
 
-- [ ] Built-in #help view with anchored topics, full nav, "Back to where I was" (placeholder view exists)
+- [ ] Built-in #help view: render USERS_MANUAL.md content in-app with search box, topic anchors, full nav, "Back to where I was" (placeholder view exists)
 
 ### Testing
 

@@ -105,6 +105,91 @@ You can always revisit the tour or change your mode:
 
 ---
 
+## Your First Session: Start to Finish
+
+This walks you through a complete session from opening PixHerder for the first time to sending your cleaned-up files home.
+
+### 1. Open PixHerder
+
+Double-click the desktop shortcut. The app opens maximized. On first launch, you'll see a guided tour introducing the app, followed by a mode selector. If you're new, choose **Easy** (recommended). You can always change this later in Settings.
+
+### 2. Import Your Photos
+
+From the dashboard, click **Start Guided Cleanup**. The wizard opens at Step 1: Import.
+
+- Click **Browse** to find your photos folder (Pictures, OneDrive, a USB drive -- anywhere)
+- After selecting a folder, a toast shows how many images were found
+- Click **Begin Migration** to copy your photos into PixHerder's safe workspace
+- Watch the progress bar -- your originals are never moved or changed
+- When complete, the wizard advances to Step 2
+
+### 3. Scan for Duplicates
+
+The scan configuration page lets you choose how to look for duplicates.
+
+- **Start with Exact mode** -- finds byte-for-byte identical copies. Fast, zero false positives.
+- Optionally check **Auto-recycle exact duplicates** to skip review for guaranteed matches
+- Click **Start Scan** and watch the progress (phase, file count, ETA)
+- When the scan finishes, you'll see a summary: how many duplicate groups were found, how much space is reclaimable
+
+### 4. Review Matches
+
+Click **Review** to see your duplicate groups side by side.
+
+- Each group shows all matching files with dimensions, file size, date, and similarity percentage
+- Click any image to toggle it between **Keep** (green) and **Duplicate** (red)
+- Use **Mark All Remaining** to quickly mark everything, then go back and adjust individual groups
+- Keyboard shortcuts speed things up: arrow keys to navigate, S to keep, M to mark, D to recycle
+- When satisfied, click **Apply Decisions**
+
+### 5. Execute Actions
+
+The actions page shows exactly what will happen: how many files will be moved to Recovery, how many will be recycled.
+
+- Click **Execute** to carry out your decisions
+- A progress bar shows files being processed
+- When complete, you'll see a summary of what was moved
+
+### 6. Rescan (Optional)
+
+After your first pass, you may want to scan again with different settings:
+
+- Return to the dashboard and click **Rescan Staging**
+- Try **Perceptual mode** at a low threshold (2-3) to catch resized or recompressed copies
+- Increase the threshold (5-8) for more aggressive matching on subsequent passes
+- Each scan finds a new set of duplicates to review
+
+Repeat scan-review-execute as many times as you like. Each pass reduces your collection further.
+
+### 7. Finish Up
+
+When you're done scanning and reviewing:
+
+- Click **Finalize** in the nav menu (or **Finished with Scanning** on the dashboard)
+- The summary page shows what will happen: kept files go home, duplicates go to the Recycle Bin
+- Click **Finish Now** to execute
+- PixHerder copies your kept files back to their original location, recycles the duplicates, and cleans up the workspace
+
+### 8. After Finishing
+
+- Your kept files are back in their original folder, exactly where they started
+- Duplicates are in the Windows Recycle Bin -- you can recover them from there if you change your mind
+- The PixHerder workspace is cleaned up automatically
+- You can run PixHerder again anytime on the same folder or a different one
+
+### What If Something Goes Wrong?
+
+At any point during the process:
+
+- **Send Files Home** -- puts everything back where it came from, no questions asked
+- **Start Over** -- moves everything back to Staging for a fresh start
+- **Rescue & Review** -- brings duplicates back for another look
+- **Close the window** -- your files stay safely in the workspace. Next time you open PixHerder, it picks up where you left off.
+
+Nothing is ever permanently deleted. You are always in control.
+
+---
+
 ## Guided Cleanup Wizard
 
 The recommended way to use PixHerder. Click **Start Guided Cleanup** on the dashboard.
