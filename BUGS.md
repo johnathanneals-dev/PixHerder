@@ -317,18 +317,80 @@ None currently known.
 - **Fix:** Hidden with `STARTUPINFO` flags (`SW_HIDE`).
 - **Files:** engine/staging.py, engine/actions.py
 
+**Staging folder invisible after settings change**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 321366e
+- **Description:** `_find_staging_subfolder()` didn't search the system temp directory (`tempfile.gettempdir()`). Staging folders created there became invisible if the settings default path pointed elsewhere.
+- **Fix:** Added temp directory to the search paths in `_find_staging_subfolder()`.
+- **Files:** web/server.py
+
+**_run_restore NameError in bridge.py (crash)**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 29a1cd8
+- **Description:** `_run_restore` function defined in server.py but called in bridge.py without being imported. Finalize crashed with `NameError: name '_run_restore' is not defined`.
+- **Fix:** Added `_run_restore` and `restore_progress` to bridge.py imports from server.py.
+- **Files:** web/bridge.py
+
+**Explanation text toggle not working on dashboard**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 8c9c04e
+- **Description:** Dashboard description divs started with `style="display:none"` inline. Dashboard.js showed them based on file state, overriding the `show_explanations` toggle from route(). Also, `state.settings` was nulled on leaving settings view, causing all toggles to default to ON.
+- **Fix:** Dashboard.js now checks `show_explanations` before showing descriptions. Settings cache marked stale instead of nulled.
+- **Files:** web/dashboard.js, web/app.js, web/index.html
+
+**App fails to start with open_fullscreen setting (crash)**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 321366e
+- **Description:** `settings` variable referenced in `_run_native_mode()` but defined in `main()` scope. `NameError: name 'settings' is not defined`.
+- **Fix:** Call `load_settings()` directly in `_run_native_mode()`.
+- **Files:** pixherder_app.py
+
+**Keyboard shortcuts not showing in review**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 892a8e9
+- **Description:** When hints bar was hidden (show_hints off), keyboard shortcuts inside it were also hidden even when the kbd shortcuts setting was on.
+- **Fix:** If kbd shortcuts should show, force hints bar visible regardless of hints toggle.
+- **Files:** web/app.js
+
+**Scan complete duplicate buttons**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 29a1cd8
+- **Description:** No-dupes path in showScanComplete() injected dynamic Rescan/Dashboard buttons. Adding static buttons caused duplicates.
+- **Fix:** Removed dynamic button injection, kept static buttons only.
+- **Files:** web/scan.js, web/index.html
+
+**Finish progress bar stuck at 0%**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 29a1cd8
+- **Description:** Progress subscription started AFTER the restore API call returned. The restore thread could complete before the subscription began polling, causing the progress bar to never update.
+- **Fix:** Subscribe to restore progress BEFORE calling the restore API.
+- **Files:** web/finish.js
+
+**Browser toolbar overlaps hints bar**
+- **Found:** Testing, 2026-03-24
+- **Commit:** 81686ff
+- **Description:** Browser nav bar used hardcoded `top: 56px`. Didn't account for hints bar and title bar pushing the nav lower.
+- **Fix:** Use `getBoundingClientRect().bottom` on the topnav to calculate actual position.
+- **Files:** web/browser.js
+
+**Finalize recycles clean Recovery files (FLOW BUG -- OPEN)**
+- **Found:** Testing, 2026-03-24
+- **Description:** After scanning Recovery and deleting actual dupes, 248 survivor files remained that passed 5 scans with 0 groups. Finalize recycled them all because it treats everything in Recovery as "dupes to recycle." No distinction between unreviewed files and files that survived review.
+- **Status:** OPEN -- TODO Priority 1b. Needs finalize warning for clean files, auto-promote after clean scan, and view description rewrite.
+- **Workaround:** Move survivors to Keepers before finalizing, or restore from Recycle Bin.
+
 ---
 
 ## Bug Statistics
 
 | Category | Count |
 |----------|-------|
-| Critical (crash/security) | 6 |
-| High priority (functionality) | 14 |
+| Critical (crash/security) | 9 |
+| High priority (functionality) | 17 |
 | Security fixes | 8 |
-| Medium priority (UX/data) | 11 |
-| **Total resolved** | **39** |
-| **Currently open** | **0** |
+| Medium priority (UX/data) | 13 |
+| **Total resolved** | **47** |
+| **Currently open** | **1** |
 
 ---
 
