@@ -72,16 +72,8 @@ function _wizardDetermineStep() {
   wizardGoToStep(step);
 }
 
-function wizardGoToStep(n) {
-  wizardState.currentStep = n;
-  // Show/hide panels
-  for (var i = 1; i <= 4; i++) {
-    var panel = document.getElementById("wizardStep" + i);
-    if (panel) panel.classList.toggle("active", i === n);
-  }
-  updateStepper();
-  // Step-specific init
-  if (n === 1) {
+var _wizardStepHandlers = {
+  1: function() {
     if (wizardState.completedSteps[1]) {
       document.getElementById("wizMigrateBtn").disabled = true;
       document.getElementById("wizMigrateBtn").textContent = "Migration Complete";
@@ -89,8 +81,8 @@ function wizardGoToStep(n) {
       document.getElementById("wizMigrateCompleteMsg").textContent =
         "Files staged to: " + (wizardState.stagingDir || "");
     }
-  }
-  if (n === 2) {
+  },
+  2: function() {
     // Load settings for threshold
     api("GET", "/api/settings").then(function(s) {
       document.getElementById("wizThreshold").value = s.threshold || 5;
@@ -110,12 +102,14 @@ function wizardGoToStep(n) {
         }
       }).catch(function() { countEl.style.display = "none"; });
     }
-  }
-  if (n === 3 && wizardState.lastReport) {
-    document.getElementById("wizReviewInfoText").textContent =
-      "Report: " + wizardState.lastReport;
-  }
-  if (n === 4) {
+  },
+  3: function() {
+    if (wizardState.lastReport) {
+      document.getElementById("wizReviewInfoText").textContent =
+        "Report: " + wizardState.lastReport;
+    }
+  },
+  4: function() {
     // Fetch file counts for browse buttons
     api("GET", "/api/folders/status").then(function(data) {
       var sBtn = document.getElementById("wizStagingBtn");
@@ -136,6 +130,19 @@ function wizardGoToStep(n) {
       }
     }).catch(function() {});
   }
+};
+
+function wizardGoToStep(n) {
+  wizardState.currentStep = n;
+  // Show/hide panels
+  for (var i = 1; i <= 4; i++) {
+    var panel = document.getElementById("wizardStep" + i);
+    if (panel) panel.classList.toggle("active", i === n);
+  }
+  updateStepper();
+  // Step-specific init
+  var handler = _wizardStepHandlers[n];
+  if (handler) handler();
 }
 
 function updateStepper() {

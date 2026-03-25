@@ -140,11 +140,11 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Unify server.py progress globals -- 6 identical dicts into one dict-of-dicts. Cuts ~50 lines. Rule 5 violation. HIGH BLAST RADIUS: bridge.py imports all 6 by name, plus every runner function references them directly. Do in a fresh session with full testing.
 - [ ] Extract inline styles from index.html to CSS classes -- 100+ inline style attributes. Biggest single frontend issue. Rule 5.
 - [ ] Refactor dialog building -- Replace inline HTML string generation in app.js, review.js, finish.js with template helpers or data-driven builders. Rule 5.
-- [ ] Split _dashUpdateFlowGuide() -- 70-line function doing 4 things (step states, stepper HTML, hint text, continue logic). Should be 3-4 functions. Rule 4.
-- [ ] Data-drive scan context configs -- Replace if/else chains in scan.js initScanConfig() with a context config object. Rule 4.
-- [ ] Data-drive wizard step init -- Replace 4 if-branches in wizardGoToStep() with a step handler map. Rule 4.
+- [x] Split _dashUpdateFlowGuide() -- Split into _dashGetStepStates(), _dashBuildStepperHtml(), _dashSetHintText() + lean orchestrator. Rule 4.
+- [x] Data-drive scan context configs -- Replaced if/else chains in initScanConfig() with ctxConfig map. Rule 4.
+- [x] Data-drive wizard step init -- Replaced 4 if-branches in wizardGoToStep() with _wizardStepHandlers map. Rule 4.
 - [ ] Evaluate LSH threshold -- comparator.py uses 500-file threshold for LSH bucketing. Unmeasured. Either measure it or document why 500. Rule 1.
-- [ ] Collapse hybrid/manual mode nav configs -- Identical in modes.js. Rule 4.
+- [x] Collapse hybrid/manual mode nav configs -- Shared _navAllVisible object replaces duplicate configs. Rule 4.
 - [ ] Server modularization -- split server.py into route modules
 
 ### OneDrive Integration

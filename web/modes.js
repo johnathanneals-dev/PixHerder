@@ -18,6 +18,17 @@ function setCurrentMode(mode) {
 // true = visible, false = hidden via display:none
 // IDs match the nav button data-view or id attributes
 
+var _navAllVisible = {
+  navMigrate: true,
+  navScan: true,
+  navReview: true,
+  navFinalize: true,
+  navMyFiles: true,
+  navDupes: true,
+  navKeepers: true,
+  navLogs: true
+};
+
 var _modeNavConfig = {
   easy: {
     navMigrate: true,
@@ -39,26 +50,8 @@ var _modeNavConfig = {
     navKeepers: false,
     navLogs: false
   },
-  hybrid: {
-    navMigrate: true,
-    navScan: true,
-    navReview: true,
-    navFinalize: true,
-    navMyFiles: true,
-    navDupes: true,
-    navKeepers: true,
-    navLogs: true
-  },
-  manual: {
-    navMigrate: true,
-    navScan: true,
-    navReview: true,
-    navFinalize: true,
-    navMyFiles: true,
-    navDupes: true,
-    navKeepers: true,
-    navLogs: true
-  }
+  hybrid: _navAllVisible,
+  manual: _navAllVisible
 };
 
 // Map data-view to actual element ids for nav buttons that use id attrs

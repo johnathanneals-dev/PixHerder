@@ -53,26 +53,17 @@ function initScanConfig() {
   var keepersSection = document.getElementById("scanKeepersSection");
 
   // Context-aware layout
-  if (ctx === "staging") {
-    title.textContent = "Configure Staging Scan";
-    subtitle.textContent = "Scan your files to find duplicates.";
-    if (folderGroup) folderGroup.style.display = "none";
-    if (keepersSection) keepersSection.style.display = "none";
-  } else if (ctx === "dupes") {
-    title.textContent = "Configure Recovery Scan";
-    subtitle.textContent = "Review your removed duplicates with different scan settings.";
-    if (folderGroup) folderGroup.style.display = "none";
-    if (keepersSection) keepersSection.style.display = "none";
-  } else if (ctx === "keepers") {
-    title.textContent = "Configure Keepers Scan";
-    subtitle.textContent = "Rescan your verified keepers to check for remaining duplicates.";
-    if (folderGroup) folderGroup.style.display = "none";
-    if (keepersSection) keepersSection.style.display = "none";
-  } else {
-    title.textContent = "Configure Scan";
-    subtitle.textContent = "Choose a folder and scanning options.";
-    if (folderGroup) folderGroup.style.display = "block";
-  }
+  var ctxConfig = {
+    staging: { title: "Configure Staging Scan",  subtitle: "Scan your files to find duplicates.",                                    showFolder: false, label: "Staging"  },
+    dupes:   { title: "Configure Recovery Scan", subtitle: "Review your removed duplicates with different scan settings.",           showFolder: false, label: "Recovery" },
+    keepers: { title: "Configure Keepers Scan",  subtitle: "Rescan your verified keepers to check for remaining duplicates.",       showFolder: false, label: "Keepers"  }
+  };
+  var cfg = ctxConfig[ctx] || { title: "Configure Scan", subtitle: "Choose a folder and scanning options.", showFolder: true, label: null };
+
+  title.textContent = cfg.title;
+  subtitle.textContent = cfg.subtitle;
+  if (folderGroup) folderGroup.style.display = cfg.showFolder ? "block" : "none";
+  if (keepersSection) keepersSection.style.display = "none";
 
   // Save context for return button, then reset (so menu link shows full options)
   _lastScanContext = ctx;
@@ -81,9 +72,8 @@ function initScanConfig() {
   // Show return-to-folder button on config page if launched from a folder
   var retConfigBtn = document.getElementById("scanReturnFolderConfigBtn");
   if (retConfigBtn) {
-    if (ctx) {
-      var labels = { staging: "Staging", dupes: "Recovery", keepers: "Keepers" };
-      retConfigBtn.textContent = "Return to " + (labels[ctx] || "Folder");
+    if (cfg.label) {
+      retConfigBtn.textContent = "Return to " + cfg.label;
       retConfigBtn.style.display = "inline-flex";
     } else {
       retConfigBtn.style.display = "none";

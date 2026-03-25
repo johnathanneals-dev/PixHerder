@@ -9,33 +9,13 @@ var _sessionScanCompleted = false; // set true when a scan completes in this ses
 
 // ---- Flow Guidance ----
 
-function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
-  var guide = document.getElementById("dashFlowGuide");
-  if (!guide) return;
-
-  var hintsEnabled = !state.settings || state.settings.show_hints !== false;
-
-  // Determine step states
-  var hasFiles = hasStaging || hasDupes || hasKeepers;
-  guide.style.display = "block";
-
-  var stepper = document.getElementById("dashStepper");
-  if (stepper) stepper.style.display = hasFiles ? "flex" : "none";
-
-  // Write flow hints into the top hints bar
-  var hintText = document.getElementById("hintsBarText");
-  if (!hasFiles) {
-    if (hintText) hintText.textContent = "Import your files to get started. Use Start Guided Cleanup or Migrate to Staging above.";
-    return;
-  }
-
+function _dashGetStepStates(hasStaging, hasDupes, hasKeepers, hasScans) {
   var steps = [
     { num: 1, label: "Import", state: "locked", tip: "Import your photos into PixHerder for scanning" },
     { num: 2, label: "Scan", state: hasScans ? "completed" : (hasStaging ? "current" : "pending"), tip: "Scan your files to find duplicates" },
     { num: 3, label: "Review", state: hasDupes ? (hasScans ? "current" : "completed") : "pending", tip: "Review duplicate groups and decide what to keep" },
     { num: 4, label: "Finish", state: (!hasStaging && !hasDupes && hasKeepers) ? "current" : "pending", tip: "Send your files home and clean up" }
   ];
-
   // If has dupes and scans, review is current
   if (hasDupes && hasScans) {
     steps[2].state = "current";
@@ -46,9 +26,12 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
     steps[3].state = "current";
     steps[2].state = "completed";
   }
+  return steps;
+}
 
-  // Build stepper HTML
+function _dashBuildStepperHtml(steps) {
   var stepper = document.getElementById("dashStepper");
+  if (!stepper) return;
   var html = "";
   for (var i = 0; i < steps.length; i++) {
     var s = steps[i];
@@ -63,8 +46,11 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
     }
   }
   stepper.innerHTML = html;
+}
 
-  // Build hint
+function _dashSetHintText(hasStaging, hasDupes, hasKeepers, hasScans) {
+  var hintText = document.getElementById("hintsBarText");
+  if (!hintText) return;
   if (hasStaging && !hasScans) {
     hintText.textContent = "Ready to scan. Use the scan buttons below to find duplicates in your files.";
   } else if (hasScans && hasDupes) {
@@ -78,6 +64,27 @@ function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
   } else {
     hintText.textContent = "Use the scan buttons below, or access wizard steps for more options.";
   }
+}
+
+function _dashUpdateFlowGuide(hasStaging, hasDupes, hasKeepers, hasScans) {
+  var guide = document.getElementById("dashFlowGuide");
+  if (!guide) return;
+
+  var hasFiles = hasStaging || hasDupes || hasKeepers;
+  guide.style.display = "block";
+
+  var stepper = document.getElementById("dashStepper");
+  if (stepper) stepper.style.display = hasFiles ? "flex" : "none";
+
+  var hintText = document.getElementById("hintsBarText");
+  if (!hasFiles) {
+    if (hintText) hintText.textContent = "Import your files to get started. Use Start Guided Cleanup or Migrate to Staging above.";
+    return;
+  }
+
+  var steps = _dashGetStepStates(hasStaging, hasDupes, hasKeepers, hasScans);
+  _dashBuildStepperHtml(steps);
+  _dashSetHintText(hasStaging, hasDupes, hasKeepers, hasScans);
 }
 
 function _dashHintClick() {
