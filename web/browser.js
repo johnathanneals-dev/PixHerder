@@ -49,9 +49,12 @@ function _initBrowserContent() {
   var navBar = document.getElementById("browserNavBar");
   if (navBar) {
     navBar.style.display = "flex";
-    // Dynamically set top to match actual nav height
+    // Dynamically set top below all header elements (hints bar + title bar + nav)
     var topNav = document.querySelector(".topnav");
-    if (topNav) navBar.style.top = topNav.offsetHeight + "px";
+    if (topNav) {
+      var navBottom = topNav.getBoundingClientRect().bottom;
+      navBar.style.top = navBottom + "px";
+    }
   }
 
   var backLabel = browserState.returnTo === "dashboard" ? "Back to Dashboard" : "Back to Finalize";
