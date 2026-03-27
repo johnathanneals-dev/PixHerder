@@ -7,7 +7,7 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 ## Active Bugs
 
 - **Finalize progress bar** -- Bar connects and shows partial progress, then resets to 0% on phase transition (restore → source cleanup → recycle). Needs phase-aware progress that doesn't reset.
-- **Nav menu missing links** -- Nav links disappear during scan progress, wizard steps, and other views. Confirmed at every step during testing. Pervasive.
+- **Easy mode nav too restrictive** -- Easy mode hides Scan, Review, Finalize, Staging, Recovery, Keepers nav links and More Options buttons. By design, but too aggressive — users can't navigate mid-workflow. Need to either show more links progressively or add a mode switcher to the nav bar.
 - 9 additional UX issues from 2026-03-26 testing documented in TODO Priority 4b.
 
 ## Fixed This Session (2026-03-26)

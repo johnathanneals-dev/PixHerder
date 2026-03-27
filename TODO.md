@@ -126,7 +126,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ### Priority 4b: UX Issues (from 2026-03-26 testing)
 
 - [ ] **Disable double-click in folder picker** -- Double-click in browse window causes unintended behavior. Should only respond to single click for folder selection.
-- [ ] **Nav menu missing during scan progress** -- Nav links disappear or are hidden while scan is running. User has no way to navigate away.
+- [ ] **Easy mode nav too restrictive** -- Easy mode hides Scan, Review, Finalize, Staging, Recovery, Keepers nav links and More Options buttons. Users can't navigate mid-workflow or access features they need. Either show more links in Easy mode or add contextual links as the workflow progresses. Also: add a "Mode" link on the right side of the nav bar that reopens the mode selector/welcome screen, so users can switch modes without hunting through Settings.
 - [ ] **Show file count on scan complete** -- "302 duplicate groups" is meaningless to a new user. Show "302 groups (1,145 duplicate files)" or similar breakdown.
 - [ ] **Clarify review file count** -- Review title shows "1145 files" which users assume means all dupes. Need to distinguish total files in groups vs actual duplicates to move.
 - [ ] **Verify Mark All Remaining toast** -- Toast said "marked 250 groups" when there were 302 total. Investigate whether 52 were already marked or if the count is wrong.
