@@ -79,7 +79,7 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
     '</div>';
 
   // Explanation text -- governed by show_explanations setting
-  if (_appSettings.show_explanations !== false) {
+  if (state.settings && state.settings.show_explanations !== false) {
     html += '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;">';
     html += '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:10px;">' +
       '<span style="color:#fff;font-weight:600;">Send to Recycle Bin</span> sends both the ' +

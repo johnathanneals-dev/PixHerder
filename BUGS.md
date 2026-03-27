@@ -20,6 +20,36 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 - **Files:** web/dashboard.js
 - **Note:** File count now includes both `copied` and `skipped` so the user sees the total files handled, not just the ones that needed copying.
 
+**Finish Now button does nothing (new two-choice dialog)**
+- **Found:** Testing, 2026-03-27
+- **Description:** Clicking "Finish Now" on the finalize page did nothing. No dialog appeared, no error shown.
+- **Root cause:** The new `_showFinishConfirmDialog()` referenced `_appSettings.show_explanations` — but `_appSettings` doesn't exist in the codebase. The correct global is `state.settings`. The `TypeError` crashed the function before the dialog HTML was set, so nothing appeared.
+- **Fix:** Changed `_appSettings.show_explanations` to `state.settings && state.settings.show_explanations`.
+- **Files:** web/finish.js
+
+**Scan mode defaults inconsistent between wizard and scan-config**
+- **Found:** Testing, 2026-03-27
+- **Description:** Wizard step 2 defaulted to "Exact (MD5)" while the scan-config page defaulted to "Both". User expected consistent defaults.
+- **Fix:** Changed wizard default to "Both" to match scan-config.
+- **Files:** web/index.html
+
+**Browse folder picker starts at machine-specific path**
+- **Found:** Testing, 2026-03-27
+- **Description:** First open of folder picker navigated to the user's detected Pictures path. Should start at a generic location (drive list) so it works for any user.
+- **Fix:** Changed default start to `__drives__` (My Computer view) instead of cached pictures path.
+- **Files:** web/app.js
+
+**Finalize summary text references old Recycle Bin procedure**
+- **Found:** Testing, 2026-03-27
+- **Description:** Finalize summary said "duplicates will be removed (recoverable from Recycle Bin, if needed)" but the new flow gives users a choice. Text should be neutral.
+- **Fix:** Changed to "duplicates found -- you'll choose what to do with them next".
+- **Files:** web/index.html
+
+**Send Files Home reports 4 fewer files than expected (errors: 4)**
+- **Found:** Testing, 2026-03-27
+- **Description:** After moving 4 dupes to Recovery and then using Send Files Home, the result showed 6073 files returned instead of 6077. The 4 files in the dupes folder errored during restore (flat file restore without structure preservation).
+- **Status:** Open — needs investigation into why flat dupe restore errors. Pre-existing issue, not related to new feature.
+
 **Rescan "enter a folder path" error after no-dupes-found**
 - **Found:** Testing, 2026-03-27 (Easy mode)
 - **Description:** In Easy mode, wizard starts scans using `wizardState.stagingDir` (in-memory) and never populates the `scanDir` DOM input. When scan-progress "Rescan" button navigates directly to scan-config, `startScan()` finds the input empty and shows error toast.

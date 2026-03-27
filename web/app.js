@@ -579,8 +579,8 @@ function openFolderPicker(targetInputId) {
     '<div style="padding:12px;color:var(--text-dim);">Loading folders...</div>';
   document.getElementById("folderPickerOverlay").classList.add("active");
   if (!startPath) {
-    // Use cached pictures path (populated at init) to avoid API round-trip
-    _loadFolderPicker(_cachedPicturesPath || "__drives__");
+    // Start at drive list so user can navigate to any location
+    _loadFolderPicker("__drives__");
   } else {
     _loadFolderPicker(startPath);
   }
