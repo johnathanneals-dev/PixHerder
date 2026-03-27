@@ -731,6 +731,7 @@ var _bridgeMap = {
   "POST /api/recovery/restore": "recovery_restore",
   "POST /api/recovery/clear": "recovery_clear",
   "POST /api/recycle-source-dupes": "recycle_source_dupes",
+  "POST /api/move-dupes-to-folder": "move_dupes_to_folder",
   "GET /api/logs/status": "logs_status",
   "POST /api/logs/enable": "logs_enable",
   "POST /api/logs/disable": "logs_disable",

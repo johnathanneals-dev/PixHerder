@@ -850,6 +850,47 @@ def recycle_source_dupes(staging_dir, source_dir):
     }
 
 
+def move_dupes_to_folder(staging_dir, source_dir):
+    """Move duplicates into PixHerder_Duplicates folder in source directory.
+
+    Alternative to recycle_source_dupes() -- moves both workspace copies
+    and source duplicates into a user-visible folder instead of Recycle Bin.
+
+    Returns dict with folder path, moved counts, and errors.
+    """
+    from engine.dupe_folder import (
+        create_dupe_folder, move_workspace_dupes, move_source_dupes
+    )
+    from engine.config import load_settings, DEFAULTS
+
+    # Create folder structure
+    folders = create_dupe_folder(source_dir)
+
+    # Move workspace dupes (from Recovery folder)
+    settings = load_settings()
+    dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
+    workspace_result = move_workspace_dupes(dupes_dir, folders["found_dir"])
+
+    # Move source duplicates
+    source_result = move_source_dupes(
+        staging_dir, source_dir, folders["source_of_dir"]
+    )
+
+    total_moved = workspace_result["moved"] + source_result["moved"]
+    all_errors = workspace_result["errors"] + source_result["errors"]
+
+    logger.info("Moved %d files to %s (%d errors)",
+                total_moved, folders["base_dir"], len(all_errors))
+
+    return {
+        "folder": folders["base_dir"],
+        "workspace_moved": workspace_result["moved"],
+        "source_moved": source_result["moved"],
+        "total_moved": total_moved,
+        "errors": all_errors,
+    }
+
+
 def _find_staging_subfolder():
     """Find the active staging subfolder reliably.
 

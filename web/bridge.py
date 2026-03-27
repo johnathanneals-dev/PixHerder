@@ -971,6 +971,19 @@ class Api:
         })
         return result
 
+    def move_dupes_to_folder(self, params=None):
+        """Move duplicates to PixHerder_Duplicates folder in source dir."""
+        params = params or {}
+        staging_dir = params.get("staging_dir", "")
+        source_dir = params.get("source_dir", "")
+        if not staging_dir or not source_dir:
+            return {"error": "Missing staging_dir or source_dir"}
+        from web.server import move_dupes_to_folder
+        result = move_dupes_to_folder(staging_dir, source_dir)
+        _log_activity("move_dupes_to_folder",
+                      "Moved %d files to folder" % result.get("total_moved", 0))
+        return result
+
     def staging_restore(self, params=None):
         import web.server as srv
         if params is None:
