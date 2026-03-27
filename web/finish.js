@@ -50,19 +50,13 @@ function _finishConfirm() {
 }
 
 function _showFinishConfirmDialog(showOneDriveWarning) {
-  document.getElementById("dialogTitle").textContent = "Confirm Finish";
+  document.getElementById("dialogTitle").textContent = "What should happen to the duplicates?";
+  var dupeCount = _finishCounts.dupes || 0;
   var html = '<div style="margin-bottom:14px;">';
-  if (_finishCounts.staging > 0 || _finishCounts.keepers > 0) {
-    var homeCount = _finishCounts.staging + _finishCounts.keepers;
-    html += homeCount.toLocaleString() + " files from Staging";
-    if (_finishCounts.keepers > 0) html += " and Keepers";
-    html += " will be placed back in their original folder. ";
-  }
-  if (_finishCounts.dupes > 0) {
-    html += _finishCounts.dupes.toLocaleString() + " files in Recovery will be sent to the Recycle Bin. ";
-    html += "Their originals will also be removed from your source folder. ";
-  }
-  html += "The recovery archive will also be cleared.</div>";
+  html += "PixHerder found " + dupeCount.toLocaleString() + " duplicate files.<br>";
+  html += "Choose how you'd like them handled:";
+  html += "</div>";
+
   if (showOneDriveWarning) {
     html += '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">' +
       '<div style="font-weight:600;color:var(--warning);margin-bottom:4px;">OneDrive is running</div>' +
@@ -73,9 +67,34 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
       '</div>' +
     '</div>';
   }
+
+  // Action buttons -- right-justified per dialog standard
   html += '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
-    '<button class="btn btn-primary" onclick="closeDialog(); _executeFinish()" data-tip="Send files home and recycle duplicates">Yes, Finish</button>' +
+    '<button class="btn btn-primary" onclick="closeDialog(); _executeFinish(\'recycle\')" ' +
+      'data-tip="Sends duplicates and the files that had matching copies to the Windows Recycle Bin. Large batches may exceed Recycle Bin capacity.">' +
+      'Send to Recycle Bin</button>' +
+    '<button class="btn btn-warning" onclick="closeDialog(); _executeFinish(\'folder\')" ' +
+      'data-tip="Moves duplicates into a PixHerder_Duplicates folder in your source directory. Nothing is deleted.">' +
+      'Keep in Folder</button>' +
     '</div>';
+
+  // Explanation text -- governed by show_explanations setting
+  if (_appSettings.show_explanations !== false) {
+    html += '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;">';
+    html += '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:10px;">' +
+      '<span style="color:#fff;font-weight:600;">Send to Recycle Bin</span> sends both the ' +
+      'workspace copies and the files from your source folder that had matching copies ' +
+      'to the Windows Recycle Bin. You can restore them from there. Note: the Recycle Bin ' +
+      'has a size limit &mdash; large batches may cause older items to be automatically removed.' +
+      '</div>';
+    html += '<div style="font-size:13px;color:var(--text-dim);line-height:1.6;">' +
+      '<span style="color:#fff;font-weight:600;">Keep in Folder</span> moves everything into ' +
+      'a &ldquo;PixHerder_Duplicates&rdquo; folder in your source directory, organized into two ' +
+      'subfolders. Nothing is deleted. A guide inside explains your options.' +
+      '</div>';
+    html += '</div>';
+  }
+
   document.getElementById("dialogMessage").innerHTML = html;
   document.getElementById("dialogConfirmBtn").style.display = "none";
   var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
@@ -83,7 +102,10 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   document.getElementById("dialogOverlay").classList.add("active");
 }
 
-function _executeFinish() {
+var _finishChoice = "recycle";
+
+function _executeFinish(choice) {
+  _finishChoice = choice || "recycle";
   _finishSourceDir = _stagingSession ? _stagingSession.source_dir : "";
   document.getElementById("finishSummary").style.display = "none";
   document.getElementById("finishProgress").style.display = "block";
@@ -139,28 +161,51 @@ function _executeFinish() {
 }
 
 function _finishSourceCleanup(restoreResult) {
-  // Phase: Recycle original duplicates from source folder
-  if (_stagingSession) {
-    document.getElementById("finishPhaseLabel").textContent = "Removing duplicates from source folder...";
-    document.getElementById("finishStage").textContent = "Sending source duplicates to Recycle Bin";
+  if (_finishChoice === "folder") {
+    // Move both source dupes and workspace dupes to folder
+    document.getElementById("finishPhaseLabel").textContent = "Moving duplicates to PixHerder_Duplicates...";
+    document.getElementById("finishStage").textContent = "Organizing files into folder";
     document.getElementById("finishProgressFill").style.width = "50%";
     document.getElementById("finishProgressPct").textContent = "";
     document.getElementById("finishProgressLeft").textContent = "";
 
-    api("POST", "/api/recycle-source-dupes", {
-      staging_dir: _stagingSession.staging_dir,
-      source_dir: _stagingSession.source_dir
-    }).then(function(r) {
-      var sourceRecycled = r.recycled || 0;
-      restoreResult.source_recycled = sourceRecycled;
-      _finishPhase2(restoreResult);
-    }).catch(function() {
-      // Non-fatal: source cleanup is best-effort
-      restoreResult.source_recycled = 0;
-      _finishPhase2(restoreResult);
-    });
+    if (_stagingSession) {
+      api("POST", "/api/move-dupes-to-folder", {
+        staging_dir: _stagingSession.staging_dir,
+        source_dir: _stagingSession.source_dir
+      }).then(function(r) {
+        restoreResult.folder_moved = r.total_moved || 0;
+        restoreResult.dupe_folder = r.folder || "";
+        // Skip recycle phases -- go straight to cleanup
+        _finishPhase3(restoreResult, {});
+      }).catch(function(err) {
+        _finishError("Failed to move duplicates to folder: " + err.message);
+      });
+    } else {
+      _finishPhase3(restoreResult, {});
+    }
   } else {
-    _finishPhase2(restoreResult);
+    // Original recycle path
+    if (_stagingSession) {
+      document.getElementById("finishPhaseLabel").textContent = "Removing duplicates from source folder...";
+      document.getElementById("finishStage").textContent = "Sending source duplicates to Recycle Bin";
+      document.getElementById("finishProgressFill").style.width = "50%";
+      document.getElementById("finishProgressPct").textContent = "";
+      document.getElementById("finishProgressLeft").textContent = "";
+
+      api("POST", "/api/recycle-source-dupes", {
+        staging_dir: _stagingSession.staging_dir,
+        source_dir: _stagingSession.source_dir
+      }).then(function(r) {
+        restoreResult.source_recycled = r.recycled || 0;
+        _finishPhase2(restoreResult);
+      }).catch(function() {
+        restoreResult.source_recycled = 0;
+        _finishPhase2(restoreResult);
+      });
+    } else {
+      _finishPhase2(restoreResult);
+    }
   }
 }
 
@@ -222,11 +267,19 @@ function _finishPhase3(restoreResult, recycleResult) {
     } else if (_finishCounts.staging > 0) {
       summary += _finishCounts.staging.toLocaleString() + " files returned safely<br>";
     }
-    if (restoreResult && restoreResult.source_recycled > 0) {
-      summary += restoreResult.source_recycled.toLocaleString() + " duplicates removed from source folder<br>";
-    }
-    if (recycleResult && recycleResult.files_recycled > 0) {
-      summary += recycleResult.files_recycled.toLocaleString() + " workspace copies sent to Recycle Bin<br>";
+    if (restoreResult && restoreResult.folder_moved > 0) {
+      summary += restoreResult.folder_moved.toLocaleString() + " duplicates moved to PixHerder_Duplicates folder<br>";
+      if (restoreResult.dupe_folder) {
+        summary += '<span style="font-size:12px;color:var(--text-dim);">Location: ' +
+          restoreResult.dupe_folder + '</span><br>';
+      }
+    } else {
+      if (restoreResult && restoreResult.source_recycled > 0) {
+        summary += restoreResult.source_recycled.toLocaleString() + " duplicates removed from source folder<br>";
+      }
+      if (recycleResult && recycleResult.files_recycled > 0) {
+        summary += recycleResult.files_recycled.toLocaleString() + " workspace copies sent to Recycle Bin<br>";
+      }
     }
     summary += "Local workspace cleaned up.";
     document.getElementById("finishCompleteSummary").innerHTML = summary;
