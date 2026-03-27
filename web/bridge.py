@@ -131,7 +131,7 @@ class Api:
         import web.server as srv
         return self._subscribe("restore", srv.restore_progress,
                                "_onRestoreProgress",
-                               ("complete", "error", "idle"))
+                               ("complete", "error"))
 
     # ---- GET equivalents ----
 
@@ -372,9 +372,7 @@ class Api:
             # Try to recover from disk
             staging_sub = _find_staging_subfolder()
             if staging_sub:
-                data["staging_dir"] = staging_sub
-                data["status"] = "complete"
-                # Check manifests for source_dir
+                # Only recover session if we have a manifest with source_dir
                 source = ""
                 scans_dir = Path(__file__).parent.parent / "scans"
                 if scans_dir.is_dir():
@@ -387,9 +385,11 @@ class Api:
                                 break
                         except Exception:
                             pass
-                if not source:
-                    source = default_pictures_path() or ""
-                data["source_dir"] = source
+                if source:
+                    data["staging_dir"] = staging_sub
+                    data["source_dir"] = source
+                    data["status"] = "complete"
+                # No manifest = no session. Don't fabricate source_dir.
         return data
 
     def browse(self, params=None):
@@ -953,6 +953,22 @@ class Api:
             "recycled": result.get("recycled", 0),
         })
         return {"status": "recycled", **result}
+
+    def recycle_source_dupes(self, params=None):
+        """Recycle original duplicate files from the source folder."""
+        if params is None:
+            params = {}
+        staging_dir = params.get("staging_dir", "")
+        source_dir = params.get("source_dir", "")
+        if not staging_dir or not source_dir:
+            return {"error": "staging_dir and source_dir required"}
+        import web.server as srv
+        result = srv.recycle_source_dupes(staging_dir, source_dir)
+        _log_activity("recycle_source_dupes", {
+            "recycled": result.get("recycled", 0),
+            "source_dir": source_dir,
+        })
+        return result
 
     def staging_restore(self, params=None):
         import web.server as srv

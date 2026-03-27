@@ -187,6 +187,13 @@ def _reset_all_progress():
         "copied": 0, "skipped": 0, "errors": 0,
         "message": "", "phase": "",
     })
+    # Clean up source dupe map (stale after reset)
+    map_path = SCANS_DIR / "source_dupes.json"
+    if map_path.exists():
+        try:
+            map_path.unlink()
+        except Exception:
+            pass
 
 
 def _update_scan_progress(current, total, stage):
@@ -675,6 +682,10 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
                 cancel_event=action_cancel,
             )
             action_progress["result"] = result
+            # Save staging paths of moved files for source cleanup at finalize
+            moved_sources = result.get("moved_sources", [])
+            if moved_sources:
+                _save_source_dupe_map(moved_sources)
         elif action_type == "delete":
             result = delete_files(
                 groups, keep_strategy,
@@ -742,6 +753,90 @@ def _run_oddball(report_data, dupes_folder):
         oddball_progress["result"] = {"error": str(e)}
 
 
+def _save_source_dupe_map(moved_staging_paths):
+    """Save staging paths of moved duplicates so finalize can recycle source originals.
+
+    Appends to existing file (multiple action batches in one session).
+    """
+    map_path = SCANS_DIR / "source_dupes.json"
+    existing = []
+    if map_path.exists():
+        try:
+            with open(str(map_path), "r", encoding="utf-8") as f:
+                data = json.load(f)
+            existing = data.get("staging_paths", [])
+        except Exception:
+            pass
+    # Deduplicate
+    all_paths = list(set(existing + moved_staging_paths))
+    try:
+        from engine.config import safe_json_write
+        safe_json_write(str(map_path), {"staging_paths": all_paths})
+        logger.info("Saved %d source dupe paths to %s", len(all_paths), map_path)
+    except Exception as e:
+        logger.error("Failed to save source dupe map: %s", e)
+
+
+def recycle_source_dupes(staging_dir, source_dir):
+    """Recycle original duplicate files from the source folder.
+
+    Reads source_dupes.json (saved at action time), maps staging paths
+    to source paths, and sends the source originals to the Recycle Bin.
+
+    Returns dict with recycled count, errors, and list of recycled paths.
+    """
+    map_path = SCANS_DIR / "source_dupes.json"
+    if not map_path.exists():
+        logger.info("No source_dupes.json found, nothing to recycle from source")
+        return {"recycled": 0, "errors": [], "source_paths": []}
+
+    try:
+        with open(str(map_path), "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        logger.error("Failed to read source dupe map: %s", e)
+        return {"recycled": 0, "errors": [str(e)], "source_paths": []}
+
+    staging_paths = data.get("staging_paths", [])
+    if not staging_paths:
+        return {"recycled": 0, "errors": [], "source_paths": []}
+
+    # Map staging paths to source paths
+    source_files = []
+    for sp in staging_paths:
+        try:
+            rel = os.path.relpath(sp, staging_dir)
+            source_path = os.path.join(source_dir, rel)
+            if os.path.isfile(source_path):
+                source_files.append(source_path)
+            else:
+                logger.debug("Source original not found (already gone?): %s",
+                            source_path)
+        except Exception as e:
+            logger.warning("Failed to map staging path %s: %s", sp, e)
+
+    if not source_files:
+        logger.info("No source originals found to recycle")
+        return {"recycled": 0, "errors": [], "source_paths": []}
+
+    # Recycle in batch via PowerShell
+    logger.info("Recycling %d source originals", len(source_files))
+    from engine.staging import _recycle_files_batch_powershell
+    result = _recycle_files_batch_powershell(source_files)
+
+    # Clean up the map file
+    try:
+        map_path.unlink()
+    except Exception:
+        pass
+
+    return {
+        "recycled": result.get("recycled", 0),
+        "errors": result.get("errors", []),
+        "source_paths": source_files,
+    }
+
+
 def _find_staging_subfolder():
     """Find the active staging subfolder reliably.
 
@@ -777,7 +872,11 @@ def _find_staging_subfolder():
             candidate = os.path.join(base, d)
             if not os.path.isdir(candidate):
                 continue
-            count = sum(1 for _, _, files in os.walk(candidate) for _ in files)
+            count = sum(
+                1 for _, _, files in os.walk(candidate)
+                for f in files
+                if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS
+            )
             if count > best_count:
                 best_count = count
                 best_path = candidate

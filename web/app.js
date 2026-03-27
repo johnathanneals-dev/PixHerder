@@ -725,6 +725,7 @@ var _bridgeMap = {
   "GET /api/recovery/list": "recovery_list",
   "POST /api/recovery/restore": "recovery_restore",
   "POST /api/recovery/clear": "recovery_clear",
+  "POST /api/recycle-source-dupes": "recycle_source_dupes",
   "GET /api/logs/status": "logs_status",
   "POST /api/logs/enable": "logs_enable",
   "POST /api/logs/disable": "logs_disable",
@@ -997,11 +998,13 @@ function route() {
     view = "dashboard";
   }
 
-  // On fresh page load, redirect stateful views to mode-appropriate landing
-  if (!_appNavigated && view !== "dashboard" && view !== "settings" && view !== "activity" && view !== "help" && view !== "autonomous") {
+  // On fresh page load, redirect to mode-appropriate landing
+  if (!_appNavigated) {
     var _landing = getModeLandingView(getCurrentMode());
-    navigate(_landing);
-    return;
+    if (view !== _landing && view !== "settings" && view !== "activity" && view !== "help") {
+      navigate(_landing);
+      return;
+    }
   }
 
   // View-specific init

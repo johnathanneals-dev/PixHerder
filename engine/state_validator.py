@@ -148,9 +148,11 @@ def _validate_staging_folders():
     staging_bases = set()
     staging_bases.add(settings.get("staging_dir", DEFAULTS["staging_dir"]))
     # Also check common alternative locations
+    import tempfile as _tf
     alt_bases = [
         os.path.join("C:\\Temp", "PixHerder_Staging"),
         os.path.join(os.environ.get("LOCALAPPDATA", ""), "PixHerder", "Staging"),
+        os.path.join(_tf.gettempdir(), "PixHerder_Staging"),
     ]
     for ab in alt_bases:
         if ab and os.path.isdir(ab):

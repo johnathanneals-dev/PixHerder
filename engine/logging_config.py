@@ -84,23 +84,38 @@ def is_logging_enabled():
     return _logging_enabled
 
 
-# Log retention: 30 days
+# Log retention
 LOG_RETENTION_DAYS = 30
+ACTION_LOG_RETENTION_DAYS = 7
+ACTION_LOG_MAX_BYTES = 5 * 1024 * 1024  # 5 MB per action log
 
 
 def cleanup_old_logs():
-    """Delete log files older than LOG_RETENTION_DAYS.
-    Also truncates activity.log if it exceeds 5 MB.
+    """Delete old log files and truncate oversized ones.
+    - Action logs (actions_*.log): 7-day retention, 5 MB cap
+    - Activity log: 5 MB cap (keep last 1000 lines)
+    - All other logs: 30-day retention
     """
     if not _LOGS_DIR.is_dir():
         return
     cutoff = time.time() - (LOG_RETENTION_DAYS * 86400)
+    action_cutoff = time.time() - (ACTION_LOG_RETENTION_DAYS * 86400)
     for f in _LOGS_DIR.iterdir():
         if f.is_file() and f.suffix == ".log":
             try:
                 st = f.stat()
-                # Delete files older than retention period
-                if st.st_mtime < cutoff:
+                is_action_log = f.name.startswith("actions_")
+                # Action logs: 7-day retention
+                if is_action_log and st.st_mtime < action_cutoff:
+                    f.unlink()
+                # Action logs: truncate if over 5 MB (keep last 2000 lines)
+                elif is_action_log and st.st_size > ACTION_LOG_MAX_BYTES:
+                    with open(str(f), "r", encoding="utf-8", errors="replace") as fh:
+                        lines = fh.readlines()
+                    with open(str(f), "w", encoding="utf-8") as fh:
+                        fh.writelines(lines[-2000:])
+                # All other logs: 30-day retention
+                elif not is_action_log and st.st_mtime < cutoff:
                     f.unlink()
                 # Truncate activity.log if over 5 MB (keep last 1000 lines)
                 elif f.name == "activity.log" and st.st_size > 5 * 1024 * 1024:

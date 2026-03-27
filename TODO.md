@@ -90,7 +90,12 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 ### Priority 1: Fix Now
 
-- [ ] **Easy mode routing** -- Easy mode lands on blank dashboard instead of wizard. The fresh-load redirect in route() doesn't trigger because the default hash resolves to "dashboard" before the redirect logic runs. Need to detect Easy mode in route() and redirect to wizard view on load. Files: web/app.js route() function.
+- [x] **Easy mode routing** -- Fixed: route() now compares current view against mode landing view instead of hardcoded skip list. Easy mode redirects to wizard on fresh load. Files: web/app.js route() function.
+- [x] **Source duplicate cleanup** -- Finalize now recycles original duplicates from source folder. Mapping saved at action time (source_dupes.json), applied during finalize. Without this, re-migration finds the same duplicates every time. Files: engine/actions.py, web/server.py, web/bridge.py, web/finish.js, web/app.js.
+- [x] **Finish progress bar race condition** -- Removed "idle" from terminal states in restore progress subscription. Poller was exiting immediately before background thread started. Files: web/bridge.py.
+- [x] **Ghost folder detection** -- _find_staging_subfolder() now counts only image files. staging_status() no longer fabricates sessions without manifests. State validator searches temp directory for orphan folders. Files: web/server.py, web/bridge.py, engine/state_validator.py.
+- [x] **Working view error styling** -- Error titles (containing "fail" or "error") now show in red instead of green. Files: web/working.js.
+- [x] **Send Files Home error message** -- "Unknown error" replaced with actionable message. Files: web/dashboard.js.
 
 ### Priority 1b: Finalize Flow Fixes
 
@@ -100,7 +105,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [ ] **Finalize view title/description rewrite** -- "Finalize" is vague. Keep button labels short but make the view title and description explicit about what will happen. Title: "Send Files Home & Clean Up" or similar. Description should clearly state: "Your kept files will be copied back to [source]. Files in Recovery will be sent to the Recycle Bin. Your originals are never deleted." Files: web/finish.js, web/index.html finish view.
 
-- [ ] **Finish progress bar race condition** -- Progress bar shows 0% until completion. Subscription now starts before restore API call (fix applied this session) but needs testing with a real file set to verify. Files: web/finish.js.
+- [x] **Finish progress bar race condition** -- Fixed by removing "idle" from terminal states in restore progress subscription (web/bridge.py). Needs verification with real file set.
 
 ### Priority 2: Safety & Protection
 
@@ -118,6 +123,19 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [x] **Finalize button on scan complete** -- Green "Finalize" button on scan complete card, only visible when Recovery or Keepers have files.
 - [ ] **Scan from Recovery review** -- Currently clicking Recovery opens file browser only. User should be able to trigger review from Recovery browser directly (scan + review in one flow). For now, "Scan Recovery" on dashboard handles this.
 
+### Priority 4b: UX Issues (from 2026-03-26 testing)
+
+- [ ] **Disable double-click in folder picker** -- Double-click in browse window causes unintended behavior. Should only respond to single click for folder selection.
+- [ ] **Nav menu missing during scan progress** -- Nav links disappear or are hidden while scan is running. User has no way to navigate away.
+- [ ] **Show file count on scan complete** -- "302 duplicate groups" is meaningless to a new user. Show "302 groups (1,145 duplicate files)" or similar breakdown.
+- [ ] **Clarify review file count** -- Review title shows "1145 files" which users assume means all dupes. Need to distinguish total files in groups vs actual duplicates to move.
+- [ ] **Verify Mark All Remaining toast** -- Toast said "marked 250 groups" when there were 302 total. Investigate whether 52 were already marked or if the count is wrong.
+- [ ] **Suggest emptying recycle bin** -- On first launch or before first finalize, suggest user empty their Recycle Bin so they can easily confirm what PixHerder sends there.
+- [ ] **Re-migration context** -- When re-migrating from same source, explain why file count matches original ("duplicates were removed from your workspace, not from the source folder").
+- [ ] **Finalize performance** -- 6,345 file restore is slow. Investigate whether batching copies or parallel I/O can help, or if it's just OneDrive sync contention.
+- [ ] **Duplicate destination choice** -- When sending files home or finalizing, confirm where duplicates should go: Recycle Bin (default) or a user-chosen folder via the browse picker. "Other folder" option lets users park duplicates somewhere for one last look before manually deleting. Addresses the risk of Recycle Bin hitting its size limit (defaults to 10% of drive) and silently purging oldest files — which could include the duplicates the user just sent there. The browse picker already exists. Apply to both finalize and Send Files Home flows. Files: web/finish.js, web/dashboard.js.
+- [ ] **Action log retention** -- Implemented: 7-day retention, 5MB cap per action log. Files: engine/logging_config.py.
+
 ### Priority 5: Polish & Features
 
 - [x] EXIF metadata in review: dimensions, file size, date modified, similarity % on image cards + lightbox overlay
@@ -134,6 +152,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] Verbose text toggle: checkbox in settings to control wizard explanation verbosity. When unchecked, minimal text describing function only. Separate from hints toggle.
 - [ ] Adaptive resolution: detect screen resolution on startup, define display profiles (full/compact/minimal), adjust layouts per profile. Extend existing CSS breakpoints (1024/768/480). Toast warning if below 1280x720.
 - [ ] Expert mode toggle (reduces dialog count for experienced users)
+- [ ] Return to default state button in Settings: resets all settings to defaults, clears workspace, removes staging/dupes/keepers folders. Confirmation dialog. Useful for testing and fresh starts without reinstalling.
 
 ### Code Quality (Pike's Rules Audit -- 2026-03-24)
 
@@ -158,6 +177,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ### Testing
 
 - [ ] USB drive: plug in a USB drive, verify folder picker shows it in My Computer view, migrate files from it, send files back to it
+- [ ] Non-C: drive testing: run full workflow (migrate, scan, review, finalize) with source folder on a different drive (D:, E:, USB). Verify path mapping, source dupe cleanup, and Send Files Home all work correctly when source and workspace are on different volumes.
 
 ### Distribution
 

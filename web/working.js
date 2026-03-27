@@ -31,9 +31,12 @@ function initWorking() {
     _workingConfig.callback(function(resultTitle, resultMsg) {
       // Called by the operation when done
       clearTimeout(_workingTimeout);
+      var title = resultTitle || "Done";
+      var isError = /fail|error/i.test(title);
       document.getElementById("workingSpinner").style.display = "none";
       document.getElementById("workingComplete").style.display = "block";
-      document.getElementById("workingCompleteTitle").textContent = resultTitle || "Done";
+      document.getElementById("workingCompleteTitle").textContent = title;
+      document.getElementById("workingCompleteTitle").style.color = isError ? "var(--danger)" : "var(--accent)";
       document.getElementById("workingCompleteMsg").textContent = resultMsg || "";
     });
   }

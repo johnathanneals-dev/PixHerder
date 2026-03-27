@@ -60,6 +60,7 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   }
   if (_finishCounts.dupes > 0) {
     html += _finishCounts.dupes.toLocaleString() + " files in Recovery will be sent to the Recycle Bin. ";
+    html += "Their originals will also be removed from your source folder. ";
   }
   html += "The recovery archive will also be cleared.</div>";
   if (showOneDriveWarning) {
@@ -89,7 +90,7 @@ function _executeFinish() {
   document.getElementById("finishTitle").textContent = "Finishing Up...";
   document.getElementById("finishSubtitle").textContent = "";
 
-  var totalPhases = (_finishCounts.staging > 0 || _finishCounts.keepers > 0 ? 1 : 0) + (_finishCounts.dupes > 0 ? 1 : 0) + 1;
+  var totalPhases = (_finishCounts.staging > 0 || _finishCounts.keepers > 0 ? 1 : 0) + 1 + (_finishCounts.dupes > 0 ? 1 : 0) + 1;
   var curPhase = 0;
 
   // Phase 1: Restore all kept files (Staging + Keepers) to source — threaded with progress
@@ -110,7 +111,7 @@ function _executeFinish() {
 
       if (d.status === "complete") {
         window._onRestoreProgress = null;
-        _finishPhase2({copied: d.copied, skipped: d.skipped, errors: d.errors});
+        _finishSourceCleanup({copied: d.copied, skipped: d.skipped, errors: d.errors});
       } else if (d.status === "error") {
         window._onRestoreProgress = null;
         _finishError(d.message || "Restore failed");
@@ -133,7 +134,33 @@ function _executeFinish() {
       _finishError("Restore failed: " + err.message);
     });
   } else {
-    _finishPhase2({});
+    _finishSourceCleanup({});
+  }
+}
+
+function _finishSourceCleanup(restoreResult) {
+  // Phase: Recycle original duplicates from source folder
+  if (_stagingSession) {
+    document.getElementById("finishPhaseLabel").textContent = "Removing duplicates from source folder...";
+    document.getElementById("finishStage").textContent = "Sending source duplicates to Recycle Bin";
+    document.getElementById("finishProgressFill").style.width = "50%";
+    document.getElementById("finishProgressPct").textContent = "";
+    document.getElementById("finishProgressLeft").textContent = "";
+
+    api("POST", "/api/recycle-source-dupes", {
+      staging_dir: _stagingSession.staging_dir,
+      source_dir: _stagingSession.source_dir
+    }).then(function(r) {
+      var sourceRecycled = r.recycled || 0;
+      restoreResult.source_recycled = sourceRecycled;
+      _finishPhase2(restoreResult);
+    }).catch(function() {
+      // Non-fatal: source cleanup is best-effort
+      restoreResult.source_recycled = 0;
+      _finishPhase2(restoreResult);
+    });
+  } else {
+    _finishPhase2(restoreResult);
   }
 }
 
@@ -195,8 +222,11 @@ function _finishPhase3(restoreResult, recycleResult) {
     } else if (_finishCounts.staging > 0) {
       summary += _finishCounts.staging.toLocaleString() + " files returned safely<br>";
     }
+    if (restoreResult && restoreResult.source_recycled > 0) {
+      summary += restoreResult.source_recycled.toLocaleString() + " duplicates removed from source folder<br>";
+    }
     if (recycleResult && recycleResult.files_recycled > 0) {
-      summary += recycleResult.files_recycled.toLocaleString() + " duplicates sent to Recycle Bin<br>";
+      summary += recycleResult.files_recycled.toLocaleString() + " workspace copies sent to Recycle Bin<br>";
     }
     summary += "Local workspace cleaned up.";
     document.getElementById("finishCompleteSummary").innerHTML = summary;

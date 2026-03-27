@@ -62,6 +62,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
     skipped = 0
     error_list = []
     cancelled = False
+    moved_sources = []  # Track staging paths of successfully moved files
 
     # Count total unique files to process (dedup across groups)
     all_dupe_paths = set()
@@ -138,6 +139,7 @@ def move_files(groups, move_dir, keep_strategy="largest",
                     os.chmod(str(dupe_path), stat.S_IWRITE | stat.S_IREAD)
                 os.remove(str(dupe_path))
                 moved += 1
+                moved_sources.append(dupe_path_str)
                 log_action("move", {
                     "source": dupe_path_str,
                     "destination": str(dest),
@@ -162,7 +164,8 @@ def move_files(groups, move_dir, keep_strategy="largest",
         if cancelled:
             break
 
-    return {"moved": moved, "skipped": skipped, "errors": error_list, "cancelled": cancelled}
+    return {"moved": moved, "skipped": skipped, "errors": error_list,
+            "cancelled": cancelled, "moved_sources": moved_sources}
 
 
 def delete_files(groups, keep_strategy="largest",

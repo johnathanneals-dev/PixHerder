@@ -532,10 +532,10 @@ function _confirmSendHome() {
             done("All Files Sent Home", fileCount.toLocaleString() + " files returned to their original folder.");
           });
         } else {
-          done("Restore Failed", r.error || "Unknown error");
+          done("Restore Failed", r.error || "No staging session found. Files may have already been sent home.");
         }
       }).catch(function(err) {
-        done("Restore Failed", err.message);
+        done("Restore Failed", err.message || "No staging session found. Files may have already been sent home.");
       });
     },
     "dashboard"

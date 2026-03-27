@@ -6,7 +6,45 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 
 ## Active Bugs
 
-None currently known.
+None currently known. 9 UX issues from 2026-03-26 testing documented in TODO Priority 4b.
+
+## Fixed This Session (2026-03-26)
+
+**Source duplicates not cleaned from source folder (DESIGN BUG)**
+- **Found:** Testing, 2026-03-26
+- **Description:** Finalize only recycled workspace copies of duplicates. Original duplicate files remained in the source folder untouched. Re-migrating from the same source found the same duplicates every time — infinite loop. Fundamental workflow gap: PixHerder identified duplicates but never actually removed them from where they lived.
+- **Fix:** New phase in finalize: `move_files()` saves staging paths of moved dupes to `scans/source_dupes.json`. At finalize time, new `recycle_source_dupes()` maps staging paths to source paths and sends originals to Recycle Bin via batch PowerShell. Map cleaned up after use and on reset.
+- **Files:** engine/actions.py, web/server.py, web/bridge.py, web/finish.js, web/app.js
+
+**Easy mode lands on blank dashboard**
+- **Found:** Testing, 2026-03-24 (fixed 2026-03-26)
+- **Description:** Easy mode users saw empty dashboard instead of wizard on fresh load. `route()` skipped redirect when view was "dashboard" because it was in the hardcoded exclusion list.
+- **Fix:** route() now compares current view against `getModeLandingView()` result instead of hardcoded skip list.
+- **Files:** web/app.js
+
+**Finish progress bar never updates (race condition, third occurrence)**
+- **Found:** Testing, 2026-03-26
+- **Description:** `subscribe_restore_progress` included "idle" as a terminal state. The poller's first poll saw "idle" (background thread hadn't started yet) and exited immediately. Progress bar stayed at 0%.
+- **Fix:** Removed "idle" from terminal states for restore progress subscription.
+- **Files:** web/bridge.py
+
+**Ghost staging folders cause false "files in system" on dashboard**
+- **Found:** Testing, 2026-03-26
+- **Description:** Empty staging subfolder skeletons (from previous sessions) were detected as active sessions. `_find_staging_subfolder()` counted all files (not just images), and `staging_status()` fabricated a session with guessed source_dir when no manifest existed. Dashboard showed files, Send Files Home failed with "Unknown error."
+- **Fix:** Three layers: `_find_staging_subfolder()` counts only image files, `staging_status()` requires manifest to report session, state validator cleans up orphan folders from temp directory on startup.
+- **Files:** web/server.py, web/bridge.py, engine/state_validator.py
+
+**Working view shows green title for errors**
+- **Found:** Testing, 2026-03-26
+- **Description:** Working view completion card used green accent color for both success and failure titles. Errors looked like successes.
+- **Fix:** Auto-detect error titles (regex for "fail"/"error") and show in red.
+- **Files:** web/working.js
+
+**Send Files Home shows "Unknown error" with no context**
+- **Found:** Testing, 2026-03-26
+- **Description:** When restore API failed (no manifest, empty folders), error message was generic "Unknown error" with no guidance.
+- **Fix:** Replaced with "No staging session found. Files may have already been sent home."
+- **Files:** web/dashboard.js
 
 ## Fixed This Session (2026-03-23 evening, second commit)
 
