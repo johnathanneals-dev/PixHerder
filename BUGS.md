@@ -6,7 +6,9 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 
 ## Active Bugs
 
-None currently known. 9 UX issues from 2026-03-26 testing documented in TODO Priority 4b.
+- **Finalize progress bar** -- Bar connects and shows partial progress, then resets to 0% on phase transition (restore → source cleanup → recycle). Needs phase-aware progress that doesn't reset.
+- **Nav menu missing links** -- Nav links disappear during scan progress, wizard steps, and other views. Confirmed at every step during testing. Pervasive.
+- 9 additional UX issues from 2026-03-26 testing documented in TODO Priority 4b.
 
 ## Fixed This Session (2026-03-26)
 

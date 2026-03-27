@@ -83,7 +83,8 @@ class Api:
             try:
                 js = callback_name + "(" + json.dumps(data) + ")"
                 self._window.evaluate_js(js)
-            except Exception:
+            except Exception as e:
+                logger.error("Progress push failed for %s: %s", callback_name, e)
                 break
             if data.get("status") in terminals:
                 break

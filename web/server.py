@@ -819,10 +819,18 @@ def recycle_source_dupes(staging_dir, source_dir):
         logger.info("No source originals found to recycle")
         return {"recycled": 0, "errors": [], "source_paths": []}
 
-    # Recycle in batch via PowerShell
+    # Recycle in chunked batches via PowerShell (Windows command line limit ~32K chars)
     logger.info("Recycling %d source originals", len(source_files))
     from engine.staging import _recycle_files_batch_powershell
-    result = _recycle_files_batch_powershell(source_files)
+    total_recycled = 0
+    all_errors = []
+    chunk_size = 50  # ~50 paths per batch keeps well under the limit
+    for i in range(0, len(source_files), chunk_size):
+        chunk = source_files[i:i + chunk_size]
+        result = _recycle_files_batch_powershell(chunk)
+        total_recycled += result.get("recycled", 0)
+        all_errors.extend(result.get("errors", []))
+    result = {"recycled": total_recycled, "errors": all_errors}
 
     # Clean up the map file
     try:
