@@ -6,7 +6,7 @@ This document defines the visual and interaction standards for PixHerder. Refer 
 
 ## Design Philosophy
 
-1. **File security first.** No user file is ever permanently deleted by PixHerder. All delete operations go to the Windows Recycle Bin. The only exception is Apply Cleanup to Originals (advanced), which is clearly warned.
+1. **File security first.** The user is always in control. No user file is ever permanently deleted unless the user decides that's what they want to happen. See the Data Protection Standard section below for the full safety model.
 2. **Plain English.** No technical jargon in user-facing text. Use exact folder names (Staging, Recovery, Keepers). No references to OneDrive, staging, workspace, or sync in normal user flows.
 3. **Predictable UI.** Cancel is always in the same place. Button colors always mean the same thing. Dialogs always follow the same layout.
 4. **Dashboard is the design baseline.** The current dashboard layout (stat cards, browse buttons, More Options) is the baseline for all future design changes. All workflow modes use the dashboard. Modes control what is visible or prominent on it, but the underlying structure does not change. No mode removes the dashboard.
@@ -218,14 +218,32 @@ Layout: `[Prev] [counter] [Next] | [Keep All] [Mark as Duplicate] [Delete] | [Ma
 
 ---
 
-## File Security Rules
+## Data Protection Standard
 
-1. **All user file deletes go to Recycle Bin** via PowerShell `SendToRecycleBin`
-2. **Fallback to permanent delete** only if PowerShell is completely unavailable (logged)
-3. **Only Apply Cleanup to Originals** permanently deletes (from source folder) -- advanced option with explicit warning
-4. **System files** (checkpoints, temp scripts, empty directories) may be permanently deleted -- these are not user files
-5. **Scan result JSON files** are removed directly (not user image files)
-6. **All file operations are logged** to activity.log for audit trail
+PixHerder's core promise: **the user is always in control. No user file is ever permanently deleted unless the user decides that's what they want to happen.** Every destructive path passes through at least two independent safety layers. This is the product's primary competitive advantage and must not be weakened.
+
+### Five-Layer Safety Model
+
+| Layer | What It Does | How the User Recovers |
+| ----- | ----------- | --------------------- |
+| **1. Workspace Copy** | Files are copied from source to staging, never moved. Source is untouched until the user finalizes. | Source files are always there until the user explicitly finishes. |
+| **2. Recycle Bin** | All "deletes" use PowerShell `SendToRecycleBin`. Nothing is permanently removed. | User opens Windows Recycle Bin and restores. |
+| **3. Recovery Archive** | Before recycling, files are copied to a 2-slot rolling archive (`PixHerder_Recovery`). | User browses/restores from the Recovery section on the dashboard. |
+| **4. Send Files Home** | Full refund -- restores all system folder files (staging, dupes, keepers) back to the source folder. | One button on dashboard or finalize view. Everything goes back. |
+| **5. Rescue & Review** | Cycles dupes back through staging for another review pass. Nothing is final until the user says so. | User clicks Rescue & Review on the dashboard to re-examine decisions. |
+
+### Standing Rules
+
+1. **All user file deletes go to Recycle Bin** via PowerShell `SendToRecycleBin`.
+2. **If PowerShell is unavailable, files stay in place.** Never fall back to permanent deletion silently. Log the failure.
+3. **Copy-then-delete, never move.** All file transfers use `shutil.copy2()` + verify + delete. Never `shutil.move()`. This prevents OneDrive lock issues and ensures the source exists until the copy is confirmed.
+4. **Verify every copy.** Compare file sizes after copy. Do not delete the original until verification passes.
+5. **One failure never stops the batch.** Per-file error handling with continue. Log each failure individually.
+6. **Log every file operation.** Every move, copy, delete, and restore is recorded with timestamp and path in daily action logs (`logs/actions_YYYYMMDD.log`).
+7. **System files are not user files.** Checkpoints, temp scripts, empty directories, and scan result JSON files may be removed directly. User image files may not.
+8. **Never say "permanently" or "cannot be undone"** in UI text for operations that go to the Recycle Bin.
+9. **Collision avoidance on all writes.** When a destination file already exists, auto-increment the filename (e.g., `photo_1.jpg`). Never silently overwrite.
+10. **Atomic writes for all critical data.** Settings, manifests, decisions, and checkpoints use write-to-temp + `os.replace()`. Backup to `_system_recovery/` before overwriting.
 
 ---
 
