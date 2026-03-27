@@ -614,71 +614,88 @@ function selectFolder() {
 }
 
 var _folderPickerLoading = false;
+var _cachedDriveList = null;
+
+function _warmUpDriveList() {
+  api("GET", "/api/browse-folders?path=__drives__")
+    .then(function(data) { _cachedDriveList = data; })
+    .catch(function() {});
+}
+
 function _loadFolderPicker(path) {
   // Debounce: ignore rapid clicks (double-click fires onclick twice)
   if (_folderPickerLoading) return;
   _folderPickerLoading = true;
   setTimeout(function() { _folderPickerLoading = false; }, 300);
+
+  // Use cached drive list for instant display
+  if (path === "__drives__" && _cachedDriveList) {
+    _renderFolderPicker(_cachedDriveList);
+    return;
+  }
+
   api("GET", "/api/browse-folders?path=" + encodeURIComponent(path))
-    .then(function(data) {
-      _folderPickerPath = data.path;
-
-      // Breadcrumb with clickable path segments
-      var bcEl = document.getElementById("folderPickerBreadcrumb");
-      if (data.is_drives) {
-        bcEl.innerHTML = "My Computer";
-      } else {
-        var crumbs = '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
-          'onclick="_loadFolderPicker(\'__drives__\')" ' +
-          'title="Show all drives">My Computer</span>';
-        // Split path into clickable segments: C:\Users\foo -> [C:, Users, foo]
-        var parts = data.path.split("\\");
-        var built = "";
-        for (var ci = 0; ci < parts.length; ci++) {
-          if (!parts[ci]) continue;
-          built += (ci === 0) ? parts[ci] : ("\\" + parts[ci]);
-          // Add trailing backslash for drive root (C: -> C:\)
-          var segPath = (ci === 0 && parts[ci].length === 2 && parts[ci][1] === ":") ? built + "\\" : built;
-          if (ci < parts.length - 1) {
-            crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' +
-              '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
-              'onclick="_loadFolderPicker(\'' + escAttr(segPath) + '\')">' + parts[ci] + '</span>';
-          } else {
-            // Current folder -- not clickable
-            crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' + parts[ci];
-          }
-        }
-        bcEl.innerHTML = crumbs;
-      }
-
-      // Build folder list
-      var html = "";
-      if (data.parent) {
-        html += '<div style="padding:6px 10px;cursor:pointer;border-radius:4px;" ' +
-          'onmouseover="this.style.background=\'var(--surface-2)\'" ' +
-          'onmouseout="this.style.background=\'none\'" ' +
-          'onclick="_loadFolderPicker(\'' + escAttr(data.parent) + '\')">' +
-          '<span style="margin-right:6px;">&#8593;</span> ..</div>';
-      }
-      for (var i = 0; i < data.folders.length; i++) {
-        var name = data.folders[i];
-        var full = data.is_drives ? name : (data.path + "\\" + name);
-        var icon = data.is_drives ? "&#128187;" : "&#128193;";
-        html += '<div style="padding:6px 10px;cursor:pointer;border-radius:4px;" ' +
-          'onmouseover="this.style.background=\'var(--surface-2)\'" ' +
-          'onmouseout="this.style.background=\'none\'" ' +
-          'onclick="_loadFolderPicker(\'' + escAttr(full) + '\')">' +
-          '<span style="margin-right:6px;">' + icon + '</span> ' + name + '</div>';
-      }
-      if (!data.folders.length && !data.parent) {
-        html = '<div style="padding:12px;color:var(--text-dim);">No subfolders found</div>';
-      }
-      document.getElementById("folderPickerList").innerHTML = html;
-    })
+    .then(function(data) { _renderFolderPicker(data); })
     .catch(function() {
       document.getElementById("folderPickerList").innerHTML =
         '<div style="padding:12px;color:var(--danger);">Could not load folder</div>';
     });
+}
+
+function _renderFolderPicker(data) {
+  _folderPickerPath = data.path;
+
+  // Breadcrumb with clickable path segments
+  var bcEl = document.getElementById("folderPickerBreadcrumb");
+  if (data.is_drives) {
+    bcEl.innerHTML = "My Computer";
+  } else {
+    var crumbs = '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
+      'onclick="_loadFolderPicker(\'__drives__\')" ' +
+      'title="Show all drives">My Computer</span>';
+    // Split path into clickable segments: C:\Users\foo -> [C:, Users, foo]
+    var parts = data.path.split("\\");
+    var built = "";
+    for (var ci = 0; ci < parts.length; ci++) {
+      if (!parts[ci]) continue;
+      built += (ci === 0) ? parts[ci] : ("\\" + parts[ci]);
+      // Add trailing backslash for drive root (C: -> C:\)
+      var segPath = (ci === 0 && parts[ci].length === 2 && parts[ci][1] === ":") ? built + "\\" : built;
+      if (ci < parts.length - 1) {
+        crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' +
+          '<span style="cursor:pointer;text-decoration:underline;color:var(--accent);" ' +
+          'onclick="_loadFolderPicker(\'' + escAttr(segPath) + '\')">' + parts[ci] + '</span>';
+      } else {
+        // Current folder -- not clickable
+        crumbs += ' <span style="color:var(--text-dim);">&rsaquo;</span> ' + parts[ci];
+      }
+    }
+    bcEl.innerHTML = crumbs;
+  }
+
+  // Build folder list
+  var html = "";
+  if (data.parent) {
+    html += '<div style="padding:6px 10px;cursor:pointer;border-radius:4px;" ' +
+      'onmouseover="this.style.background=\'var(--surface-2)\'" ' +
+      'onmouseout="this.style.background=\'none\'" ' +
+      'onclick="_loadFolderPicker(\'' + escAttr(data.parent) + '\')">' +
+      '<span style="margin-right:6px;">&#8593;</span> ..</div>';
+  }
+  for (var i = 0; i < data.folders.length; i++) {
+    var name = data.folders[i];
+    var full = data.is_drives ? name : (data.path + "\\" + name);
+    var icon = data.is_drives ? "&#128187;" : "&#128193;";
+    html += '<div style="padding:6px 10px;cursor:pointer;border-radius:4px;" ' +
+      'onmouseover="this.style.background=\'var(--surface-2)\'" ' +
+      'onmouseout="this.style.background=\'none\'" ' +
+      'onclick="_loadFolderPicker(\'' + escAttr(full) + '\')">' +
+      '<span style="margin-right:6px;">' + icon + '</span> ' + name + '</div>';
+  }
+  if (!data.folders.length && !data.parent) {
+    html = '<div style="padding:12px;color:var(--text-dim);">No subfolders found</div>';
+  }
+  document.getElementById("folderPickerList").innerHTML = html;
 }
 
 // ---- API Helper ----
@@ -1453,6 +1470,7 @@ function _appInit() {
   function _postValidateInit() {
     _refreshFolderPaths();
     _checkPersistentLogging();
+    _warmUpDriveList();
     // Load settings to check workflow mode and cache pictures path
     api("GET", "/api/settings").then(function(s) {
       state.settings = s;
