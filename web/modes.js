@@ -104,6 +104,51 @@ function applyModeToUI(mode) {
   }
 }
 
+// ---- Progressive Nav for Easy Mode ----
+
+function updateEasyModeNav() {
+  if (getCurrentMode() !== "easy") return;
+  getAppState().then(function(appState) {
+    var hasStaging = appState.folders.staging.count > 0;
+    var hasDupes = appState.folders.dupes.count > 0;
+    var hasKeepers = appState.folders.keepers.count > 0;
+    var hasScans = appState.has_scans;
+    var hasAnyFiles = hasStaging || hasDupes || hasKeepers;
+
+    // Progressive disclosure: show links as workflow progresses
+    var show = {
+      navMigrate: true,
+      navScan: hasStaging,
+      navReview: hasScans,
+      navFinalize: hasDupes || hasKeepers,
+      navMyFiles: hasStaging,
+      navDupes: hasDupes,
+      navKeepers: hasKeepers,
+      navLogs: hasScans
+    };
+
+    for (var key in show) {
+      var el = null;
+      if (key === "navLogs") {
+        var allLinks = document.querySelectorAll(".nav-link");
+        for (var j = 0; j < allLinks.length; j++) {
+          if (allLinks[j].getAttribute("data-view") === "activity") {
+            el = allLinks[j];
+            break;
+          }
+        }
+      } else {
+        el = document.getElementById(key);
+      }
+      if (el) el.style.display = show[key] ? "" : "none";
+    }
+
+    // Show More Options on dashboard when files exist
+    var moreOptions = document.getElementById("dashAdvancedOptions");
+    if (moreOptions) moreOptions.style.display = hasAnyFiles ? "" : "none";
+  }).catch(function() {});
+}
+
 // ---- Mode-Aware Dashboard ----
 
 function modeAwareDashboard(mode) {
@@ -114,9 +159,9 @@ function modeAwareDashboard(mode) {
   var moreOptions = document.getElementById("dashAdvancedOptions");
 
   if (mode === "easy") {
-    // Hide Direct Scan, hide More Options (overwhelming for beginners)
+    // Hide Direct Scan (wizard is the path in Easy mode)
     if (directScanBtn) directScanBtn.style.display = "none";
-    if (moreOptions) moreOptions.style.display = "none";
+    // More Options visibility handled by updateEasyModeNav() based on file state
     // Make guided cleanup button prominent
     if (continueBtn) {
       continueBtn.style.fontSize = "18px";

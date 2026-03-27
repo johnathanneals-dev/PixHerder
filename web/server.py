@@ -571,6 +571,10 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
         delete_checkpoint(ckpt_path)
 
         total_groups = len(exact_groups_data) + len(perceptual_groups_data)
+        total_duplicate_files = (
+            sum(len(g["duplicates"]) for g in exact_groups_data) +
+            sum(len(g["duplicates"]) for g in perceptual_groups_data)
+        )
         total_reclaimable = (
             sum(g["reclaimable_bytes"] for g in exact_groups_data) +
             sum(g["reclaimable_bytes"] for g in perceptual_groups_data)
@@ -590,6 +594,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
                 "exact_groups": len(exact_groups_data),
                 "perceptual_groups": len(perceptual_groups_data),
                 "total_groups": total_groups,
+                "total_duplicate_files": total_duplicate_files,
                 "reclaimable_mb": round(mb, 1),
                 "duration": round(elapsed, 1),
                 "errors": len(all_errors),

@@ -186,8 +186,12 @@ function initReview(report, returnTo) {
       var g = state.groups[gi];
       totalFiles += g.files || ((g.duplicates || []).length + 1);
     }
+    var totalDupes = 0;
+    for (var di = 0; di < state.groups.length; di++) {
+      totalDupes += (state.groups[di].duplicates || []).length;
+    }
     document.getElementById("reviewTitle").textContent =
-      "Review: " + state.groups.length + " groups, " + totalFiles.toLocaleString() + " files";
+      "Review: " + state.groups.length + " groups, " + totalDupes.toLocaleString() + " duplicates (" + totalFiles.toLocaleString() + " files total)";
 
     // Hide Move buttons if scan was on the dupes folder (move would be circular)
     var scanDir = (state._scanMetadata.directory || "").replace(/\\/g, "/").toLowerCase();
@@ -518,7 +522,7 @@ function reviewBulkMove() {
       renderReviewGroup();
       updateReviewActionInfo();
       _saveDecisionsNow();
-      toast("Marked " + marked + " groups as duplicates");
+      toast("Marked " + marked + " of " + state.groups.length + " groups as duplicates");
     }
   );
 }
@@ -547,7 +551,7 @@ function reviewBulkDelete() {
       renderReviewGroup();
       updateReviewActionInfo();
       _saveDecisionsNow();
-      toast("Marked " + marked + " groups for recycling");
+      toast("Marked " + marked + " of " + state.groups.length + " groups for recycling");
     }
   );
 }

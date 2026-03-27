@@ -366,6 +366,7 @@ function showScanComplete(d) {
     var html = '<div class="card-grid">';
     html += '<div class="stat-card"><div class="num">' + s.total_images + '</div><div class="label">Images Scanned</div></div>';
     html += '<div class="stat-card"><div class="num">' + s.total_groups + '</div><div class="label">Duplicate Groups</div></div>';
+    html += '<div class="stat-card"><div class="num">' + (s.total_duplicate_files || 0) + '</div><div class="label">Duplicate Files</div></div>';
     html += '<div class="stat-card"><div class="num">' + s.reclaimable_mb + ' MB</div><div class="label">Reclaimable</div></div>';
     html += '<div class="stat-card"><div class="num">' + formatTime(s.duration) + '</div><div class="label">Duration</div></div>';
     if (s.auto_recycled && s.auto_recycled > 0) {

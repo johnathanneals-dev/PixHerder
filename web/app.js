@@ -614,7 +614,12 @@ function selectFolder() {
   closeFolderPicker();
 }
 
+var _folderPickerLoading = false;
 function _loadFolderPicker(path) {
+  // Debounce: ignore rapid clicks (double-click fires onclick twice)
+  if (_folderPickerLoading) return;
+  _folderPickerLoading = true;
+  setTimeout(function() { _folderPickerLoading = false; }, 300);
   api("GET", "/api/browse-folders?path=" + encodeURIComponent(path))
     .then(function(data) {
       _folderPickerPath = data.path;
@@ -950,6 +955,8 @@ function route() {
 
   // Apply workflow mode to UI (nav visibility, forced settings)
   applyModeToUI(getCurrentMode());
+  // Progressive nav: Easy mode shows links as workflow progresses
+  updateEasyModeNav();
 
   // Show hints bar when hints enabled, with contextual flow text
   var _curMode = getCurrentMode();
