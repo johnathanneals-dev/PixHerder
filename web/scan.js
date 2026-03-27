@@ -63,6 +63,10 @@ function initScanConfig() {
   title.textContent = cfg.title;
   subtitle.textContent = cfg.subtitle;
   if (folderGroup) folderGroup.style.display = cfg.showFolder ? "block" : "none";
+  // Auto-fill scan directory from staging session when no context is set
+  if (cfg.showFolder && !document.getElementById("scanDir").value.trim()) {
+    fillScanDir("staging");
+  }
   if (keepersSection) keepersSection.style.display = "none";
 
   // Save context for return button, then reset (so menu link shows full options)

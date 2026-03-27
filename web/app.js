@@ -546,6 +546,7 @@ function clearActivity() {
 // ---- Folder Picker ----
 var _folderPickerTarget = null;
 var _folderPickerPath = "";
+var _cachedPicturesPath = "";
 
 function _quickFill(which) {
   api("GET", "/api/settings").then(function(s) {
@@ -573,18 +574,16 @@ function _quickFill(which) {
 function openFolderPicker(targetInputId) {
   _folderPickerTarget = targetInputId;
   var startPath = document.getElementById(targetInputId).value.trim();
+  // Show loading state immediately
+  document.getElementById("folderPickerList").innerHTML =
+    '<div style="padding:12px;color:var(--text-dim);">Loading folders...</div>';
+  document.getElementById("folderPickerOverlay").classList.add("active");
   if (!startPath) {
-    // Default to detected pictures path (OneDrive\Pictures if it exists)
-    api("GET", "/api/settings").then(function(s) {
-      var home = s.default_pictures_path || "";
-      _loadFolderPicker(home || "__drives__");
-    }).catch(function() {
-      _loadFolderPicker("__drives__");
-    });
+    // Use cached pictures path (populated at init) to avoid API round-trip
+    _loadFolderPicker(_cachedPicturesPath || "__drives__");
   } else {
     _loadFolderPicker(startPath);
   }
-  document.getElementById("folderPickerOverlay").classList.add("active");
 }
 
 function closeFolderPicker() {
@@ -1036,6 +1035,11 @@ function route() {
 
 window.onhashchange = route;
 
+// Prevent mouse back/forward buttons from navigating (WebView2 default behavior)
+document.addEventListener("mousedown", function(e) {
+  if (e.button === 3 || e.button === 4) e.preventDefault();
+}, true);
+
 // ---- Radio helper ----
 function selectRadio(el, name) {
   var siblings = el.parentElement.querySelectorAll(".radio-option");
@@ -1449,9 +1453,10 @@ function _appInit() {
   function _postValidateInit() {
     _refreshFolderPaths();
     _checkPersistentLogging();
-    // Load settings to check workflow mode
+    // Load settings to check workflow mode and cache pictures path
     api("GET", "/api/settings").then(function(s) {
       state.settings = s;
+      _cachedPicturesPath = s.default_pictures_path || "";
       if (!s.workflow_mode) {
         // First launch: show tour then mode selector
         var _afterModeSelect = function(mode) {

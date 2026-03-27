@@ -10,6 +10,29 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 - **Easy mode nav too restrictive** -- Easy mode hides Scan, Review, Finalize, Staging, Recovery, Keepers nav links and More Options buttons. By design, but too aggressive — users can't navigate mid-workflow. Need to either show more links progressively or add a mode switcher to the nav bar.
 - 9 additional UX issues from 2026-03-26 testing documented in TODO Priority 4b.
 
+## Fixed This Session (2026-03-27)
+
+**Rescan "enter a folder path" error after no-dupes-found**
+- **Found:** Testing, 2026-03-27 (Easy mode)
+- **Description:** In Easy mode, wizard starts scans using `wizardState.stagingDir` (in-memory) and never populates the `scanDir` DOM input. When scan-progress "Rescan" button navigates directly to scan-config, `startScan()` finds the input empty and shows error toast.
+- **Root cause:** `initScanConfig()` did not auto-fill `scanDir` from `_stagingSession` when no scan context was set.
+- **Fix:** Added auto-fill call to `fillScanDir("staging")` in `initScanConfig()` when folder group is visible and scanDir is empty.
+- **Files:** web/scan.js
+
+**Browse window blank for 3-5 seconds on first open**
+- **Found:** Testing, 2026-03-27
+- **Description:** Folder picker overlay appeared immediately but content loaded asynchronously via chained API calls (settings fetch then folder listing). No cached data on first click meant 3-5 second blank dialog.
+- **Root cause:** `openFolderPicker()` fetched `default_pictures_path` from `/api/settings` on every open instead of using a cached value.
+- **Fix:** Cache `default_pictures_path` at app init (already fetched for mode selection). Show "Loading folders..." text immediately so dialog is never blank.
+- **Files:** web/app.js
+
+**Mouse back/forward buttons navigate behind dialogs**
+- **Found:** Testing, 2026-03-27
+- **Description:** WebView2 interprets mouse buttons 3/4 (back/forward) as browser navigation. With hash-based routing, this changes the page behind any open dialog or overlay.
+- **Root cause:** No event handler to intercept mouse back/forward buttons.
+- **Fix:** Added global `mousedown` listener that prevents default for buttons 3 and 4.
+- **Files:** web/app.js
+
 ## Fixed This Session (2026-03-26)
 
 **Source duplicates not cleaned from source folder (DESIGN BUG)**
