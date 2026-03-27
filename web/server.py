@@ -653,7 +653,7 @@ def _run_scan(directory, mode, threshold, recursive, hash_size,
 
 
 def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
-                report_file=None):
+                report_file=None, scan_dir=None):
     """Background action thread target."""
     global action_progress
 
@@ -685,6 +685,7 @@ def _run_action(action_type, groups, move_dir=None, keep_strategy="largest",
                 groups, move_dir, keep_strategy,
                 progress_cb=_update_action_progress,
                 cancel_event=action_cancel,
+                scan_dir=scan_dir,
             )
             action_progress["result"] = result
             # Save staging paths of moved files for source cleanup at finalize
@@ -1088,7 +1089,7 @@ def _run_restore(staging_dir, source_dir, full_restore, include_keepers):
         folders_to_restore.append((staging_dir, True))
     if full_restore or include_keepers:
         if os.path.isdir(dupes_dir):
-            folders_to_restore.append((dupes_dir, False))
+            folders_to_restore.append((dupes_dir, True))
     if include_keepers or full_restore:
         if os.path.isdir(keepers_dir):
             folders_to_restore.append((keepers_dir, True))
@@ -1125,8 +1126,10 @@ def _run_restore(staging_dir, source_dir, full_restore, include_keepers):
                             os.makedirs(os.path.dirname(dest), exist_ok=True)
                             shutil.copy2(src, dest)
                             copied += 1
-                    except Exception:
+                    except Exception as e:
                         errors += 1
+                        logger.error("Restore error for %s -> %s: %s",
+                                    src, dest, e)
                     restore_progress.update({
                         "current": current, "copied": copied,
                         "skipped": skipped, "errors": errors,
@@ -1800,11 +1803,13 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
                             settings.get("move_destination", DEFAULTS["move_destination"]))
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = body.get("report")
+        scan_dir = body.get("scan_dir", "")
 
         action_cancel = threading.Event()
         action_thread = threading.Thread(
             target=_run_action,
-            args=("move", groups, move_dir, keep_strategy, report_file),
+            args=("move", groups, move_dir, keep_strategy, report_file,
+                  scan_dir),
             daemon=True,
         )
         action_thread.start()

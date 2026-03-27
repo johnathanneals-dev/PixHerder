@@ -613,11 +613,13 @@ class Api:
                                            DEFAULTS["move_destination"]))
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = params.get("report")
+        scan_dir = _find_staging_subfolder() or ""
 
         srv.action_cancel = threading.Event()
         srv.action_thread = threading.Thread(
             target=_run_action,
-            args=("move", groups, move_dir, keep_strategy, report_file),
+            args=("move", groups, move_dir, keep_strategy, report_file,
+                  scan_dir),
             daemon=True,
         )
         srv.action_thread.start()

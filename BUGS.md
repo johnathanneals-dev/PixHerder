@@ -45,10 +45,12 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 - **Fix:** Changed to "duplicates found -- you'll choose what to do with them next".
 - **Files:** web/index.html
 
-**Send Files Home reports 4 fewer files than expected (errors: 4)**
+**Send Files Home loses files from Recovery (flat file restore)**
 - **Found:** Testing, 2026-03-27
-- **Description:** After moving 4 dupes to Recovery and then using Send Files Home, the result showed 6073 files returned instead of 6077. The 4 files in the dupes folder errored during restore (flat file restore without structure preservation).
-- **Status:** Open — needs investigation into why flat dupe restore errors. Pre-existing issue, not related to new feature.
+- **Description:** After moving 4 dupes to Recovery and then using Send Files Home, the result showed 6073 files instead of 6077. The 4 files in the dupes folder errored during restore.
+- **Root cause:** Two issues. (1) `move_files()` stored dupes flat (just filename, no subfolder). Files from `Family/IMG_0028 (2).JPG` became `IMG_0028 (2).JPG` in the dupes folder — structure lost. (2) The restore used `preserve_structure=False` for the dupes folder, so even if structure existed it would be ignored. On restore, files went to wrong location and errored.
+- **Fix:** (1) `move_files()` now accepts `scan_dir` parameter and preserves subfolder structure relative to it when moving to dupes. (2) Dupes folder restore changed to `preserve_structure=True`. (3) Added error logging to restore so failures aren't silent.
+- **Files:** engine/actions.py, web/server.py, web/bridge.py
 
 **Rescan "enter a folder path" error after no-dupes-found**
 - **Found:** Testing, 2026-03-27 (Easy mode)

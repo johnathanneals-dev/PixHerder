@@ -37,7 +37,7 @@ def log_action(action_type, details):
 
 
 def move_files(groups, move_dir, keep_strategy="largest",
-               progress_cb=None, cancel_event=None):
+               progress_cb=None, cancel_event=None, scan_dir=None):
     """Move duplicate files to a destination directory.
 
     Uses copy+delete for OneDrive compatibility. Per-file error handling
@@ -115,15 +115,24 @@ def move_files(groups, move_dir, keep_strategy="largest",
                     progress_cb(current, total, "move")
                 continue
 
-            # Determine destination with collision avoidance
-            dest = move_dir / dupe_path.name
+            # Determine destination preserving subfolder structure
+            if scan_dir:
+                try:
+                    rel = dupe_path.relative_to(scan_dir)
+                    dest = move_dir / rel
+                except ValueError:
+                    dest = move_dir / dupe_path.name
+            else:
+                dest = move_dir / dupe_path.name
+            # Collision avoidance
             if dest.exists():
                 stem = dest.stem
                 suffix = dest.suffix
                 counter = 1
                 while dest.exists():
-                    dest = move_dir / (stem + "_" + str(counter) + suffix)
+                    dest = dest.parent / (stem + "_" + str(counter) + suffix)
                     counter += 1
+            os.makedirs(str(dest.parent), exist_ok=True)
 
             try:
                 logger.debug("Copying %s -> %s", dupe_path, dest)
