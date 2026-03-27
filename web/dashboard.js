@@ -507,18 +507,17 @@ function _confirmSendHome() {
     return;
   }
   var sourceDir = _stagingSession.source_dir;
+  var stagingDir = _stagingSession.staging_dir;
   closeDialog();
   startWorkingView(
     "Sending Files Home",
     "Returning your files to their original folder.",
     function(done) {
-      api("POST", "/api/staging/restore", {
-        staging_dir: _stagingSession.staging_dir,
-        source_dir: _stagingSession.source_dir,
-        full_restore: true
-      }).then(function(r) {
-        if (r.success) {
-          var fileCount = r.copied || 0;
+      // Subscribe to restore progress (same pattern as finalize flow)
+      window._onRestoreProgress = function(d) {
+        if (d.status === "complete") {
+          window._onRestoreProgress = null;
+          var fileCount = (d.copied || 0) + (d.skipped || 0);
           resetAppState();
           // Show OneDrive explainer if files went back to a OneDrive folder
           api("POST", "/api/onedrive/status", { directory: sourceDir }).then(function(od) {
@@ -531,11 +530,24 @@ function _confirmSendHome() {
           }).catch(function() {
             done("All Files Sent Home", fileCount.toLocaleString() + " files returned to their original folder.");
           });
-        } else {
-          done("Restore Failed", r.error || "No staging session found. Files may have already been sent home.");
+        } else if (d.status === "error") {
+          window._onRestoreProgress = null;
+          done("Restore Failed", d.message || "Something went wrong while restoring files.");
+        }
+      };
+
+      // Start restore, then subscribe to progress
+      api("POST", "/api/staging/restore", {
+        staging_dir: stagingDir,
+        source_dir: sourceDir,
+        full_restore: true
+      }).then(function() {
+        if (window.pywebview && window.pywebview.api) {
+          window.pywebview.api.subscribe_restore_progress();
         }
       }).catch(function(err) {
-        done("Restore Failed", err.message || "No staging session found. Files may have already been sent home.");
+        window._onRestoreProgress = null;
+        done("Restore Failed", err.message || "Could not start restore.");
       });
     },
     "dashboard"

@@ -12,6 +12,14 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 
 ## Fixed This Session (2026-03-27)
 
+**Send Files Home reports "Restore Failed" in pywebview mode (pre-existing)**
+- **Found:** Testing, 2026-03-27
+- **Description:** "Send Files Home" on the dashboard always showed "Restore Failed" when running in pywebview mode (native window). The restore actually succeeded -- files were returned to source -- but the UI reported failure. The restore worked correctly in HTTP mode.
+- **Root cause:** `staging_restore()` bridge method launches a background thread and returns `{"status": "started"}`. The dashboard callback checked `r.success` (which doesn't exist in the bridge response) and fell through to the "Restore Failed" error path. The finalize flow had the correct pattern: subscribe to `restore_progress` and wait for `"complete"` status. Dashboard didn't use this pattern.
+- **Fix:** Rewrote `_confirmSendHome()` to use the same progress subscription pattern as the finalize flow: set `_onRestoreProgress` callback, start restore, subscribe to progress, wait for `"complete"` or `"error"`.
+- **Files:** web/dashboard.js
+- **Note:** File count now includes both `copied` and `skipped` so the user sees the total files handled, not just the ones that needed copying.
+
 **Rescan "enter a folder path" error after no-dupes-found**
 - **Found:** Testing, 2026-03-27 (Easy mode)
 - **Description:** In Easy mode, wizard starts scans using `wizardState.stagingDir` (in-memory) and never populates the `scanDir` DOM input. When scan-progress "Rescan" button navigates directly to scan-config, `startScan()` finds the input empty and shows error toast.
