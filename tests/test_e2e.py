@@ -10,16 +10,52 @@ import sys
 import os
 import time
 import json
+import glob as globmod
+from datetime import datetime
 from pathlib import Path
 
 # Project root setup
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# Test log directory
+TEST_LOG_DIR = PROJECT_ROOT / "logs" / "test_runs"
+
 from engine.config import (
     ensure_dirs, load_settings, DEFAULTS,
     SCANS_DIR, IMAGE_EXTENSIONS,
 )
+
+# Test log capture
+_log_lines = []
+
+
+def log_line(line):
+    """Print a line and capture it for the log file."""
+    print(line)
+    _log_lines.append(line)
+
+
+def save_test_log(success):
+    """Save captured output to a timestamped log file. Keep last 10 runs."""
+    TEST_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    status = "PASS" if success else "FAIL"
+    filename = "e2e_%s_%s.log" % (timestamp, status)
+    log_path = TEST_LOG_DIR / filename
+    with open(str(log_path), "w", encoding="utf-8") as f:
+        f.write("\n".join(_log_lines))
+    print("  Test log saved: %s" % log_path)
+    prune_test_logs()
+
+
+def prune_test_logs(keep=10):
+    """Delete oldest test logs, keeping only the most recent runs."""
+    pattern = str(TEST_LOG_DIR / "e2e_*.log")
+    logs = sorted(globmod.glob(pattern))
+    while len(logs) > keep:
+        os.remove(logs.pop(0))
+
 
 # Test reporting
 _issues = []
@@ -29,7 +65,7 @@ _step = ""
 def issue(msg):
     """Record a test issue."""
     _issues.append({"step": _step, "message": msg})
-    print("  !! ISSUE: " + msg)
+    log_line("  !! ISSUE: " + msg)
 
 
 def check(condition, msg):
@@ -60,7 +96,7 @@ def poll_progress(progress_dict, name, max_wait=600):
         status = data.get("status", "idle")
         msg = "%s: %s %d/%d" % (name, status, data.get("current", 0), data.get("total", 0))
         if msg != last_msg:
-            print("  " + msg)
+            log_line("  " + msg)
             last_msg = msg
         if status in ("complete", "error", "cancelled"):
             return data
@@ -80,13 +116,13 @@ def test_migrate(api, source_dir):
     """Step 1: Migrate files from source to staging."""
     global _step
     _step = "migrate"
-    print("\n=== STEP 1: MIGRATE ===")
+    log_line("\n=== STEP 1: MIGRATE ===")
 
     from web.server import staging_progress
 
     # Count source images before
     source_count = snapshot_source(source_dir)
-    print("  Source images: %d" % source_count)
+    log_line("  Source images: %d" % source_count)
     check(source_count > 0, "Source folder has no images: " + source_dir)
 
     # Reset state
@@ -102,12 +138,12 @@ def test_migrate(api, source_dir):
 
     staging_dir = data.get("staging_dir") or staging_progress.get("staging_dir", "")
     copied = data.get("copied", 0)
-    print("  Staging dir: %s" % staging_dir)
-    print("  Files copied: %d" % copied)
+    log_line("  Staging dir: %s" % staging_dir)
+    log_line("  Files copied: %d" % copied)
 
     # Verify staging has images
     staged_images = count_images(staging_dir)
-    print("  Staged images: %d" % staged_images)
+    log_line("  Staged images: %d" % staged_images)
     check(staged_images > 0, "No images in staging after migration")
     check(staged_images == source_count,
           "Staged image count (%d) != source count (%d)" % (staged_images, source_count))
@@ -124,7 +160,7 @@ def test_scan(api, staging_dir, staged_images):
     """Step 2: Scan staging for duplicates."""
     global _step
     _step = "scan"
-    print("\n=== STEP 2: SCAN ===")
+    log_line("\n=== STEP 2: SCAN ===")
 
     from web.server import scan_progress
 
@@ -147,10 +183,10 @@ def test_scan(api, staging_dir, staged_images):
     total_dupes = summary.get("total_duplicate_files", 0)
     scanned = summary.get("total_images", 0)
 
-    print("  Scanned: %d images" % scanned)
-    print("  Groups: %d" % total_groups)
-    print("  Duplicate files: %d" % total_dupes)
-    print("  Reclaimable: %.1f MB" % summary.get("reclaimable_mb", 0))
+    log_line("  Scanned: %d images" % scanned)
+    log_line("  Groups: %d" % total_groups)
+    log_line("  Duplicate files: %d" % total_dupes)
+    log_line("  Reclaimable: %.1f MB" % summary.get("reclaimable_mb", 0))
 
     check(scanned == staged_images,
           "Scanned count (%d) != staged images (%d)" % (scanned, staged_images))
@@ -163,22 +199,22 @@ def test_execute(api, result_file, staging_dir):
     """Step 3: Load groups, mark all as dupes, execute move."""
     global _step
     _step = "execute"
-    print("\n=== STEP 3: REVIEW + EXECUTE ===")
+    log_line("\n=== STEP 3: REVIEW + EXECUTE ===")
 
     from web.server import action_progress
 
     # Load groups
     group_data = api.get_groups({"report": result_file})
     groups = group_data.get("groups", [])
-    print("  Loaded %d groups from %s" % (len(groups), result_file))
+    log_line("  Loaded %d groups from %s" % (len(groups), result_file))
 
     if not groups:
-        print("  No groups to execute")
+        log_line("  No groups to execute")
         return {"moved": 0}
 
     # Count expected moves
     expected_moves = sum(len(g.get("duplicates", [])) for g in groups)
-    print("  Expected moves: %d" % expected_moves)
+    log_line("  Expected moves: %d" % expected_moves)
 
     # Execute move
     settings = load_settings()
@@ -197,8 +233,8 @@ def test_execute(api, result_file, staging_dir):
     move_result = data.get("result", {})
     moved = move_result.get("moved", 0)
     errors = move_result.get("errors", [])
-    print("  Moved: %d" % moved)
-    print("  Errors: %d" % len(errors))
+    log_line("  Moved: %d" % moved)
+    log_line("  Errors: %d" % len(errors))
 
     check(moved == expected_moves,
           "Moved count (%d) != expected (%d)" % (moved, expected_moves))
@@ -212,13 +248,13 @@ def test_execute(api, result_file, staging_dir):
         with open(str(source_dupes_path), "r") as f:
             sd = json.load(f)
         paths = sd.get("staging_paths", [])
-        print("  Source dupe paths saved: %d" % len(paths))
+        log_line("  Source dupe paths saved: %d" % len(paths))
         check(len(paths) == moved,
               "Source dupe paths (%d) != moved count (%d)" % (len(paths), moved))
 
     # Verify dupes folder has files
     dupes_images = count_images(dupes_dir)
-    print("  Images in dupes folder: %d" % dupes_images)
+    log_line("  Images in dupes folder: %d" % dupes_images)
     check(dupes_images >= moved,
           "Dupes folder count (%d) < moved (%d)" % (dupes_images, moved))
 
@@ -229,14 +265,14 @@ def test_finalize(api, staging_dir, source_dir, source_count, moved):
     """Step 4: Finalize -- restore, recycle source dupes, recycle workspace dupes, cleanup."""
     global _step
     _step = "finalize"
-    print("\n=== STEP 4: FINALIZE ===")
+    log_line("\n=== STEP 4: FINALIZE ===")
 
     from web.server import restore_progress
 
     # Count staging before restore
     staging_before = count_images(staging_dir)
-    print("  Staging files before restore: %d" % staging_before)
-    print("  Expected source dupes to recycle: %d" % moved)
+    log_line("  Staging files before restore: %d" % staging_before)
+    log_line("  Expected source dupes to recycle: %d" % moved)
 
     # Phase 1: Restore kept files to source
     result = api.staging_restore({
@@ -253,19 +289,19 @@ def test_finalize(api, staging_dir, source_dir, source_count, moved):
 
     restored = data.get("copied", 0)
     skipped = data.get("skipped", 0)
-    print("  Restored: %d copied, %d skipped" % (restored, skipped))
+    log_line("  Restored: %d copied, %d skipped" % (restored, skipped))
 
     # Phase 2: Recycle source duplicates
-    print("  Recycling source duplicates...")
+    log_line("  Recycling source duplicates...")
     recycle_result = api.recycle_source_dupes({
         "staging_dir": staging_dir,
         "source_dir": source_dir,
     })
     source_recycled = recycle_result.get("recycled", 0)
     recycle_errors = recycle_result.get("errors", [])
-    print("  Source dupes recycled: %d" % source_recycled)
+    log_line("  Source dupes recycled: %d" % source_recycled)
     if recycle_errors:
-        print("  Recycle errors: %s" % str(recycle_errors[:3]))
+        log_line("  Recycle errors: %s" % str(recycle_errors[:3]))
 
     check(source_recycled == moved,
           "Source recycled (%d) != moved (%d)" % (source_recycled, moved))
@@ -273,7 +309,7 @@ def test_finalize(api, staging_dir, source_dir, source_count, moved):
     # Phase 3: Verify source count reduced
     source_after = snapshot_source(source_dir)
     expected_after = source_count - moved
-    print("  Source images after finalize: %d (was %d)" % (source_after, source_count))
+    log_line("  Source images after finalize: %d (was %d)" % (source_after, source_count))
     check(source_after == expected_after,
           "Source count (%d) != expected (%d = %d - %d)" %
           (source_after, expected_after, source_count, moved))
@@ -282,28 +318,107 @@ def test_finalize(api, staging_dir, source_dir, source_count, moved):
     settings = load_settings()
     dupes_dir = settings.get("move_destination", DEFAULTS["move_destination"])
     if os.path.isdir(dupes_dir) and count_images(dupes_dir) > 0:
-        print("  Recycling workspace dupes...")
+        log_line("  Recycling workspace dupes...")
         r = api.staging_recycle_bin({"folder": "dupes"})
-        print("  Workspace dupes recycled: %s" % r.get("recycled", 0))
+        log_line("  Workspace dupes recycled: %s" % r.get("recycled", 0))
 
     # Phase 5: Cleanup workspace
     if os.path.isdir(staging_dir):
         api.staging_cleanup({"staging_dir": staging_dir})
     api.staging_reset()
     api.reset_state()
-    print("  Workspace cleaned up")
+    log_line("  Workspace cleaned up")
 
     return {"source_after": source_after, "source_recycled": source_recycled}
 
 
+def test_finalize_to_folder(api, staging_dir, source_dir, source_count, moved):
+    """Step 4 (alt): Finalize -- move dupes to folder instead of recycling."""
+    global _step
+    _step = "finalize_folder"
+    log_line("\n=== STEP 4 (ALT): FINALIZE TO FOLDER ===")
+
+    from web.server import restore_progress
+
+    # Count staging before restore
+    staging_before = count_images(staging_dir)
+    log_line("  Staging files before restore: %d" % staging_before)
+
+    # Phase 1: Restore kept files to source (same as normal finalize)
+    result = api.staging_restore({
+        "staging_dir": staging_dir,
+        "source_dir": source_dir,
+        "include_keepers": True,
+    })
+    check("error" not in result, "staging_restore failed: " + str(result.get("error", "")))
+
+    data = poll_progress(restore_progress, "Restore", max_wait=600)
+    check(data.get("status") == "complete",
+          "Restore did not complete: " + data.get("status", ""))
+
+    restored = data.get("copied", 0)
+    log_line("  Restored: %d files" % restored)
+
+    # Phase 2: Move dupes to folder
+    log_line("  Moving duplicates to folder...")
+    folder_result = api.move_dupes_to_folder({
+        "staging_dir": staging_dir,
+        "source_dir": source_dir,
+    })
+    folder_path = folder_result.get("folder", "")
+    total_moved = folder_result.get("total_moved", 0)
+    log_line("  Folder: %s" % folder_path)
+    log_line("  Total moved to folder: %d" % total_moved)
+
+    check(len(folder_path) > 0, "No folder path returned")
+    check(os.path.isdir(folder_path), "Dupe folder not created: " + folder_path)
+
+    # Verify README exists
+    readme_path = os.path.join(folder_path, "README.txt")
+    check(os.path.isfile(readme_path), "README.txt not created")
+
+    # Verify subfolders have files
+    found_dir = os.path.join(folder_path, "Found_Duplicates")
+    source_of_dir = os.path.join(folder_path, "Source_of_Duplicates")
+    found_count = count_images(found_dir)
+    source_of_count = count_images(source_of_dir)
+    log_line("  Found_Duplicates: %d files" % found_count)
+    log_line("  Source_of_Duplicates: %d files" % source_of_count)
+
+    check(found_count > 0, "Found_Duplicates is empty")
+    check(source_of_count > 0, "Source_of_Duplicates is empty")
+
+    # Verify source folder is clean (dupes removed)
+    source_after = count_images(source_dir)
+    expected_after = source_count - moved
+    log_line("  Source images after: %d (was %d)" % (source_after, source_count))
+    check(source_after == expected_after,
+          "Source count (%d) != expected (%d)" % (source_after, expected_after))
+
+    # Phase 3: Cleanup workspace
+    if os.path.isdir(staging_dir):
+        api.staging_cleanup({"staging_dir": staging_dir})
+    api.staging_reset()
+    api.reset_state()
+    log_line("  Workspace cleaned up")
+
+    # Clean up the test dupe folder
+    import shutil
+    if os.path.isdir(folder_path):
+        shutil.rmtree(folder_path, ignore_errors=True)
+        log_line("  Test dupe folder cleaned up")
+
+    return {"source_after": source_after, "total_moved": total_moved}
+
+
 # ---- Main Runner ----
 
-def run_test(source_dir):
+def run_test(source_dir, use_folder=False):
     """Run the full E2E test cycle."""
-    print("=" * 60)
-    print("PixHerder E2E Test Agent")
-    print("Source: %s" % source_dir)
-    print("=" * 60)
+    log_line("=" * 60)
+    log_line("PixHerder E2E Test Agent")
+    log_line("Source: %s" % source_dir)
+    log_line("=" * 60)
 
     from web.bridge import Api
     ensure_dirs()
@@ -315,7 +430,8 @@ def run_test(source_dir):
     # Run the cycle
     migrate_result = test_migrate(api, source_dir)
     if not migrate_result.get("staging_dir"):
-        print("\nMigration failed, cannot continue.")
+        log_line("\nMigration failed, cannot continue.")
+        save_test_log(False)
         return False
 
     scan_result = test_scan(
@@ -325,7 +441,8 @@ def run_test(source_dir):
     )
 
     if not scan_result.get("result_file"):
-        print("\nScan failed, cannot continue.")
+        log_line("\nScan failed, cannot continue.")
+        save_test_log(False)
         return False
 
     execute_result = test_execute(
@@ -334,44 +451,60 @@ def run_test(source_dir):
         migrate_result["staging_dir"],
     )
 
-    finalize_result = test_finalize(
-        api,
-        migrate_result["staging_dir"],
-        source_dir,
-        migrate_result["source_count"],
-        execute_result["moved"],
-    )
+    if use_folder:
+        finalize_result = test_finalize_to_folder(
+            api,
+            migrate_result["staging_dir"],
+            source_dir,
+            migrate_result["source_count"],
+            execute_result["moved"],
+        )
+    else:
+        finalize_result = test_finalize(
+            api,
+            migrate_result["staging_dir"],
+            source_dir,
+            migrate_result["source_count"],
+            execute_result["moved"],
+        )
 
     # Report
-    print("\n" + "=" * 60)
-    print("TEST REPORT")
-    print("=" * 60)
-    print("Source: %s" % source_dir)
-    print("Original images: %d" % migrate_result["source_count"])
-    print("Groups found: %d" % scan_result["total_groups"])
-    print("Duplicate files: %d" % scan_result["total_dupes"])
-    print("Duplicates moved: %d" % execute_result["moved"])
-    print("Source dupes recycled: %d" % finalize_result["source_recycled"])
-    print("Source images after: %d (-%d)" % (
+    log_line("\n" + "=" * 60)
+    log_line("TEST REPORT")
+    log_line("=" * 60)
+    log_line("Source: %s" % source_dir)
+    log_line("Original images: %d" % migrate_result["source_count"])
+    log_line("Groups found: %d" % scan_result["total_groups"])
+    log_line("Duplicate files: %d" % scan_result["total_dupes"])
+    log_line("Duplicates moved: %d" % execute_result["moved"])
+    if use_folder:
+        log_line("Duplicates moved to folder: %d" % finalize_result.get("total_moved", 0))
+    else:
+        log_line("Source dupes recycled: %d" % finalize_result.get("source_recycled", 0))
+    log_line("Source images after: %d (-%d)" % (
         finalize_result["source_after"],
         migrate_result["source_count"] - finalize_result["source_after"]))
-    print()
+    log_line("")
 
     if _issues:
-        print("ISSUES FOUND: %d" % len(_issues))
+        log_line("ISSUES FOUND: %d" % len(_issues))
         for i, iss in enumerate(_issues):
-            print("  %d. [%s] %s" % (i + 1, iss["step"], iss["message"]))
+            log_line("  %d. [%s] %s" % (i + 1, iss["step"], iss["message"]))
     else:
-        print("ALL CHECKS PASSED")
+        log_line("ALL CHECKS PASSED")
 
-    print("=" * 60)
-    return len(_issues) == 0
+    log_line("=" * 60)
+    success = len(_issues) == 0
+    save_test_log(success)
+    return success
 
 
 if __name__ == "__main__":
-    source = sys.argv[1] if len(sys.argv) > 1 else r"C:\Projects\Pictures"
+    use_folder = "--folder" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--folder"]
+    source = args[0] if args else r"C:\Projects\Pictures"
     if not os.path.isdir(source):
         print("Source folder not found: " + source)
         sys.exit(1)
-    success = run_test(source)
+    success = run_test(source, use_folder=use_folder)
     sys.exit(0 if success else 1)
