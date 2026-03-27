@@ -5,7 +5,7 @@ Discovers image files in directories with extension filtering.
 
 import logging
 from pathlib import Path
-from engine.config import IMAGE_EXTENSIONS
+from engine.config import IMAGE_EXTENSIONS, EXCLUDED_FOLDERS
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ def find_images(directory, recursive=True, extensions=None):
     if recursive:
         try:
             for root, dirs, files in _os.walk(str(directory), followlinks=False):
+                dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
                 for fname in files:
                     try:
                         fpath = Path(root) / fname

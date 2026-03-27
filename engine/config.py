@@ -104,6 +104,9 @@ IMAGE_EXTENSIONS = {
     ".tiff", ".tif", ".webp", ".heic", ".heif",
 }
 
+# Folders the scanner should always skip
+EXCLUDED_FOLDERS = {"PixHerder_Duplicates"}
+
 DEFAULTS = {
     "threshold": 5,
     "move_destination": os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "PixHerder", "Dupes"),
