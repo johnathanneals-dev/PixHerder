@@ -1316,8 +1316,10 @@ function _initTooltips() {
   document.addEventListener("mouseover", function(e) {
     var el = e.target.closest("[data-tip]");
     if (!el) return;
-    // Settings view always shows tooltips regardless of toggle
-    if (state.settings && state.settings.show_tooltips === false && state._currentView !== "settings") return;
+    // Settings view and data-tip-always elements always show tooltips
+    if (state.settings && state.settings.show_tooltips === false
+        && state._currentView !== "settings"
+        && !el.hasAttribute("data-tip-always")) return;
 
     clearTimeout(_tipTimer);
     _tipTimer = setTimeout(function() {

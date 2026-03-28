@@ -71,10 +71,10 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   // Action buttons -- right-justified per dialog standard
   html += '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
     '<button class="btn btn-primary" onclick="closeDialog(); _executeFinish(\'recycle\')" ' +
-      'data-tip="Sends duplicates and the files that had matching copies to the Windows Recycle Bin. Large batches may exceed Recycle Bin capacity.">' +
+      'data-tip="Sends duplicates and the files that had matching copies to the Windows Recycle Bin. Large batches may exceed Recycle Bin capacity." data-tip-always>' +
       'Send to Recycle Bin</button>' +
     '<button class="btn btn-warning" onclick="closeDialog(); _executeFinish(\'folder\')" ' +
-      'data-tip="Moves duplicates into a PixHerder_Duplicates folder in your source directory. Nothing is deleted.">' +
+      'data-tip="Moves duplicates into a PixHerder_Duplicates folder in your source directory. Nothing is deleted." data-tip-always>' +
       'Keep in Folder</button>' +
     '</div>';
 

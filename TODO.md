@@ -135,6 +135,8 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 - [ ] **Finalize performance** -- 6,345 file restore is slow. Investigate whether batching copies or parallel I/O can help, or if it's just OneDrive sync contention.
 - [ ] **ctypes Recycle Bin** -- Replace PowerShell subprocess with direct Windows Shell API via ctypes (`SHFileOperationW` with `FOF_ALLOWUNDO`). Eliminates .NET startup overhead (~500ms-1s per call), removes command line length limits, handles batches natively. This is what Windows Explorer uses internally. Current approach: chunked PowerShell calls (50 files per batch). Interim improvement: write paths to temp .ps1 file instead of command line args. Files: engine/staging.py.
 - [x] **Duplicate destination choice** -- At finalize, user chooses Recycle Bin or PixHerder_Duplicates folder in source directory. Folder creates Found_Duplicates/ and Source_of_Duplicates/ subfolders with README.txt. Scanner excludes PixHerder_Duplicates from future scans. Files: engine/dupe_folder.py, engine/scanner.py, web/finish.js, web/bridge.py.
+- [ ] **Scan ETA inconsistency** -- ETA display during scanning jumps around. Investigate smoothing (rolling average, or only update every N seconds). Not crucial but looks unprofessional.
+- [ ] **Scan complete screen redesign** -- "Done" screen after scan needs design attention. Layout, stat cards, action buttons need polish.
 - [ ] **Action log retention** -- Implemented: 7-day retention, 5MB cap per action log. Files: engine/logging_config.py.
 
 ### Priority 5: Polish & Features
