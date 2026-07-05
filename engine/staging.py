@@ -481,23 +481,27 @@ def _recycle_file_powershell(filepath, archive_slot=None):
             archive_file(archive_slot, filepath)
         except Exception:
             pass  # Archive failure should not block recycle
+    import base64
     import subprocess
 
     ps_path = str(filepath).replace("'", "''")
-    cmd = (
-        'powershell -NoProfile -ExecutionPolicy Bypass -Command "'
+    ps_script = (
         "Add-Type -AssemblyName Microsoft.VisualBasic; "
         "[Microsoft.VisualBasic.FileIO.FileSystem]"
         "::DeleteFile("
         "'" + ps_path + "', "
         "'OnlyErrorDialogs', 'SendToRecycleBin')"
-        '"'
     )
+    encoded = base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
+    cmd = [
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-EncodedCommand", encoded,
+    ]
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     si.wShowWindow = 0  # SW_HIDE
     result = subprocess.run(
-        cmd, shell=True, capture_output=True, timeout=30,
+        cmd, capture_output=True, timeout=30,
         startupinfo=si,
     )
     if result.returncode != 0:
@@ -507,11 +511,11 @@ def _recycle_file_powershell(filepath, archive_slot=None):
 
 def _recycle_files_batch_powershell(filepaths):
     """Send multiple files to the Recycle Bin in a single PowerShell call."""
+    import base64
     import subprocess
     if not filepaths:
         return {"recycled": 0, "errors": []}
 
-    # Build PowerShell script that recycles all files
     ps_lines = ["Add-Type -AssemblyName Microsoft.VisualBasic"]
     for fp in filepaths:
         ps_path = str(fp).replace("'", "''")
@@ -522,13 +526,16 @@ def _recycle_files_batch_powershell(filepaths):
         )
 
     ps_script = "; ".join(ps_lines)
-    cmd = ('powershell -NoProfile -ExecutionPolicy Bypass -Command "'
-           + ps_script + '"')
+    encoded = base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
+    cmd = [
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+        "-EncodedCommand", encoded,
+    ]
 
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     si.wShowWindow = 0  # SW_HIDE
-    result = subprocess.run(cmd, shell=True, capture_output=True, timeout=120,
+    result = subprocess.run(cmd, capture_output=True, timeout=120,
                             startupinfo=si)
     # Can't easily tell which files failed in batch mode
     if result.returncode != 0:

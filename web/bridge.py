@@ -37,8 +37,8 @@ from engine.staging import (
 )
 from engine.state_validator import validate_state
 
-# Import shared state and runners from server module
-from web.server import (
+# Import shared state and runners from workers module
+from web.workers import (
     scan_progress, action_progress, oddball_progress,
     staging_progress, syncback_progress, restore_progress,
     scan_cancel, action_cancel, oddball_cancel,
