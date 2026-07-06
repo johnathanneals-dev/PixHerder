@@ -951,8 +951,124 @@
   <!-- Help View -->
   <div class="view" id="view-help">
     <h1>Help</h1>
-    <p class="subtitle">Coming soon. In-app help topics and documentation.</p>
-    <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+    <p class="subtitle">Learn how PixHerder works and get the most out of every feature.</p>
+
+    <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+      <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Dashboard</button>
+    </div>
+
+    <div style="max-width:720px;">
+
+      <div class="card help-section" id="help-wizard">
+        <h3>Guided Cleanup Wizard</h3>
+        <p>The wizard walks you through the full workflow step by step:</p>
+        <ol>
+          <li><b>Migrate to Staging</b> &mdash; Copy your photos into a safe working folder so originals are never touched.</li>
+          <li><b>Scan</b> &mdash; PixHerder compares files by content (exact byte match) and optionally by visual similarity (perceptual hash).</li>
+          <li><b>Review</b> &mdash; Browse each group of duplicates side by side. Mark files to keep or remove.</li>
+          <li><b>Finalize</b> &mdash; Send your cleaned-up files back home and remove the workspace.</li>
+        </ol>
+        <p>You can also skip the wizard and use <b>Direct Scan</b> from the dashboard to scan any folder immediately.</p>
+      </div>
+
+      <div class="card help-section" id="help-folders">
+        <h3>Staging, Recovery, and Keepers</h3>
+        <p>PixHerder organizes files into three folders during a session:</p>
+        <ul>
+          <li><b>Staging</b> &mdash; Your working copies. Scans run against this folder. Originals stay untouched.</li>
+          <li><b>Recovery</b> &mdash; Files removed during review land here. Nothing is permanently deleted until you choose to recycle them.</li>
+          <li><b>Keepers</b> &mdash; Files you have explicitly confirmed as non-duplicates. A safe archive for files you want to keep separate from the review cycle.</li>
+        </ul>
+        <p>Browse any of these folders from the dashboard to inspect, move, or delete individual files.</p>
+      </div>
+
+      <div class="card help-section" id="help-scanning">
+        <h3>Scanning for Duplicates</h3>
+        <p>PixHerder supports two scan modes:</p>
+        <ul>
+          <li><b>Exact</b> &mdash; Compares file checksums (MD5). Finds byte-for-byte identical copies with zero false positives.</li>
+          <li><b>Perceptual</b> &mdash; Compares visual fingerprints. Finds photos that look the same even if cropped, resized, or re-saved. Adjust the similarity threshold in Settings to control sensitivity.</li>
+        </ul>
+        <p>The default mode runs both scans. Scanning saves progress automatically &mdash; if interrupted, you can resume from where you left off.</p>
+      </div>
+
+      <div class="card help-section" id="help-stats">
+        <h3>Dashboard Stats</h3>
+        <p>The four stat cards on the dashboard show a live snapshot of your session:</p>
+        <ul>
+          <li><b>Total Files</b> &mdash; Number of image files across all PixHerder folders.</li>
+          <li><b>Duplicate Groups</b> &mdash; Sets of matching files found by the last scan.</li>
+          <li><b>Duplicate Files</b> &mdash; Individual files within those groups (excluding the one kept from each group).</li>
+          <li><b>Reclaimable</b> &mdash; Estimated disk space you can free by removing duplicates.</li>
+        </ul>
+      </div>
+
+      <div class="card help-section" id="help-send-home">
+        <h3>Send Files Home</h3>
+        <p>Returns all files in Staging back to their original locations. Nothing is recycled or deleted &mdash; files are copied back and the staging copies are removed.</p>
+        <p>Use this when you are done reviewing or if you want to abandon the session without losing any files.</p>
+      </div>
+
+      <div class="card help-section" id="help-keepers">
+        <h3>Keepers</h3>
+        <p>Move files from Recovery to Keepers to confirm them as non-duplicates. Keepers are preserved across sessions and are never automatically recycled.</p>
+        <p>You can also promote individual files to Keepers from the folder browser.</p>
+      </div>
+
+      <div class="card help-section" id="help-cleanup">
+        <h3>Remove Workspace</h3>
+        <p>Removes the Staging workspace after you are finished. You will be asked whether to send remaining files home or to the Recycle Bin before the workspace is deleted.</p>
+        <p>This does not affect your original photos &mdash; only the copies in the PixHerder workspace.</p>
+      </div>
+
+      <div class="card help-section" id="help-start-over">
+        <h3>Start Over</h3>
+        <p>Moves all files from Recovery and Keepers back into Staging so you can rescan everything from scratch. Use this if you want a fresh review pass without re-importing from your source folder.</p>
+      </div>
+
+      <div class="card help-section" id="help-rescue-review">
+        <h3>Rescue and Review</h3>
+        <p>Not sure about files you removed? Rescue and Review moves everything from Recovery back into Staging for another round of scanning and review. No files are lost.</p>
+      </div>
+
+      <div class="card help-section" id="help-recycling">
+        <h3>Recycling Files</h3>
+        <p>When you recycle files, they are sent to the Windows Recycle Bin &mdash; not permanently deleted. You can restore them from the Recycle Bin if you change your mind.</p>
+        <p><b>Recycle All Remaining</b> sends every file in Recovery to the Recycle Bin. This is the final cleanup step after review.</p>
+      </div>
+
+      <div class="card help-section" id="help-finishing">
+        <h3>Finishing Up</h3>
+        <p>The Finalize step sends your cleaned-up files back to their original location and removes the workspace. This is the last step in the guided wizard.</p>
+        <p>You can also use <b>Send Files Home</b> from the dashboard at any time to return files without going through the wizard.</p>
+      </div>
+
+      <div class="card help-section" id="help-keyboard">
+        <h3>Keyboard Shortcuts (Review)</h3>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;">
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">&larr;</kbd><span>Previous group</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">&rarr;</kbd><span>Next group</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">S</kbd><span>Keep this file</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">M</kbd><span>Mark as duplicate</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">D</kbd><span>Recycle this file</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">E</kbd><span>Apply decisions</span>
+          <kbd style="background:var(--surface-2);padding:2px 8px;border-radius:3px;font-size:12px;">Space</kbd><span>Zoom image</span>
+        </div>
+        <p style="margin-top:8px;font-size:12px;color:var(--text-dim);">Toggle the shortcut bar in Settings under "Show keyboard shortcuts."</p>
+      </div>
+
+      <div class="card help-section" id="help-troubleshooting">
+        <h3>Troubleshooting</h3>
+        <ul>
+          <li><b>Files fail to save or scan errors appear</b> &mdash; Windows Defender Controlled Folder Access may be blocking Python. Whitelist the Python executable in Windows Security &gt; Ransomware protection.</li>
+          <li><b>OneDrive locks prevent file moves</b> &mdash; Pause OneDrive sync before importing or sending files home. PixHerder will remind you if it detects OneDrive is running.</li>
+          <li><b>Port 8787 blocked</b> &mdash; Another application may be using the port or a firewall is blocking it. Change the port in Settings.</li>
+          <li><b>App does not open</b> &mdash; Ensure the Microsoft Edge WebView2 Runtime is installed. Windows 11 includes it; on Windows 10 you may need to install it from Microsoft.</li>
+        </ul>
+        <p style="font-size:12px;color:var(--text-dim);">Enable verbose logging in Settings to capture detailed debug information for troubleshooting. Log files older than 30 days are automatically deleted.</p>
+      </div>
+
+    </div>
   </div>
 
   <!-- Autonomous Mode View -->
@@ -1156,6 +1272,10 @@
         <button class="btn btn-primary" onclick="saveSettings()" data-tip="Save your settings">Save Settings</button>
         <button class="btn btn-warning" onclick="navigate('dashboard')" data-tip="Return to the main dashboard">Back to Dashboard</button>
       </div>
+
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);color:var(--text-dim);font-size:12px;">
+        PixHerder <span id="settingsVersion"></span> &middot; SaddleCode
+      </div>
     </div>
   </div>
 
@@ -1185,7 +1305,7 @@
   </div>
   <div class="status-bar-right">
     <span id="statusBarToggles"></span>
-    <span id="statusBarInfo">PixHerder</span>
+    <span id="statusBarInfo">PixHerder <span id="statusBarVersion"></span></span>
   </div>
 </div>
 

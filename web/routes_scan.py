@@ -9,7 +9,7 @@ import threading
 from pathlib import Path
 
 from engine.config import (
-    SCANS_DIR, PROJECT_ROOT as ROOT, DEFAULTS, IMAGE_EXTENSIONS,
+    SCANS_DIR, PROJECT_ROOT as ROOT, DEFAULTS, IMAGE_EXTENSIONS, VERSION,
     load_settings, save_settings, default_pictures_path,
 )
 from engine.checkpoint import (
@@ -246,6 +246,7 @@ def handle_delete_scan(handler, workers):
 def handle_get_settings(handler, workers):
     settings = load_settings()
     settings["default_pictures_path"] = default_pictures_path()
+    settings["version"] = VERSION
     handler.send_json(settings)
 
 

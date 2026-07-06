@@ -12,6 +12,8 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+VERSION = "1.1.0"
+
 PROJECT_ROOT = Path(__file__).parent.parent
 SETTINGS_PATH = PROJECT_ROOT / "settings.json"
 SCANS_DIR = PROJECT_ROOT / "scans"

@@ -1402,7 +1402,13 @@ function _tooltipHelp() {
   var section = _tipHelpSection;
   var tip = document.getElementById("tooltip");
   if (tip) tip.style.display = "none";
-  toast("Help section coming soon: " + (section || "general"));
+  navigate("help");
+  if (section) {
+    setTimeout(function() {
+      var el = document.getElementById("help-" + section);
+      if (el) el.scrollIntoView({behavior: "smooth", block: "start"});
+    }, 100);
+  }
 }
 
 function _checkPersistentLogging() {
@@ -1439,6 +1445,8 @@ function _updateStatusBarPort() {
     var port = s.port || 8787;
     var el = document.getElementById("statusBarPort");
     if (el) el.textContent = "127.0.0.1:" + port;
+    var ver = document.getElementById("statusBarVersion");
+    if (ver && s.version) ver.textContent = "v" + s.version;
     _updateStatusBarToggles(s);
   }).catch(function() {});
 }

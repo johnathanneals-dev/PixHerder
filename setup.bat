@@ -133,6 +133,26 @@ if errorlevel 1 (
     echo  [OK] PowerShell available.
 )
 
+:: Test WebView2 Runtime (required by pywebview for the native window)
+reg query "HKLM\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" /v pv >nul 2>&1
+if errorlevel 1 (
+    reg query "HKLM\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" /v pv >nul 2>&1
+)
+if errorlevel 1 (
+    echo.
+    echo  [WARNING] Microsoft Edge WebView2 Runtime not detected.
+    echo  PixHerder needs WebView2 to display its interface.
+    echo.
+    echo  Windows 11 and updated Windows 10 include it automatically.
+    echo  If PixHerder fails to open, download the WebView2 Runtime from:
+    echo    https://developer.microsoft.com/en-us/microsoft-edge/webview2/
+    echo  Choose "Evergreen Bootstrapper" and run it.
+    echo.
+    pause
+) else (
+    echo  [OK] WebView2 Runtime available.
+)
+
 :: Test port availability
 "%PYTHON_EXE%" -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',8787)); s.close(); print('ok')" >nul 2>&1
 if errorlevel 1 (

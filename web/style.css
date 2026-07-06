@@ -853,3 +853,23 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
   }
+
+  /* ---- Help Page ---- */
+  .help-section h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: var(--accent);
+    font-size: 16px;
+  }
+  .help-section p, .help-section li {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .help-section ul, .help-section ol {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
+  .help-section:target {
+    border-color: var(--accent);
+  }

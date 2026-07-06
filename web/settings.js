@@ -27,6 +27,8 @@ function initSettings() {
     document.getElementById("setOpenFullscreen").checked = settings.open_fullscreen !== false;
     var exts = settings.extensions || [];
     document.getElementById("setExtensions").value = exts.join(", ");
+    var verEl = document.getElementById("settingsVersion");
+    if (verEl && settings.version) verEl.textContent = "v" + settings.version;
   });
   // Check logging status (session-only, not in saved settings)
   api("GET", "/api/logs/status").then(function(data) {

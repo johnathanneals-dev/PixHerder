@@ -22,7 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from engine.config import (
     SCANS_DIR, ACTIVITY_LOG, PROJECT_ROOT as ROOT,
-    DEFAULTS, load_settings, save_settings, default_pictures_path,
+    DEFAULTS, VERSION, load_settings, save_settings, default_pictures_path,
     verify_copy as _verify_copy,
 )
 from engine.scanner import find_images, count_images
@@ -175,6 +175,7 @@ class Api:
     def get_settings(self, params=None):
         settings = load_settings()
         settings["default_pictures_path"] = default_pictures_path()
+        settings["version"] = VERSION
         return settings
 
     def get_folders_status(self, params=None):
