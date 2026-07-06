@@ -39,6 +39,7 @@ from engine.state_validator import validate_state
 
 # Import shared state and runners from workers module
 from web.workers import (
+    worker_manager,
     scan_progress, action_progress, oddball_progress,
     staging_progress, syncback_progress, restore_progress,
     scan_cancel, action_cancel, oddball_cancel,
@@ -46,6 +47,7 @@ from web.workers import (
     _log_activity, _read_activity, _find_staging_subfolder,
     _run_scan, _run_action, _run_oddball, _run_staging, _run_syncback,
     _run_restore, _reset_all_progress,
+    recycle_source_dupes, move_dupes_to_folder,
 )
 
 # Thread references (mirrors server.py globals)
@@ -129,8 +131,7 @@ class Api:
                                ("complete", "error", "idle"))
 
     def subscribe_restore_progress(self, params=None):
-        import web.server as srv
-        return self._subscribe("restore", srv.restore_progress,
+        return self._subscribe("restore", restore_progress,
                                "_onRestoreProgress",
                                ("complete", "error"))
 
@@ -537,10 +538,9 @@ class Api:
 
     def scan_start(self, params=None):
         logger.debug("Bridge call: scan_start(%s)", params)
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.scan_thread and srv.scan_thread.is_alive():
+        if worker_manager.scan_thread and worker_manager.scan_thread.is_alive():
             return {"error": "A scan is already running"}
 
         directory = params.get("directory", "")
@@ -566,8 +566,7 @@ class Api:
             ckpt = checkpoint_path(directory, mode)
             delete_checkpoint(ckpt)
 
-        srv.scan_cancel = threading.Event()
-        # Reset progress dict to prevent stale data from previous scan
+        worker_manager.scan_cancel = threading.Event()
         scan_progress.update({
             "status": "running",
             "stage": "starting",
@@ -575,14 +574,14 @@ class Api:
             "message": "Starting scan...",
             "result_file": None,
         })
-        srv.scan_thread = threading.Thread(
+        worker_manager.scan_thread = threading.Thread(
             target=_run_scan,
             args=(directory, mode, threshold, recursive, hash_size,
                   keep_strategy, extensions, resume_data, auto_recycle,
                   scan_limit),
             daemon=True,
         )
-        srv.scan_thread.start()
+        worker_manager.scan_thread.start()
 
         return {
             "status": "started",
@@ -592,16 +591,14 @@ class Api:
         }
 
     def scan_cancel_op(self, params=None):
-        import web.server as srv
-        srv.scan_cancel.set()
+        worker_manager.scan_cancel.set()
         return {"status": "cancelling"}
 
     def action_move(self, params=None):
         logger.debug("Bridge call: action_move(%d groups)", len((params or {}).get("groups", [])))
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.action_thread and srv.action_thread.is_alive():
+        if worker_manager.action_thread and worker_manager.action_thread.is_alive():
             return {"error": "An action is already running"}
 
         groups = params.get("groups", [])
@@ -616,22 +613,21 @@ class Api:
         report_file = params.get("report")
         scan_dir = _find_staging_subfolder() or ""
 
-        srv.action_cancel = threading.Event()
-        srv.action_thread = threading.Thread(
+        worker_manager.action_cancel = threading.Event()
+        worker_manager.action_thread = threading.Thread(
             target=_run_action,
             args=("move", groups, move_dir, keep_strategy, report_file,
                   scan_dir),
             daemon=True,
         )
-        srv.action_thread.start()
+        worker_manager.action_thread.start()
         return {"status": "started", "action": "move"}
 
     def action_delete(self, params=None):
         logger.debug("Bridge call: action_delete(%d groups)", len((params or {}).get("groups", [])))
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.action_thread and srv.action_thread.is_alive():
+        if worker_manager.action_thread and worker_manager.action_thread.is_alive():
             return {"error": "An action is already running"}
 
         groups = params.get("groups", [])
@@ -642,13 +638,13 @@ class Api:
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = params.get("report")
 
-        srv.action_cancel = threading.Event()
-        srv.action_thread = threading.Thread(
+        worker_manager.action_cancel = threading.Event()
+        worker_manager.action_thread = threading.Thread(
             target=_run_action,
             args=("delete", groups, None, keep_strategy, report_file),
             daemon=True,
         )
-        srv.action_thread.start()
+        worker_manager.action_thread.start()
         return {"status": "started", "action": "delete"}
 
     def action_rescue(self, params=None):
@@ -666,10 +662,9 @@ class Api:
         return save_settings(params)
 
     def oddball_run(self, params=None):
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.oddball_thread and srv.oddball_thread.is_alive():
+        if worker_manager.oddball_thread and worker_manager.oddball_thread.is_alive():
             return {"error": "Oddball check is already running"}
 
         report = params.get("report", "")
@@ -694,13 +689,13 @@ class Api:
             dupes_folder = settings.get("move_destination",
                                         DEFAULTS["move_destination"])
 
-        srv.oddball_cancel = threading.Event()
-        srv.oddball_thread = threading.Thread(
+        worker_manager.oddball_cancel = threading.Event()
+        worker_manager.oddball_thread = threading.Thread(
             target=_run_oddball,
             args=(report_data, dupes_folder),
             daemon=True,
         )
-        srv.oddball_thread.start()
+        worker_manager.oddball_thread.start()
         return {"status": "started"}
 
     def decisions_save(self, params=None):
@@ -815,10 +810,9 @@ class Api:
 
     def staging_start(self, params=None):
         logger.debug("Bridge call: staging_start(%s)", params)
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.staging_thread and srv.staging_thread.is_alive():
+        if worker_manager.staging_thread and worker_manager.staging_thread.is_alive():
             return {"error": "Staging is already running"}
 
         source_dir = params.get("source_dir", "")
@@ -860,13 +854,13 @@ class Api:
         except Exception:
             pass
 
-        srv.staging_cancel = threading.Event()
-        srv.staging_thread = threading.Thread(
+        worker_manager.staging_cancel = threading.Event()
+        worker_manager.staging_thread = threading.Thread(
             target=_run_staging,
             args=(source_dir, staging_dir, extensions),
             daemon=True,
         )
-        srv.staging_thread.start()
+        worker_manager.staging_thread.start()
 
         return {
             "status": "started",
@@ -875,16 +869,14 @@ class Api:
         }
 
     def staging_cancel_op(self, params=None):
-        import web.server as srv
-        srv.staging_cancel.set()
+        worker_manager.staging_cancel.set()
         return {"status": "cancelling"}
 
     def staging_syncback(self, params=None):
         logger.debug("Bridge call: staging_syncback(%s)", params)
-        import web.server as srv
         if params is None:
             params = {}
-        if srv.syncback_thread and srv.syncback_thread.is_alive():
+        if worker_manager.syncback_thread and worker_manager.syncback_thread.is_alive():
             return {"error": "Sync-back is already running"}
 
         staging_dir = params.get("staging_dir", "")
@@ -892,13 +884,13 @@ class Api:
         if not staging_dir or not source_dir:
             return {"error": "Missing staging or source directory"}
 
-        srv.syncback_cancel = threading.Event()
-        srv.syncback_thread = threading.Thread(
+        worker_manager.syncback_cancel = threading.Event()
+        worker_manager.syncback_thread = threading.Thread(
             target=_run_syncback,
             args=(staging_dir, source_dir),
             daemon=True,
         )
-        srv.syncback_thread.start()
+        worker_manager.syncback_thread.start()
         return {"status": "started"}
 
     def staging_cleanup(self, params=None):
@@ -966,8 +958,7 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not staging_dir or not source_dir:
             return {"error": "staging_dir and source_dir required"}
-        import web.server as srv
-        result = srv.recycle_source_dupes(staging_dir, source_dir)
+        result = recycle_source_dupes(staging_dir, source_dir)
         _log_activity("recycle_source_dupes", {
             "recycled": result.get("recycled", 0),
             "source_dir": source_dir,
@@ -981,14 +972,12 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not staging_dir or not source_dir:
             return {"error": "Missing staging_dir or source_dir"}
-        from web.server import move_dupes_to_folder
         result = move_dupes_to_folder(staging_dir, source_dir)
         _log_activity("move_dupes_to_folder",
                       "Moved %d files to folder" % result.get("total_moved", 0))
         return result
 
     def staging_restore(self, params=None):
-        import web.server as srv
         if params is None:
             params = {}
         staging_dir = params.get("staging_dir", "")
@@ -999,15 +988,15 @@ class Api:
         if not source_dir:
             return {"error": "Source directory not specified"}
 
-        if srv.restore_thread and srv.restore_thread.is_alive():
+        if worker_manager.restore_thread and worker_manager.restore_thread.is_alive():
             return {"error": "Restore already running"}
 
-        srv.restore_thread = threading.Thread(
+        worker_manager.restore_thread = threading.Thread(
             target=_run_restore,
             args=(staging_dir, source_dir, full_restore, include_keepers),
             daemon=True,
         )
-        srv.restore_thread.start()
+        worker_manager.restore_thread.start()
         return {"status": "started"}
 
     def staging_recycle(self, params=None):
