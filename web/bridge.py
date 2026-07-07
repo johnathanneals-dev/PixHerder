@@ -633,6 +633,8 @@ class Api:
         move_dir = params.get("destination",
                               settings.get("move_destination",
                                            DEFAULTS["move_destination"]))
+        if not _is_safe_source_path(move_dir):
+            return {"error": "Cannot move files to system directories or drive roots"}
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = params.get("report")
         scan_dir = _find_staging_subfolder() or ""
@@ -909,6 +911,8 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not staging_dir or not source_dir:
             return {"error": "Missing staging or source directory"}
+        if not _is_safe_source_path(source_dir):
+            return {"error": "Cannot write to system directories or drive roots"}
 
         worker_manager.syncback_cancel = threading.Event()
         worker_manager.syncback_thread = threading.Thread(
@@ -984,6 +988,8 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not staging_dir or not source_dir:
             return {"error": "staging_dir and source_dir required"}
+        if not _is_safe_source_path(source_dir):
+            return {"error": "Cannot modify system directories or drive roots"}
         result = recycle_source_dupes(staging_dir, source_dir)
         _log_activity("recycle_source_dupes", {
             "recycled": result.get("recycled", 0),
@@ -998,6 +1004,8 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not staging_dir or not source_dir:
             return {"error": "Missing staging_dir or source_dir"}
+        if not _is_safe_source_path(source_dir):
+            return {"error": "Cannot modify system directories or drive roots"}
         result = move_dupes_to_folder(staging_dir, source_dir)
         _log_activity("move_dupes_to_folder",
                       "Moved %d files to folder" % result.get("total_moved", 0))
@@ -1013,6 +1021,8 @@ class Api:
 
         if not source_dir:
             return {"error": "Source directory not specified"}
+        if not _is_safe_source_path(source_dir):
+            return {"error": "Cannot restore to system directories or drive roots"}
 
         if worker_manager.restore_thread and worker_manager.restore_thread.is_alive():
             return {"error": "Restore already running"}
