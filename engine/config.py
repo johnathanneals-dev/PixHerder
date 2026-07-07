@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import tempfile
+import threading
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -65,25 +66,29 @@ def restore_from_backup(filepath):
     return False
 
 
+_json_write_lock = threading.Lock()
+
+
 def safe_json_write(filepath, data):
     """Atomic JSON write: backup existing, write to temp, replace.
 
     Combines backup-before-write with atomic temp+replace pattern.
+    Thread-safe via _json_write_lock.
     """
     filepath = Path(filepath)
-    backup_before_write(filepath)
-    tmp_path = str(filepath) + ".tmp"
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-        os.replace(tmp_path, str(filepath))
-    except Exception:
-        # Clean up temp file on failure
+    with _json_write_lock:
+        backup_before_write(filepath)
+        tmp_path = str(filepath) + ".tmp"
         try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-        raise
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            os.replace(tmp_path, str(filepath))
+        except Exception:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
 
 
 def cleanup_system_recovery():

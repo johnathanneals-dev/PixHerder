@@ -8,8 +8,15 @@ import logging
 from PIL import Image
 import imagehash
 
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
+Image.MAX_IMAGE_PIXELS = 200_000_000
 
 DEFAULT_HASH_SIZE = 16
 

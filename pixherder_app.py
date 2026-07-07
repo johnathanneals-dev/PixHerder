@@ -84,6 +84,10 @@ def main():
         "--port", type=int, default=None,
         help="Port to run on (default: from settings or 8787)",
     )
+    parser.add_argument(
+        "--support-mode", action="store_true",
+        help="Enable DevTools (F12) for troubleshooting",
+    )
     args = parser.parse_args()
 
     # Setup
@@ -108,10 +112,10 @@ def main():
         # Port in use — another instance is already running
         sys.exit(0)
 
-    _run_native_mode(port)
+    _run_native_mode(port, support_mode=args.support_mode)
 
 
-def _run_native_mode(port):
+def _run_native_mode(port, support_mode=False):
     """Run with pywebview native window."""
     try:
         import webview
@@ -178,12 +182,10 @@ def _run_native_mode(port):
 
     window.events.closing += on_closing
 
-    # Always start with debug=True so WebView2 enables:
-    #   - Right-click context menus (paste, cut, copy, select all)
-    #   - Keyboard accelerators (Ctrl+V, Ctrl+C, Ctrl+X, Ctrl+A)
-    # Suppress DevTools window from auto-opening (user can still open via F12)
+    debug = support_mode or _settings.get("debug_mode", False)
+    icon_path = str(PROJECT_ROOT / "web" / "pixherder.ico")
     webview.settings['OPEN_DEVTOOLS_IN_DEBUG'] = False
-    webview.start(debug=True)
+    webview.start(debug=debug, icon=icon_path)
 
     # Ensure clean exit after window closes
     server.shutdown()

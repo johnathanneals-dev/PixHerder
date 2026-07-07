@@ -62,6 +62,27 @@ _threads = {
 from engine.config import IMAGE_EXTENSIONS
 IMAGE_EXTS = IMAGE_EXTENSIONS
 
+_BLOCKED_PREFIXES = None
+
+def _is_safe_source_path(dirpath):
+    """Reject system directories and drive roots as scan/staging sources."""
+    global _BLOCKED_PREFIXES
+    if _BLOCKED_PREFIXES is None:
+        windir = os.environ.get("WINDIR", "C:\\Windows")
+        _BLOCKED_PREFIXES = [
+            os.path.normpath(windir).lower(),
+            os.path.normpath(os.path.join(windir, "system32")).lower(),
+            os.path.normpath(
+                os.environ.get("PROGRAMFILES", "C:\\Program Files")).lower(),
+            os.path.normpath(os.environ.get(
+                "PROGRAMFILES(X86)", "C:\\Program Files (x86)")).lower(),
+        ]
+    norm = os.path.normpath(dirpath).lower()
+    if len(norm) <= 3:
+        return False
+    return not any(norm == b or norm.startswith(b + os.sep)
+                   for b in _BLOCKED_PREFIXES)
+
 
 class Api:
     """pywebview API bridge. Each method maps to an HTTP endpoint."""
@@ -420,7 +441,8 @@ class Api:
             allowed.append(active_staging)
         norm_dir = os.path.normpath(dirpath)
         allowed_norms = [os.path.normpath(d) for d in allowed if d]
-        if not any(norm_dir.startswith(a) for a in allowed_norms):
+        if not any(norm_dir == a or norm_dir.startswith(a + os.sep)
+                   for a in allowed_norms):
             logger.warning("Browse access denied: %s not in %s", norm_dir, allowed_norms)
             return {"error": "Access denied", "files": [], "total": 0}
 
@@ -546,6 +568,8 @@ class Api:
         directory = params.get("directory", "")
         if not directory or not os.path.isdir(directory):
             return {"error": "Invalid directory: " + str(directory)}
+        if not _is_safe_source_path(directory):
+            return {"error": "Cannot scan system directories or drive roots"}
 
         settings = load_settings()
         mode = params.get("mode", "both")
@@ -818,6 +842,8 @@ class Api:
         source_dir = params.get("source_dir", "")
         if not source_dir or not os.path.isdir(source_dir):
             return {"error": "Invalid source directory"}
+        if not _is_safe_source_path(source_dir):
+            return {"error": "Cannot stage system directories or drive roots"}
 
         settings = load_settings()
         staging_dir = params.get("staging_dir") or get_staging_dir(
@@ -1153,7 +1179,8 @@ class Api:
             settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
         ]
         norm = os.path.normpath(filepath)
-        if not any(norm.startswith(os.path.normpath(a))
+        if not any(norm == os.path.normpath(a)
+                   or norm.startswith(os.path.normpath(a) + os.sep)
                    for a in allowed if a):
             return {"error": "Access denied"}
 
@@ -1214,7 +1241,8 @@ class Api:
             settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
         ]
         norm = os.path.normpath(folderpath)
-        if not any(norm.startswith(os.path.normpath(a))
+        if not any(norm == os.path.normpath(a)
+                   or norm.startswith(os.path.normpath(a) + os.sep)
                    for a in allowed if a):
             return {"error": "Access denied"}
 

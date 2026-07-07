@@ -42,8 +42,25 @@ from web import routes_scan, routes_actions, routes_staging, routes_browser
 class PixHerderHandler(http.server.BaseHTTPRequestHandler):
     """HTTP request handler for the PixHerder web API."""
 
+    _ALLOWED_HOSTS = {"127.0.0.1", "localhost"}
+
     def log_message(self, format, *args):
         pass
+
+    def _check_origin(self):
+        """Reject requests from external origins (CSRF/DNS-rebinding)."""
+        host = (self.headers.get("Host") or "").split(":")[0]
+        if host and host not in self._ALLOWED_HOSTS:
+            self.send_error_json("Forbidden", 403)
+            return False
+        origin = self.headers.get("Origin")
+        if origin:
+            from urllib.parse import urlparse
+            o = urlparse(origin)
+            if o.hostname and o.hostname not in self._ALLOWED_HOSTS:
+                self.send_error_json("Forbidden", 403)
+                return False
+        return True
 
     # ---- Response helpers ----
 
@@ -72,6 +89,9 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
+
+        if path.startswith("/api/") and not self._check_origin():
+            return
 
         if path == "/" or path == "":
             self._serve_index()
@@ -118,6 +138,9 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
     # ---- POST routes ----
 
     def do_POST(self):
+        if not self._check_origin():
+            return
+
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
