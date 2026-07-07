@@ -483,11 +483,11 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 - **Fix:** Start the restore API call first (sets progress to "running"), then subscribe in the `.then()` callback. Poller now sees "running" and keeps polling until "complete".
 - **Files:** web/finish.js
 
-**Finalize recycles clean Recovery files (FLOW BUG -- OPEN)**
+**Finalize recycles clean Recovery files (FLOW BUG -- FIXED)**
 - **Found:** Testing, 2026-03-24
 - **Description:** After scanning Recovery and deleting actual dupes, 248 survivor files remained that passed 5 scans with 0 groups. Finalize recycled them all because it treats everything in Recovery as "dupes to recycle." No distinction between unreviewed files and files that survived review.
-- **Status:** OPEN -- TODO Priority 1b. Needs finalize warning for clean files, auto-promote after clean scan, and view description rewrite.
-- **Workaround:** Move survivors to Keepers before finalizing, or restore from Recycle Bin.
+- **Fix:** Finalize dialog now warns when Recovery has files and offers "Move Recovery to Keepers First" button. Promoted files are returned home safely with the rest of the kept files during finalize.
+- **Files:** web/finish.js
 
 ---
 

@@ -53,9 +53,23 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   document.getElementById("dialogTitle").textContent = "What should happen to the duplicates?";
   var dupeCount = _finishCounts.dupes || 0;
   var html = '<div style="margin-bottom:14px;">';
-  html += "PixHerder found " + dupeCount.toLocaleString() + " duplicate files.<br>";
+  html += "PixHerder found " + dupeCount.toLocaleString() + " files in Recovery.<br>";
   html += "Choose how you'd like them handled:";
   html += "</div>";
+
+  if (dupeCount > 0) {
+    html += '<div style="background:var(--surface-2);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">' +
+      '<div style="font-weight:600;color:var(--warning);margin-bottom:4px;">Check before recycling</div>' +
+      '<div style="font-size:13px;color:var(--text-dim);line-height:1.5;">' +
+        'All ' + dupeCount.toLocaleString() + ' files in Recovery will be recycled. ' +
+        'If you rescanned Recovery and some files are not duplicates, move them to Keepers first so they are returned home safely.' +
+      '</div>' +
+      '<div style="margin-top:8px;">' +
+        '<button class="btn btn-primary btn-sm" onclick="closeDialog(); _finishPromoteAndReturn()">' +
+          'Move Recovery to Keepers First</button>' +
+      '</div>' +
+    '</div>';
+  }
 
   if (showOneDriveWarning) {
     html += '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">' +
@@ -71,7 +85,7 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   // Action buttons -- right-justified per dialog standard
   html += '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
     '<button class="btn btn-primary" onclick="closeDialog(); _executeFinish(\'recycle\')" ' +
-      'data-tip="Sends duplicates and the files that had matching copies to the Windows Recycle Bin. Large batches may exceed Recycle Bin capacity." data-tip-always>' +
+      'data-tip="Sends Recovery files and source duplicates to the Windows Recycle Bin. Large batches may exceed Recycle Bin capacity." data-tip-always>' +
       'Send to Recycle Bin</button>' +
     '<button class="btn btn-warning" onclick="closeDialog(); _executeFinish(\'folder\')" ' +
       'data-tip="Moves duplicates into a PixHerder_Duplicates folder in your source directory. Nothing is deleted." data-tip-always>' +
@@ -100,6 +114,17 @@ function _showFinishConfirmDialog(showOneDriveWarning) {
   var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
   if (ghostBtn) ghostBtn.style.display = "";
   document.getElementById("dialogOverlay").classList.add("active");
+}
+
+function _finishPromoteAndReturn() {
+  api("POST", "/api/dupes/promote").then(function(r) {
+    if (r.moved > 0) {
+      toast(r.moved + " files moved to Keepers. They will be returned home safely.");
+    }
+    initFinish();
+  }).catch(function(err) {
+    toast("Failed to promote: " + err.message);
+  });
 }
 
 var _finishChoice = "recycle";
