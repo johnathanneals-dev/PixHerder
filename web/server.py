@@ -42,7 +42,7 @@ from web import routes_scan, routes_actions, routes_staging, routes_browser
 class PixHerderHandler(http.server.BaseHTTPRequestHandler):
     """HTTP request handler for the PixHerder web API."""
 
-    _ALLOWED_HOSTS = {"127.0.0.1", "localhost"}
+    _ALLOWED_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]"}
 
     def log_message(self, format, *args):
         pass

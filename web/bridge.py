@@ -70,14 +70,14 @@ def _is_safe_source_path(dirpath):
     if _BLOCKED_PREFIXES is None:
         windir = os.environ.get("WINDIR", "C:\\Windows")
         _BLOCKED_PREFIXES = [
-            os.path.normpath(windir).lower(),
-            os.path.normpath(os.path.join(windir, "system32")).lower(),
-            os.path.normpath(
+            os.path.realpath(windir).lower(),
+            os.path.realpath(os.path.join(windir, "system32")).lower(),
+            os.path.realpath(
                 os.environ.get("PROGRAMFILES", "C:\\Program Files")).lower(),
-            os.path.normpath(os.environ.get(
+            os.path.realpath(os.environ.get(
                 "PROGRAMFILES(X86)", "C:\\Program Files (x86)")).lower(),
         ]
-    norm = os.path.normpath(dirpath).lower()
+    norm = os.path.realpath(dirpath).lower()
     if len(norm) <= 3:
         return False
     return not any(norm == b or norm.startswith(b + os.sep)

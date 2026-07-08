@@ -49,3 +49,10 @@ Auditor/
 
 # Perceptual dupes (legacy)
 perceptual_dupes/
+
+# Internal project files
+CLAUDE.md
+claude_config.md
+HANDOFF.md
+.claude/
+docs/superpowers/
