@@ -590,22 +590,23 @@ class Api:
             ckpt = checkpoint_path(directory, mode)
             delete_checkpoint(ckpt)
 
-        worker_manager.scan_cancel = threading.Event()
-        scan_progress.update({
-            "status": "running",
-            "stage": "starting",
-            "current": 0, "total": 0, "elapsed": 0, "errors": 0,
-            "message": "Starting scan...",
-            "result_file": None,
-        })
-        worker_manager.scan_thread = threading.Thread(
-            target=_run_scan,
-            args=(directory, mode, threshold, recursive, hash_size,
-                  keep_strategy, extensions, resume_data, auto_recycle,
-                  scan_limit),
-            daemon=True,
-        )
-        worker_manager.scan_thread.start()
+        def _prime_scan_progress():
+            scan_progress.update({
+                "status": "running",
+                "stage": "starting",
+                "current": 0, "total": 0, "elapsed": 0, "errors": 0,
+                "message": "Starting scan...",
+                "result_file": None,
+            })
+
+        if not worker_manager.start_worker(
+                "scan_thread", _run_scan,
+                (directory, mode, threshold, recursive, hash_size,
+                 keep_strategy, extensions, resume_data, auto_recycle,
+                 scan_limit),
+                cancel_attr="scan_cancel",
+                before_start=_prime_scan_progress):
+            return {"error": "A scan is already running"}
 
         return {
             "status": "started",
@@ -639,14 +640,12 @@ class Api:
         report_file = params.get("report")
         scan_dir = _find_staging_subfolder() or ""
 
-        worker_manager.action_cancel = threading.Event()
-        worker_manager.action_thread = threading.Thread(
-            target=_run_action,
-            args=("move", groups, move_dir, keep_strategy, report_file,
-                  scan_dir),
-            daemon=True,
-        )
-        worker_manager.action_thread.start()
+        if not worker_manager.start_worker(
+                "action_thread", _run_action,
+                ("move", groups, move_dir, keep_strategy, report_file,
+                 scan_dir),
+                cancel_attr="action_cancel"):
+            return {"error": "An action is already running"}
         return {"status": "started", "action": "move"}
 
     def action_delete(self, params=None):
@@ -664,13 +663,11 @@ class Api:
         keep_strategy = settings.get("keep_strategy", "largest")
         report_file = params.get("report")
 
-        worker_manager.action_cancel = threading.Event()
-        worker_manager.action_thread = threading.Thread(
-            target=_run_action,
-            args=("delete", groups, None, keep_strategy, report_file),
-            daemon=True,
-        )
-        worker_manager.action_thread.start()
+        if not worker_manager.start_worker(
+                "action_thread", _run_action,
+                ("delete", groups, None, keep_strategy, report_file),
+                cancel_attr="action_cancel"):
+            return {"error": "An action is already running"}
         return {"status": "started", "action": "delete"}
 
     def action_rescue(self, params=None):
@@ -715,13 +712,10 @@ class Api:
             dupes_folder = settings.get("move_destination",
                                         DEFAULTS["move_destination"])
 
-        worker_manager.oddball_cancel = threading.Event()
-        worker_manager.oddball_thread = threading.Thread(
-            target=_run_oddball,
-            args=(report_data, dupes_folder),
-            daemon=True,
-        )
-        worker_manager.oddball_thread.start()
+        if not worker_manager.start_worker(
+                "oddball_thread", _run_oddball, (report_data, dupes_folder),
+                cancel_attr="oddball_cancel"):
+            return {"error": "Oddball check is already running"}
         return {"status": "started"}
 
     def decisions_save(self, params=None):
@@ -882,13 +876,11 @@ class Api:
         except Exception:
             pass
 
-        worker_manager.staging_cancel = threading.Event()
-        worker_manager.staging_thread = threading.Thread(
-            target=_run_staging,
-            args=(source_dir, staging_dir, extensions),
-            daemon=True,
-        )
-        worker_manager.staging_thread.start()
+        if not worker_manager.start_worker(
+                "staging_thread", _run_staging,
+                (source_dir, staging_dir, extensions),
+                cancel_attr="staging_cancel"):
+            return {"error": "Staging is already running"}
 
         return {
             "status": "started",
@@ -914,13 +906,10 @@ class Api:
         if not _is_safe_source_path(source_dir):
             return {"error": "Cannot write to system directories or drive roots"}
 
-        worker_manager.syncback_cancel = threading.Event()
-        worker_manager.syncback_thread = threading.Thread(
-            target=_run_syncback,
-            args=(staging_dir, source_dir),
-            daemon=True,
-        )
-        worker_manager.syncback_thread.start()
+        if not worker_manager.start_worker(
+                "syncback_thread", _run_syncback, (staging_dir, source_dir),
+                cancel_attr="syncback_cancel"):
+            return {"error": "Sync-back is already running"}
         return {"status": "started"}
 
     def staging_cleanup(self, params=None):
@@ -1027,12 +1016,10 @@ class Api:
         if worker_manager.restore_thread and worker_manager.restore_thread.is_alive():
             return {"error": "Restore already running"}
 
-        worker_manager.restore_thread = threading.Thread(
-            target=_run_restore,
-            args=(staging_dir, source_dir, full_restore, include_keepers),
-            daemon=True,
-        )
-        worker_manager.restore_thread.start()
+        if not worker_manager.start_worker(
+                "restore_thread", _run_restore,
+                (staging_dir, source_dir, full_restore, include_keepers)):
+            return {"error": "Restore already running"}
         return {"status": "started"}
 
     def staging_recycle(self, params=None):

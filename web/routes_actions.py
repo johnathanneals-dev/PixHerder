@@ -5,7 +5,6 @@ Move, delete, rescue, oddball verification, and review decisions.
 
 import json
 import os
-import threading
 from pathlib import Path
 
 from engine.config import SCANS_DIR, PROJECT_ROOT as ROOT, DEFAULTS, load_settings
@@ -36,14 +35,12 @@ def handle_action_move(handler, workers):
     report_file = body.get("report")
     scan_dir = body.get("scan_dir", "")
 
-    workers.action_cancel = threading.Event()
-    workers.action_thread = threading.Thread(
-        target=_run_action,
-        args=("move", groups, move_dir, keep_strategy, report_file,
-              scan_dir),
-        daemon=True,
-    )
-    workers.action_thread.start()
+    if not workers.start_worker(
+            "action_thread", _run_action,
+            ("move", groups, move_dir, keep_strategy, report_file, scan_dir),
+            cancel_attr="action_cancel"):
+        handler.send_error_json("An action is already running", 409)
+        return
 
     handler.send_json({"status": "started", "action": "move"})
 
@@ -68,13 +65,12 @@ def handle_action_delete(handler, workers):
     keep_strategy = settings.get("keep_strategy", "largest")
     report_file = body.get("report")
 
-    workers.action_cancel = threading.Event()
-    workers.action_thread = threading.Thread(
-        target=_run_action,
-        args=("delete", groups, None, keep_strategy, report_file),
-        daemon=True,
-    )
-    workers.action_thread.start()
+    if not workers.start_worker(
+            "action_thread", _run_action,
+            ("delete", groups, None, keep_strategy, report_file),
+            cancel_attr="action_cancel"):
+        handler.send_error_json("An action is already running", 409)
+        return
 
     handler.send_json({"status": "started", "action": "delete"})
 
@@ -135,13 +131,11 @@ def handle_oddball_run(handler, workers):
         handler.send_error_json("Error reading report: " + str(e), 500)
         return
 
-    workers.oddball_cancel = threading.Event()
-    workers.oddball_thread = threading.Thread(
-        target=_run_oddball,
-        args=(report_data, dupes_folder),
-        daemon=True,
-    )
-    workers.oddball_thread.start()
+    if not workers.start_worker(
+            "oddball_thread", _run_oddball, (report_data, dupes_folder),
+            cancel_attr="oddball_cancel"):
+        handler.send_error_json("Oddball check is already running", 409)
+        return
 
     handler.send_json({"status": "started"})
 

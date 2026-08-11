@@ -5,7 +5,6 @@ Scan lifecycle, results listing, settings, and checkpoint resume.
 
 import json
 import os
-import threading
 from pathlib import Path
 
 from engine.config import (
@@ -189,15 +188,14 @@ def handle_scan_start(handler, workers):
         ckpt = checkpoint_path(directory, mode)
         delete_checkpoint(ckpt)
 
-    workers.scan_cancel = threading.Event()
-    workers.scan_thread = threading.Thread(
-        target=_run_scan,
-        args=(directory, mode, threshold, recursive, hash_size,
-              keep_strategy, extensions, resume_data, auto_recycle,
-              scan_limit),
-        daemon=True,
-    )
-    workers.scan_thread.start()
+    if not workers.start_worker(
+            "scan_thread", _run_scan,
+            (directory, mode, threshold, recursive, hash_size,
+             keep_strategy, extensions, resume_data, auto_recycle,
+             scan_limit),
+            cancel_attr="scan_cancel"):
+        handler.send_error_json("A scan is already running", 409)
+        return
 
     handler.send_json({
         "status": "started",

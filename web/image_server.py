@@ -42,6 +42,33 @@ def _is_allowed_path(filepath, include_active_staging=True):
                or real == a for a in resolved)
 
 
+def _is_recyclable_dir(dirpath):
+    """Check if dirpath is a workspace folder safe to recycle wholesale.
+
+    Deliberately stricter than _is_allowed_path, which also admits the active
+    source directory so originals can be displayed. Reading the user's
+    originals is fine; recycling that folder is exactly the data-loss case
+    PixHerder exists to prevent, so only the three workspace roots — staging,
+    duplicates, keepers — and folders nested inside them qualify.
+
+    Fails closed: an unconfigured workspace admits nothing.
+    """
+    if not dirpath:
+        return False
+    settings = load_settings()
+    roots = [
+        settings.get("staging_dir", DEFAULTS["staging_dir"]),
+        settings.get("move_destination", DEFAULTS["move_destination"]),
+        settings.get("keepers_dir", DEFAULTS.get("keepers_dir", "")),
+    ]
+    resolved = [os.path.realpath(r).lower()
+                for r in roots if r and os.path.isdir(r)]
+    if not resolved:
+        return False
+    real = os.path.realpath(dirpath).lower()
+    return any(real == r or real.startswith(r + os.sep) for r in resolved)
+
+
 def serve_image(handler, filepath):
     """Serve an image file with path validation, ETag caching, and content-type detection."""
     filepath = os.path.normpath(filepath)

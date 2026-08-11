@@ -74,6 +74,12 @@ class WorkerManager:
     """Owns all background worker state: threads, cancel events, progress dicts."""
 
     def __init__(self):
+        # Guards the check-and-start sequence for every worker thread below.
+        # The HTTP routes and the pywebview bridge share this one instance,
+        # so without it two callers can both pass an is_alive() check and
+        # both launch a worker against the same files.
+        self._thread_lock = threading.RLock()
+
         self.scan_thread = None
         self.scan_cancel = threading.Event()
         self.scan_progress = {
@@ -144,6 +150,36 @@ class WorkerManager:
             "message": "",
             "phase": "",
         }
+
+    def start_worker(self, thread_attr, target, args=(), cancel_attr=None,
+                     before_start=None):
+        """Atomically check the "already running" guard and start a worker.
+
+        Returns True if this caller started the worker, False if one was
+        already running. Checking and starting under a single lock is what
+        makes the guard sound: callers arriving from the HTTP routes and the
+        pywebview bridge share one WorkerManager, and a bare
+        `if thread and thread.is_alive()` test lets both of them through.
+
+        `cancel_attr` names a cancel Event to replace with a fresh one for
+        the new worker. `before_start` is a callable for priming state the
+        worker depends on, such as seeding a progress dict. Both run only
+        after the guard has been passed and before the thread starts, so a
+        refused start can neither hand a running worker a cancel Event that
+        nothing is watching nor advertise a run that never began.
+        """
+        with self._thread_lock:
+            existing = getattr(self, thread_attr, None)
+            if existing is not None and existing.is_alive():
+                return False
+            if cancel_attr is not None:
+                setattr(self, cancel_attr, threading.Event())
+            if before_start is not None:
+                before_start()
+            thread = threading.Thread(target=target, args=args, daemon=True)
+            setattr(self, thread_attr, thread)
+            thread.start()
+            return True
 
     def reset_all_progress(self):
         """Clear all in-memory progress dicts to prevent stale state."""

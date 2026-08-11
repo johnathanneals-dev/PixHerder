@@ -9,7 +9,6 @@ import logging
 import os
 import shutil
 import stat
-import threading
 from pathlib import Path
 
 from engine.config import (
@@ -20,7 +19,7 @@ from engine.staging import (
     is_onedrive_path, get_staging_dir, count_files_for_staging,
     load_manifest, cleanup_staging, recycle_staging,
 )
-from web.image_server import _is_allowed_path
+from web.image_server import _is_allowed_path, _is_recyclable_dir
 from web.workers import (
     worker_manager, _log_activity, _find_staging_subfolder,
     _run_staging, _run_restore, _run_syncback,
@@ -153,13 +152,12 @@ def handle_staging_start(handler, workers):
     except Exception:
         pass
 
-    workers.staging_cancel = threading.Event()
-    workers.staging_thread = threading.Thread(
-        target=_run_staging,
-        args=(source_dir, staging_dir, extensions),
-        daemon=True,
-    )
-    workers.staging_thread.start()
+    if not workers.start_worker(
+            "staging_thread", _run_staging,
+            (source_dir, staging_dir, extensions),
+            cancel_attr="staging_cancel"):
+        handler.send_error_json("Staging is already running", 409)
+        return
 
     handler.send_json({
         "status": "started",
@@ -225,13 +223,11 @@ def handle_syncback_start(handler, workers):
         handler.send_error_json("Missing staging_dir or source_dir")
         return
 
-    workers.syncback_cancel = threading.Event()
-    workers.syncback_thread = threading.Thread(
-        target=_run_syncback,
-        args=(staging_dir, source_dir),
-        daemon=True,
-    )
-    workers.syncback_thread.start()
+    if not workers.start_worker(
+            "syncback_thread", _run_syncback, (staging_dir, source_dir),
+            cancel_attr="syncback_cancel"):
+        handler.send_error_json("Sync-back is already running", 409)
+        return
 
     handler.send_json({"status": "started"})
 
@@ -296,6 +292,16 @@ def handle_staging_recycle_bin(handler, workers):
 
     if not target_dir:
         handler.send_error_json("Could not resolve target directory")
+        return
+
+    # target_dir may have come straight from the request body. Recycling is
+    # recursive and destructive, so it must be confined to the workspace.
+    if not _is_recyclable_dir(target_dir):
+        logger.warning(
+            "Recycle refused for path outside workspace: %s", target_dir)
+        handler.send_error_json(
+            "Refusing to recycle a folder outside the PixHerder workspace",
+            403)
         return
 
     result = recycle_staging(target_dir)
