@@ -56,3 +56,5 @@ claude_config.md
 HANDOFF.md
 .claude/
 docs/superpowers/
+
+.mcp.json
