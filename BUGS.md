@@ -12,6 +12,12 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 
 ## Fixed 2026-08-11
 
+**Browse/enumeration endpoints could be escaped via NTFS junctions (security)**
+- **Found:** Security review (Sabretooth s-76 OBS-A/OBS-B), 2026-08-11
+- **Description:** The read-side twins of the delete-endpoint junction bug. `Api.browse` validated its workspace allowlist with `os.path.normpath` (a junction inside dupes pointing outside it was enumerable), and both system-directory blocklists (`Api.browse_folders`, `handle_browse_folders`) used `normpath` (a junction pointing into `C:\Windows` was silently followed and its listing returned). Info-disclosure, not destructive.
+- **Fix:** `os.path.realpath` on the target and the allowlist/blocklist entries at all three sites, matching the Adj-2 delete-side fix. 6 new tests in `tests/test_bridge_browse_path_security.py` (junction-escape denial + legitimate-use regression on each site).
+- **Files:** web/bridge.py, web/routes_browser.py, tests/test_bridge_browse_path_security.py
+
 **Delete endpoints could be escaped via NTFS junctions (security)**
 - **Found:** Security review (Sabretooth R-2), 2026-08-11
 - **Description:** `browser_delete` and `browser_delete_folder` in `web/bridge.py` validated client-supplied paths with `os.path.normpath`, which collapses `..` lexically but does not resolve junctions or symlinks. A junction inside an allowed workspace folder pointing outside it passed the allowlist prefix check, allowing deletion outside the workspace.

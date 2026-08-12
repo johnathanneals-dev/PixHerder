@@ -442,11 +442,13 @@ class Api:
         if active_staging:
             allowed.append(os.path.dirname(active_staging))
             allowed.append(active_staging)
-        norm_dir = os.path.normpath(dirpath)
-        allowed_norms = [os.path.normpath(d) for d in allowed if d]
-        if not any(norm_dir == a or norm_dir.startswith(a + os.sep)
-                   for a in allowed_norms):
-            logger.warning("Browse access denied: %s not in %s", norm_dir, allowed_norms)
+        # realpath, not normpath: a junction inside an allowed dir must not
+        # let enumeration escape the allowlist (OBS-A, read-side twin of Adj-2)
+        real_dir = os.path.realpath(dirpath)
+        allowed_reals = [os.path.realpath(d) for d in allowed if d]
+        if not any(real_dir == a or real_dir.startswith(a + os.sep)
+                   for a in allowed_reals):
+            logger.warning("Browse access denied: %s not in %s", real_dir, allowed_reals)
             return {"error": "Access denied", "files": [], "total": 0}
 
         files = []
@@ -530,15 +532,17 @@ class Api:
 
         if not dirpath or not os.path.isdir(dirpath):
             return {"folders": [], "error": "Invalid path"}
-        # Block system directories
-        lower = os.path.normpath(dirpath).lower()
-        windir = os.environ.get("WINDIR", "C:\\Windows").lower()
+        # Block system directories. realpath, not normpath: a junction into a
+        # blocked dir must resolve before the blocklist check or enumeration
+        # follows it into the system tree anyway (OBS-B).
+        lower = os.path.realpath(dirpath).lower()
+        windir = os.path.realpath(os.environ.get("WINDIR", "C:\\Windows")).lower()
         blocked = [
             windir,
             os.path.join(windir, "system32"),
-            os.environ.get("PROGRAMFILES", "C:\\Program Files").lower(),
-            os.environ.get("PROGRAMFILES(X86)",
-                           "C:\\Program Files (x86)").lower(),
+            os.path.realpath(os.environ.get("PROGRAMFILES", "C:\\Program Files")).lower(),
+            os.path.realpath(os.environ.get("PROGRAMFILES(X86)",
+                             "C:\\Program Files (x86)")).lower(),
         ]
         if any(lower == b or lower.startswith(b + os.sep)
                for b in blocked):

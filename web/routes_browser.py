@@ -41,19 +41,21 @@ def handle_browse_folders(handler, workers, dirpath):
     if not dirpath:
         dirpath = os.path.expanduser("~")
 
-    dirpath = os.path.normpath(dirpath)
+    # realpath, not normpath: a junction into a blocked dir must resolve
+    # before the blocklist check, or enumeration follows it in (OBS-B).
+    dirpath = os.path.realpath(dirpath)
     if not os.path.isdir(dirpath):
         handler.send_error_json("Directory not found", 404)
         return
 
     lower = dirpath.lower()
-    windir = os.environ.get("WINDIR", "C:\\Windows").lower()
+    windir = os.path.realpath(os.environ.get("WINDIR", "C:\\Windows")).lower()
     blocked = [
         windir,
         os.path.join(windir, "system32"),
-        os.environ.get("PROGRAMFILES", "C:\\Program Files").lower(),
-        os.environ.get("PROGRAMFILES(X86)",
-                       "C:\\Program Files (x86)").lower(),
+        os.path.realpath(os.environ.get("PROGRAMFILES", "C:\\Program Files")).lower(),
+        os.path.realpath(os.environ.get("PROGRAMFILES(X86)",
+                         "C:\\Program Files (x86)")).lower(),
     ]
     if any(lower == b or lower.startswith(b + os.sep) for b in blocked):
         handler.send_error_json("Access denied", 403)
