@@ -1,0 +1,28 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    # PixHerder is Windows-only (junctions, PowerShell recycle, drive letters)
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.13 = bundled runtime (setup.bat), 3.14 = current dev environment
+        python-version: ['3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Run test suite
+        run: python -m pytest
