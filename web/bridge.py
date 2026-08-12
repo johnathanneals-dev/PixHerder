@@ -120,6 +120,9 @@ class Api:
             old.set()
         stop = threading.Event()
         self._stop_events[key] = stop
+        # Intentionally not WorkerManager-managed: this is the pywebview
+        # JS-callback progress pump, not a work pipeline; lifecycle is
+        # per-subscription via the stop Event above.
         t = threading.Thread(
             target=self._push_progress,
             args=(progress_dict, callback_name, terminals, stop),

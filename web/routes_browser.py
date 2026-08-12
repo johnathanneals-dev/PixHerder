@@ -229,6 +229,9 @@ def handle_open_explorer(handler, workers):
                 os.remove(helper_path)
             except Exception:
                 pass
+        # Intentionally not WorkerManager-managed: one-shot waiter that
+        # removes the helper script after the subprocess exits, not a
+        # cancellable work pipeline.
         threading.Thread(target=_cleanup, daemon=True).start()
     except Exception as e:
         handler.send_json({"success": False, "error": str(e)})

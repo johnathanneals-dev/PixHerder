@@ -66,7 +66,8 @@ def _is_recyclable_dir(dirpath):
     if not resolved:
         return False
     real = os.path.realpath(dirpath).lower()
-    return any(real == r or real.startswith(r + os.sep) for r in resolved)
+    return any(real.startswith(r + os.sep) or real.startswith(r + "/")
+               or real == r for r in resolved)
 
 
 def serve_image(handler, filepath):
