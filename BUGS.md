@@ -10,6 +10,26 @@ Comprehensive record of all bugs found and fixed. Updated with every commit cycl
 - **Easy mode nav too restrictive** -- Easy mode hides Scan, Review, Finalize, Staging, Recovery, Keepers nav links and More Options buttons. By design, but too aggressive — users can't navigate mid-workflow. Need to either show more links progressively or add a mode switcher to the nav bar.
 - 9 additional UX issues from 2026-03-26 testing documented in TODO Priority 4b.
 
+## Fixed 2026-08-11
+
+**Delete endpoints could be escaped via NTFS junctions (security)**
+- **Found:** Security review (Sabretooth R-2), 2026-08-11
+- **Description:** `browser_delete` and `browser_delete_folder` in `web/bridge.py` validated client-supplied paths with `os.path.normpath`, which collapses `..` lexically but does not resolve junctions or symlinks. A junction inside an allowed workspace folder pointing outside it passed the allowlist prefix check, allowing deletion outside the workspace.
+- **Fix:** Swapped to `os.path.realpath` on both the target and each allowlist entry, matching the `_is_allowed_path` / `_is_recyclable_dir` idiom. 4 new junction-escape tests in `tests/test_bridge_delete_path_security.py`.
+- **Files:** web/bridge.py, tests/test_bridge_delete_path_security.py
+
+**Recycle target path accepted without validation (security)**
+- **Found:** Architecture review (Mimir), fixed 2026-08-11
+- **Description:** `handle_staging_recycle_bin` accepted a client-supplied `staging_dir` from the JSON body and passed it straight to `recycle_staging()` — a recursive destructive operation — with no path validation.
+- **Fix:** New `_is_recyclable_dir` guard in `web/image_server.py`: realpath-based, case-folded, admits only the three workspace roots (staging, duplicates, keepers) and their subfolders, fails closed on an unconfigured workspace. Deliberately stricter than `_is_allowed_path` — it must never admit the active source directory.
+- **Files:** web/image_server.py, web/routes_staging.py, tests/test_staging_path_security.py
+
+**Worker thread start was not race-safe**
+- **Found:** Security review chain, fixed 2026-08-11
+- **Description:** Concurrent requests could start duplicate worker threads: the is-running check and thread start were not atomic, and the cancel Event was replaced outside the guarded section.
+- **Fix:** `WorkerManager.start_worker` now performs check-and-start under an RLock, replacing the cancel Event inside the lock on the success path only. 13 concurrency tests including a proof the test fails against the lockless version.
+- **Files:** web/workers.py, tests/test_worker_thread_race.py
+
 ## Fixed This Session (2026-03-27)
 
 **Send Files Home reports "Restore Failed" in pywebview mode (pre-existing)**
