@@ -1175,9 +1175,11 @@ class Api:
             settings.get("move_destination", DEFAULTS["move_destination"]),
             settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
         ]
-        norm = os.path.normpath(filepath)
-        if not any(norm == os.path.normpath(a)
-                   or norm.startswith(os.path.normpath(a) + os.sep)
+        # realpath, not normpath: junctions/symlinks must resolve before the
+        # prefix check or a link inside an allowed dir can escape it (Adj-2)
+        real = os.path.realpath(filepath)
+        if not any(real == os.path.realpath(a)
+                   or real.startswith(os.path.realpath(a) + os.sep)
                    for a in allowed if a):
             return {"error": "Access denied"}
 
@@ -1237,9 +1239,11 @@ class Api:
             settings.get("move_destination", DEFAULTS["move_destination"]),
             settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
         ]
-        norm = os.path.normpath(folderpath)
-        if not any(norm == os.path.normpath(a)
-                   or norm.startswith(os.path.normpath(a) + os.sep)
+        # realpath, not normpath: junctions/symlinks must resolve before the
+        # prefix check or a link inside an allowed dir can escape it (Adj-2)
+        real = os.path.realpath(folderpath)
+        if not any(real == os.path.realpath(a)
+                   or real.startswith(os.path.realpath(a) + os.sep)
                    for a in allowed if a):
             return {"error": "Access denied"}
 
