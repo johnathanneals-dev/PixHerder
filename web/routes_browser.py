@@ -17,7 +17,7 @@ from engine.config import (
     load_settings, verify_copy,
 )
 from engine.staging import recycle_staging
-from web.image_server import _is_allowed_path
+from web.image_server import _is_allowed_path, _is_recyclable_dir
 from web.workers import _log_activity, _find_staging_subfolder
 
 logger = logging.getLogger(__name__)
@@ -295,7 +295,7 @@ def handle_browser_delete_folder(handler, workers):
         handler.send_error_json("Directory not found", 404)
         return
 
-    if not _is_allowed_path(dirpath, include_active_staging=False):
+    if not _is_recyclable_dir(dirpath):
         handler.send_error_json("Access denied: cannot delete this directory", 403)
         return
 
