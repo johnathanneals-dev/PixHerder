@@ -36,6 +36,7 @@ from engine.staging import (
     count_files_for_staging, cleanup_staging, recycle_staging,
 )
 from engine.state_validator import validate_state
+from web.image_server import _is_recyclable_dir
 
 # Import shared state and runners from workers module
 from web.workers import (
@@ -954,6 +955,7 @@ class Api:
         if params is None:
             params = {}
         folder = params.get("folder", "")
+        staging_dir = params.get("staging_dir", "")
         settings = load_settings()
 
         if folder == "staging":
@@ -963,11 +965,16 @@ class Api:
                                   DEFAULTS["move_destination"])
         elif folder == "keepers":
             target = settings.get("keepers_dir", DEFAULTS["keepers_dir"])
+        elif staging_dir:
+            target = staging_dir
         else:
-            return {"error": "Invalid folder: " + folder}
+            return {"error": "Missing folder or staging_dir"}
 
         if not target or not os.path.isdir(target):
             return {"error": "Folder not found or empty"}
+
+        if not _is_recyclable_dir(target):
+            return {"error": "Cannot recycle folders outside the PixHerder workspace"}
 
         result = recycle_staging(target)
         _log_activity("recycle_bin", {
