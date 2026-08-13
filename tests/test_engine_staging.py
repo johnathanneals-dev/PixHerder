@@ -95,25 +95,14 @@ class TestIsOnedrivePath(unittest.TestCase):
         with patch.dict(os.environ, {"OneDrive": r"D:\Synced"}, clear=False):
             self.assertTrue(is_onedrive_path(r"D:\Synced\Pictures\trip"))
 
-    def test_sibling_prefix_collision_is_a_known_false_positive(self):
-        # CHARACTERIZING A BUG, NOT ENDORSING IT. Adjacent finding #5.
-        #
-        # The env-var branch is a bare `startswith` with no separator
-        # boundary, so `D:\SyncedBackup` reads as living inside `D:\Synced`
-        # and is misreported as OneDrive-managed. This is the same sibling
-        # prefix collision class that `_is_recyclable_dir` (S-1, bb9fbf9)
-        # explicitly guards against with an os.sep boundary check.
-        #
-        # Impact is advisory rather than destructive — it decides whether the
-        # OneDrive-safe staging flow is offered — so it is surfaced for
-        # Mimir/Sabretooth disposition rather than fixed inside a test-only
-        # change while bb9fbf9 is under R-2 review.
-        #
-        # When it is fixed, invert this assertion; do not delete the test.
+    def test_sibling_prefix_collision_is_correctly_rejected(self):
+        # Fixed: Adj-5 added os.sep boundary check to the env-var branch,
+        # matching the pattern in _is_recyclable_dir (S-1, bb9fbf9).
+        # D:\SyncedBackup is a sibling of D:\Synced, not a child.
         with patch.dict(os.environ, {"OneDrive": r"D:\Synced",
                                      "OneDriveConsumer": "",
                                      "OneDriveCommercial": ""}, clear=False):
-            self.assertTrue(is_onedrive_path(r"D:\SyncedBackup\Pictures"))
+            self.assertFalse(is_onedrive_path(r"D:\SyncedBackup\Pictures"))
 
     def test_unrelated_root_is_correctly_rejected(self):
         # The guard does work when there is no shared prefix — this is what

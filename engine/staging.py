@@ -29,8 +29,10 @@ def is_onedrive_path(directory):
     # Check environment variables
     for env_var in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
         od_path = os.environ.get(env_var, "")
-        if od_path and normed.startswith(os.path.normpath(od_path).lower()):
-            return True
+        if od_path:
+            od_normed = os.path.normpath(od_path).lower()
+            if normed == od_normed or normed.startswith(od_normed + os.sep):
+                return True
     return False
 
 
