@@ -132,14 +132,14 @@ class TestStartWorkerCancelEvent(unittest.TestCase):
         self.ran.set()
         self.release.wait(timeout=5)
 
-    def test_fresh_cancel_event_on_successful_start(self):
-        stale = self.wm.scan_cancel
-        stale.set()
+    def test_cancel_event_cleared_on_successful_start(self):
+        original = self.wm.scan_cancel
+        original.set()
 
         self.wm.start_worker(
             "scan_thread", self._worker, cancel_attr="scan_cancel")
 
-        self.assertIsNot(self.wm.scan_cancel, stale)
+        self.assertIs(self.wm.scan_cancel, original)
         self.assertFalse(self.wm.scan_cancel.is_set())
 
     def test_running_workers_cancel_event_is_not_clobbered_on_refusal(self):

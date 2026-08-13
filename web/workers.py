@@ -173,7 +173,7 @@ class WorkerManager:
             if existing is not None and existing.is_alive():
                 return False
             if cancel_attr is not None:
-                setattr(self, cancel_attr, threading.Event())
+                getattr(self, cancel_attr).clear()
             if before_start is not None:
                 before_start()
             thread = threading.Thread(target=target, args=args, daemon=True)
