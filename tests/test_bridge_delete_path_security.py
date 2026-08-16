@@ -24,6 +24,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 _BRIDGE = "web.bridge"
+_IMG = "web.image_server"
 _STAGING = "engine.staging"
 
 
@@ -43,8 +44,9 @@ def _make_junction(target, junction):
 
 
 class _BridgeDeleteTestCase(unittest.TestCase):
-    def _settings(self, dupes="", keepers=""):
-        return {"move_destination": dupes, "keepers_dir": keepers}
+    def _settings(self, staging="", dupes="", keepers=""):
+        return {"staging_dir": staging, "move_destination": dupes,
+                "keepers_dir": keepers}
 
 
 class TestBrowserDeleteFolder(_BridgeDeleteTestCase):
@@ -52,8 +54,7 @@ class TestBrowserDeleteFolder(_BridgeDeleteTestCase):
 
     def _call(self, target, settings):
         with (
-            patch(f"{_BRIDGE}.load_settings", return_value=settings),
-            patch(f"{_BRIDGE}._find_staging_subfolder", return_value=None),
+            patch(f"{_IMG}.load_settings", return_value=settings),
             patch(f"{_BRIDGE}.recycle_staging",
                   return_value={"files_recycled": 0, "errors": 0}) as recycle,
             patch(f"{_BRIDGE}._log_activity"),
@@ -96,8 +97,7 @@ class TestBrowserDelete(_BridgeDeleteTestCase):
 
     def _call(self, target, settings):
         with (
-            patch(f"{_BRIDGE}.load_settings", return_value=settings),
-            patch(f"{_BRIDGE}._find_staging_subfolder", return_value=None),
+            patch(f"{_IMG}.load_settings", return_value=settings),
             patch(f"{_STAGING}._recycle_file_powershell") as recycle,
             patch(f"{_BRIDGE}._log_activity"),
         ):

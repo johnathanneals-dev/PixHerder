@@ -1182,19 +1182,7 @@ class Api:
         if not filepath or not os.path.isfile(filepath):
             return {"error": "File not found"}
 
-        # Security: restrict to allowed dirs
-        settings = load_settings()
-        allowed = [
-            _find_staging_subfolder() or "",
-            settings.get("move_destination", DEFAULTS["move_destination"]),
-            settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
-        ]
-        # realpath, not normpath: junctions/symlinks must resolve before the
-        # prefix check or a link inside an allowed dir can escape it (Adj-2)
-        real = os.path.realpath(filepath)
-        if not any(real == os.path.realpath(a)
-                   or real.startswith(os.path.realpath(a) + os.sep)
-                   for a in allowed if a):
+        if not _is_recyclable_dir(filepath):
             return {"error": "Access denied"}
 
         try:
@@ -1247,18 +1235,7 @@ class Api:
         if not folderpath or not os.path.isdir(folderpath):
             return {"error": "Folder not found"}
 
-        settings = load_settings()
-        allowed = [
-            _find_staging_subfolder() or "",
-            settings.get("move_destination", DEFAULTS["move_destination"]),
-            settings.get("keepers_dir", DEFAULTS["keepers_dir"]),
-        ]
-        # realpath, not normpath: junctions/symlinks must resolve before the
-        # prefix check or a link inside an allowed dir can escape it (Adj-2)
-        real = os.path.realpath(folderpath)
-        if not any(real == os.path.realpath(a)
-                   or real.startswith(os.path.realpath(a) + os.sep)
-                   for a in allowed if a):
+        if not _is_recyclable_dir(folderpath):
             return {"error": "Access denied"}
 
         result = recycle_staging(folderpath)

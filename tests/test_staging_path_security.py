@@ -180,5 +180,85 @@ class TestRecycleBinRouteRejectsUnvalidatedPaths(unittest.TestCase):
         handler.send_error_json.assert_called_once()
 
 
+_BROWSER = "web.routes_browser"
+
+
+class TestBrowserDeleteFolderRejectsSourceDir(unittest.TestCase):
+    """OBS-Tyr-1: handle_browser_delete_folder must be directly tested.
+
+    The Adj-1 gate swap replaced _is_allowed_path with _is_recyclable_dir,
+    but the routes_browser path had no dedicated test coverage — only the
+    dispatch routing test (which mocks the handler entirely) and the bridge
+    delete test. This class covers the actual handler.
+    """
+
+    def _handler(self, body):
+        h = MagicMock()
+        h.read_json_body = MagicMock(return_value=body)
+        h.send_json = MagicMock()
+        h.send_error_json = MagicMock()
+        return h
+
+    def test_source_dir_is_refused(self):
+        with tempfile.TemporaryDirectory() as source:
+            handler = self._handler({"path": source})
+            with (
+                patch(f"{_BROWSER}._is_recyclable_dir", return_value=False),
+                patch(f"{_BROWSER}.recycle_staging") as recycle,
+                patch(f"{_BROWSER}._log_activity"),
+            ):
+                from web.routes_browser import handle_browser_delete_folder
+                handle_browser_delete_folder(handler, MagicMock())
+
+            recycle.assert_not_called()
+            handler.send_json.assert_not_called()
+            handler.send_error_json.assert_called_once()
+            self.assertEqual(handler.send_error_json.call_args[0][1], 403)
+
+    def test_workspace_dir_is_recycled(self):
+        with tempfile.TemporaryDirectory() as workspace:
+            handler = self._handler({"path": workspace})
+            with (
+                patch(f"{_BROWSER}._is_recyclable_dir", return_value=True),
+                patch(f"{_BROWSER}.recycle_staging",
+                      return_value={"files_recycled": 5}) as recycle,
+                patch(f"{_BROWSER}._log_activity"),
+            ):
+                from web.routes_browser import handle_browser_delete_folder
+                handle_browser_delete_folder(handler, MagicMock())
+
+            recycle.assert_called_once_with(workspace)
+            handler.send_error_json.assert_not_called()
+            handler.send_json.assert_called_once()
+            self.assertTrue(handler.send_json.call_args[0][0]["success"])
+
+    def test_nonexistent_dir_returns_404(self):
+        handler = self._handler({"path": "C:\\does\\not\\exist\\xyz"})
+        with (
+            patch(f"{_BROWSER}._is_recyclable_dir") as guard,
+            patch(f"{_BROWSER}.recycle_staging") as recycle,
+        ):
+            from web.routes_browser import handle_browser_delete_folder
+            handle_browser_delete_folder(handler, MagicMock())
+
+        guard.assert_not_called()
+        recycle.assert_not_called()
+        handler.send_error_json.assert_called_once()
+        self.assertEqual(handler.send_error_json.call_args[0][1], 404)
+
+    def test_empty_path_returns_404(self):
+        handler = self._handler({"path": ""})
+        with (
+            patch(f"{_BROWSER}._is_recyclable_dir") as guard,
+            patch(f"{_BROWSER}.recycle_staging") as recycle,
+        ):
+            from web.routes_browser import handle_browser_delete_folder
+            handle_browser_delete_folder(handler, MagicMock())
+
+        guard.assert_not_called()
+        recycle.assert_not_called()
+        handler.send_error_json.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()
