@@ -453,7 +453,7 @@ class Api:
             return {"error": "Access denied", "files": [], "total": 0}
 
         files = []
-        for root, dirs, fnames in os.walk(dirpath):
+        for root, dirs, fnames in os.walk(real_dir):
             for fname in fnames:
                 ext = os.path.splitext(fname)[1].lower()
                 if ext in IMAGE_EXTS:
