@@ -77,10 +77,12 @@ def check(condition, msg):
 
 def count_images(directory):
     """Count image files in a directory tree (case-insensitive)."""
+    from engine.config import EXCLUDED_FOLDERS
     count = 0
     if not os.path.isdir(directory):
         return 0
     for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
         for f in files:
             if os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS:
                 count += 1
