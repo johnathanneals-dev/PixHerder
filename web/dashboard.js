@@ -103,6 +103,65 @@ function _dashStepClick(step) {
   else if (step === 4) navigate("finish");
 }
 
+function _dashStartNewScan() {
+  api("GET", "/api/folders/status").then(function(data) {
+    var hasFiles = data.staging && data.staging.exists && data.staging.file_count > 0;
+    if (!hasFiles) {
+      navigate("wizard");
+      return;
+    }
+    var p = _stagingSession
+      ? Promise.resolve()
+      : api("GET", "/api/staging/status").then(function(d) {
+          if (d.staging_dir && d.source_dir) {
+            _stagingSession = { source_dir: d.source_dir, staging_dir: d.staging_dir };
+          }
+        });
+    p.then(function() {
+      if (!_stagingSession) {
+        navigate("wizard");
+        return;
+      }
+      var stagingDir = _stagingSession.staging_dir;
+      var sourceDir = _stagingSession.source_dir;
+      startWorkingView(
+        "Sending Files Home",
+        "Returning your files before starting a new scan.",
+        function(done) {
+          window._onRestoreProgress = function(d) {
+            if (d.status === "complete") {
+              window._onRestoreProgress = null;
+              resetAppState();
+              _stagingSession = null;
+              wizardState.completedSteps = {};
+              wizardState.stagingDir = null;
+              wizardState.sourceDir = null;
+              navigate("wizard");
+            } else if (d.status === "error") {
+              window._onRestoreProgress = null;
+              done("Send Home Failed", d.message || "Could not return files.", true);
+            }
+          };
+          api("POST", "/api/staging/restore", {
+            staging_dir: stagingDir,
+            source_dir: sourceDir,
+            full_restore: true
+          }).then(function() {
+            if (window.pywebview && window.pywebview.api) {
+              window.pywebview.api.subscribe_restore_progress();
+            }
+          }).catch(function(err) {
+            window._onRestoreProgress = null;
+            done("Send Home Failed", err.message || "Could not start restore.", true);
+          });
+        }
+      );
+    });
+  }).catch(function() {
+    navigate("wizard");
+  });
+}
+
 function _dashStartWizard() {
   // Check folder state fresh to decide whether to skip Step 1
   api("GET", "/api/folders/status").then(function(data) {
@@ -252,6 +311,12 @@ function _dashUpdateFolders() {
     document.getElementById("dashContinueAction").style.display = hasAnySystemFiles ? "block" : "none";
     if (hasAnySystemFiles) {
       _dashUpdateContinueButton(hasStaging, hasDupes, hasKeepers);
+    }
+
+    // Show "Start New Scan" only when there's an active session
+    var newScanBtn = document.getElementById("dashNewScanBtn");
+    if (newScanBtn) {
+      newScanBtn.style.display = hasStaging ? "" : "none";
     }
 
     // Flow guidance — use session flag to determine if a scan was done this session

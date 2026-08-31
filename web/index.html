@@ -8,6 +8,12 @@
 </head>
 <body>
 
+<!-- OneDrive resume reminder banner (hidden until OneDrive pause is prompted) -->
+<div id="oneDriveReminder" style="display:none;background:var(--warning-bg);border-bottom:1px solid var(--warning);padding:8px 16px;text-align:center;font-size:13px;color:var(--warning);">
+  <strong>OneDrive sync paused</strong> &mdash; remember to resume before closing.
+  <button class="btn btn-secondary btn-sm" onclick="_showOneDriveResumeDialog()" style="margin-left:12px;font-size:12px;padding:4px 12px;" data-tip="Instructions to resume OneDrive sync">How to Resume</button>
+</div>
+
 <!-- Hints bar: flow hints + keyboard shortcuts + settings note (hidden when hints off) -->
 <div class="hints-bar" id="hintsBar" style="display:none;">
   <div id="hintsBarText" style="font-size:14px;font-weight:500;margin-bottom:4px;"></div>
@@ -146,6 +152,7 @@
 
     <div style="margin-bottom:32px;display:flex;gap:12px;flex-wrap:wrap;">
       <button class="btn btn-primary btn-lg" id="dashContinueBtn" onclick="_dashStartWizard()" data-tip="Step-by-step wizard to find and remove duplicates" data-help="wizard">Start Guided Cleanup</button>
+      <button class="btn btn-primary btn-lg" id="dashNewScanBtn" onclick="_dashStartNewScan()" data-tip="Pick a new folder and start a fresh scan" style="display:none;">Start New Scan</button>
       <button class="btn btn-secondary btn-lg" id="dashDirectScanBtn" onclick="navigate('scan-config')" data-tip="Scan any folder without the wizard" data-help="scanning">Direct Scan</button>
     </div>
 
@@ -280,8 +287,8 @@
           <div style="font-size:13px;color:var(--text-dim);font-family:monospace;" id="wizMigrateInfoText"></div>
         </div>
         <div id="wizMigrateActions">
-          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to PixHerder for scanning">Begin Migration</button>
-          <button class="btn btn-danger" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
+          <button class="btn btn-primary" id="wizMigrateBtn" onclick="wizardStartMigration()" data-tip="Start copying files to PixHerder for scanning" style="display:none;">Begin Migration</button>
+          <button class="btn btn-danger" onclick="cancelStaging()" style="margin-left:8px;" data-tip="Cancel and return to the dashboard">Cancel</button>
           <button class="btn btn-warning" onclick="navigate('dashboard')" style="margin-left:8px;" data-tip="Return to the main dashboard">Dashboard</button>
         </div>
         <div id="wizMigrateProgress" style="display:none;margin-top:16px;">

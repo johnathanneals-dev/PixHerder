@@ -83,6 +83,7 @@ function updateStagingUI(d) {
 }
 
 function cancelStaging() {
+  window._stagingCancelRequested = true;
   api("POST", "/api/staging/cancel").catch(function() {});
 }
 

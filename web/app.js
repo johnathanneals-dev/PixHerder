@@ -146,7 +146,41 @@ function checkOneDriveBeforeOperation(sourceDir, operation, onContinue) {
   }
 }
 
+var _oneDrivePauseShownThisSession = false;
+
+function _showOneDriveResumeDialog() {
+  document.getElementById("dialogTitle").textContent = "Resume OneDrive Sync";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="font-size:14px;line-height:1.8;color:var(--text);">' +
+      '<ol style="margin:0;padding-left:20px;">' +
+        '<li>Right-click the <strong>OneDrive cloud icon</strong> in your system tray (bottom-right, may be in hidden icons).</li>' +
+        '<li>Click the <strong>gear icon</strong> (Settings).</li>' +
+        '<li>Select <strong>Resume syncing</strong>.</li>' +
+        '<li>The icon will return to normal when syncing resumes.</li>' +
+      '</ol>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">' +
+      '<button class="btn btn-primary" onclick="closeDialog(); _oneDrivePauseShownThisSession = false; document.getElementById(\'oneDriveReminder\').style.display = \'none\';"' +
+        ' data-tip="I have resumed OneDrive sync">I\'ve Resumed It</button>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
+  var ghostBtn = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-ghost");
+  if (ghostBtn) ghostBtn.style.display = "";
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
+window.addEventListener("beforeunload", function(e) {
+  if (_oneDrivePauseShownThisSession) {
+    e.preventDefault();
+    e.returnValue = "OneDrive sync is paused. Remember to resume it before closing.";
+    return e.returnValue;
+  }
+});
+
 function _showOneDrivePauseDialog(operation, onContinue) {
+  _oneDrivePauseShownThisSession = true;
+  var reminder = document.getElementById("oneDriveReminder");
+  if (reminder) reminder.style.display = "";
   // Capture original dialog-actions HTML for restoration
   if (!_dialogActionsOriginal) {
     var ad = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
@@ -176,11 +210,41 @@ function _showOneDrivePauseDialog(operation, onContinue) {
     '<div style="margin-top:14px;display:flex;gap:8px;align-items:center;">' +
       '<button class="btn btn-danger" onclick="closeDialog()"' +
         ' data-tip="Cancel and return to dashboard">Cancel</button>' +
-      '<button class="btn btn-ghost" onclick="closeDialog(); (' + _escCb(onContinue) + ')()"' +
+      '<button class="btn btn-ghost" onclick="closeDialog(); _showOneDriveNoPauseConfirm(\'' + operation + '\', ' + _escCb(onContinue) + ')"' +
         ' style="font-size:12px;">Continue without pausing</button>' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
   // Hide the standard dialog Cancel button (replaced by inline Cancel)
+  var stdCancel = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
+  if (stdCancel) stdCancel.style.display = "none";
+  document.getElementById("dialogOverlay").classList.add("active");
+}
+
+function _showOneDriveNoPauseConfirm(operation, onContinue) {
+  var opLabel = operation === "migration" ? "importing files"
+    : operation === "finish" ? "finishing up"
+    : "sending files home";
+  document.getElementById("dialogTitle").textContent = "Continue Without Pausing?";
+  document.getElementById("dialogMessage").innerHTML =
+    '<div style="margin-bottom:16px;">' +
+      '<span style="font-weight:700;color:var(--warning);font-size:15px;">Important</span>' +
+    '</div>' +
+    '<div style="margin-bottom:16px;line-height:1.6;">' +
+      'OneDrive sync is still active. Proceeding with ' + opLabel + ' while OneDrive is syncing may cause:' +
+      '<ul style="margin:8px 0;padding-left:20px;">' +
+        '<li>File lock errors that slow down or interrupt the operation</li>' +
+        '<li>Temporary sync conflicts in your OneDrive folder</li>' +
+        '<li>Increased processing time as both PixHerder and OneDrive compete for the same files</li>' +
+      '</ul>' +
+      'Your files will not be damaged, but the process may be slower and less reliable.' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
+      '<button class="btn btn-warning" onclick="closeDialog(); (' + _escCb(onContinue) + ')()"' +
+        ' data-tip="Continue with OneDrive sync still running">Proceed Anyway</button>' +
+      '<button class="btn btn-danger" onclick="closeDialog(); _showOneDrivePauseDialog(\'' + operation + '\', ' + _escCb(onContinue) + ')"' +
+        ' data-tip="Go back and pause OneDrive first">Cancel</button>' +
+    '</div>';
+  document.getElementById("dialogConfirmBtn").style.display = "none";
   var stdCancel = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (stdCancel) stdCancel.style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
@@ -609,6 +673,10 @@ function selectFolder() {
         toast(count.toLocaleString() + " image" + (count !== 1 ? "s" : "") + " found", "success");
       }
     }).catch(function() {});
+  }
+  if (_folderPickerTarget === "wizSourceDir") {
+    var migrateBtn = document.getElementById("wizMigrateBtn");
+    if (migrateBtn && _folderPickerPath) migrateBtn.style.display = "";
   }
   closeFolderPicker();
 }

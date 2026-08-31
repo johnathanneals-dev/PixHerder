@@ -75,6 +75,7 @@ function _wizardDetermineStep() {
 var _wizardStepHandlers = {
   1: function() {
     if (wizardState.completedSteps[1]) {
+      document.getElementById("wizMigrateBtn").style.display = "";
       document.getElementById("wizMigrateBtn").disabled = true;
       document.getElementById("wizMigrateBtn").textContent = "Migration Complete";
       document.getElementById("wizMigrateComplete").style.display = "block";
@@ -201,6 +202,7 @@ function wizardStartMigration() {
   var dir = document.getElementById("wizSourceDir").value.trim();
   if (!dir) { toast("Please enter a source folder", "error"); return; }
 
+  window._stagingCancelRequested = false;
   wizardState.sourceDir = dir;
   // Check OneDrive before starting migration
   checkOneDriveBeforeOperation(dir, "migration", function() {
@@ -225,7 +227,36 @@ function _doWizardMigration(dir) {
       var mbT = d.bytes_total ? Math.round(d.bytes_total / (1024*1024)) : 0;
       document.getElementById("wizMigRight").textContent = mb + " / " + mbT + " MB";
 
-      if (d.status === "complete") {
+      if (d.status === "complete" && window._stagingCancelRequested) {
+        window._stagingCancelRequested = false;
+        window._onStagingProgress = null;
+        document.getElementById("wizMigrateProgress").style.display = "none";
+        var cStagingDir = d.staging_dir || wizardState.stagingDir;
+        var cSourceDir = wizardState.sourceDir;
+        if (cStagingDir && cSourceDir) {
+          toast("Cancelled. Sending files home...");
+          api("POST", "/api/staging/restore", {
+            staging_dir: cStagingDir,
+            source_dir: cSourceDir,
+            full_restore: true
+          }).then(function() {
+            if (window.pywebview && window.pywebview.api) {
+              window._onRestoreProgress = function(rd) {
+                if (rd.status === "complete" || rd.status === "error") {
+                  window._onRestoreProgress = null;
+                  resetAppState();
+                  _stagingSession = null;
+                  document.getElementById("wizMigrateBtn").style.display = "none";
+                  document.getElementById("wizMigrateBtn").disabled = false;
+                  toast("Files returned home.", "success");
+                }
+              };
+              window.pywebview.api.subscribe_restore_progress();
+            }
+          });
+        }
+      } else if (d.status === "complete") {
+        window._stagingCancelRequested = false;
         window._onStagingProgress = null;
         document.getElementById("wizMigrateProgress").style.display = "none";
         // If no files were migrated, go back to dashboard
@@ -244,11 +275,42 @@ function _doWizardMigration(dir) {
         };
         _refreshFolderPaths();
         wizardMarkComplete(1);
-      } else if (d.status === "error" || d.status === "cancelled") {
+      } else if (d.status === "error") {
         window._onStagingProgress = null;
         document.getElementById("wizMigrateProgress").style.display = "none";
         document.getElementById("wizMigrateBtn").disabled = false;
         toast(d.message || "Migration failed", "error");
+      } else if (d.status === "cancelled") {
+        window._stagingCancelRequested = false;
+        window._onStagingProgress = null;
+        document.getElementById("wizMigrateProgress").style.display = "none";
+        document.getElementById("wizMigrateBtn").style.display = "none";
+        var stagingDir = d.staging_dir || wizardState.stagingDir;
+        var sourceDir = wizardState.sourceDir;
+        if (stagingDir && sourceDir) {
+          toast("Migration cancelled. Sending files home...");
+          api("POST", "/api/staging/restore", {
+            staging_dir: stagingDir,
+            source_dir: sourceDir,
+            full_restore: true
+          }).then(function() {
+            if (window.pywebview && window.pywebview.api) {
+              window._onRestoreProgress = function(rd) {
+                if (rd.status === "complete" || rd.status === "error") {
+                  window._onRestoreProgress = null;
+                  resetAppState();
+                  _stagingSession = null;
+                  document.getElementById("wizMigrateBtn").disabled = false;
+                  toast("Files returned home.", "success");
+                }
+              };
+              window.pywebview.api.subscribe_restore_progress();
+            }
+          });
+        } else {
+          document.getElementById("wizMigrateBtn").disabled = false;
+          toast("Migration cancelled", "warning");
+        }
       }
     }
     window._onStagingProgress = _onWizStaging;
