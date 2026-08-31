@@ -172,6 +172,17 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 ### OneDrive Integration
 
 - [x] OneDrive sync management: pause-sync prompts, "Keep or Delete" explanation, auto-detect sync state
+- [x] OneDrive sync pause reminder banner: persistent amber bar when pause prompted, "How to Resume" dialog, beforeunload prompt on close
+- [x] "Continue without pausing" confirmation dialog with risk explanation
+- [ ] Programmatic OneDrive pause/resume: research feasibility (OneDrive.exe /pause, UI Automation, process suspend). Must auto-resume on exit even if user closes via X. Needs troubleshooting routine for failure cases.
+- [ ] OneDrive sync state awareness: pause dialog should check actual sync state before prompting (currently fires based on process running, not sync status)
+- [ ] Migration should exclude PixHerder_Duplicates folder from source copy (scanner already excludes it)
+
+### Workflow / Mode Issues (from 2026-08-30 smoke test)
+
+- [ ] Autonomous mode: add cancel button that dumps to dashboard (no send-home)
+- [ ] Mode switch in Settings should take effect immediately on dashboard (currently needs app restart to show/hide More Options)
+- [ ] Send Files Home / More Options should be accessible in all workflow modes
 
 ### Help System
 

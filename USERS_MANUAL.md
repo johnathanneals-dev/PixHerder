@@ -118,10 +118,13 @@ Double-click the desktop shortcut. The app opens maximized. On first launch, you
 From the dashboard, click **Start Guided Cleanup**. The wizard opens at Step 1: Import.
 
 - Click **Browse** to find your photos folder (Pictures, OneDrive, a USB drive -- anywhere)
-- After selecting a folder, a toast shows how many images were found
+- After selecting a folder, a toast shows how many images were found and the **Begin Migration** button appears
 - Click **Begin Migration** to copy your photos into PixHerder's safe workspace
 - Watch the progress bar -- your originals are never moved or changed
+- **Cancel** stops the migration and automatically sends any partially-copied files back home
 - When complete, the wizard advances to Step 2
+
+If you have already completed a scan and want to start fresh with a different folder, click **Start New Scan** on the dashboard. This sends your current files home and returns you to the folder picker.
 
 ### 3. Scan for Duplicates
 
@@ -203,11 +206,13 @@ PixHerder makes a working copy of your pictures so it can scan without interrupt
   - Click any path segment in the breadcrumb to jump to that level
   - Click **My Computer** to see all available drives (C:\, D:\, USB drives, etc.)
   - After selecting a folder, a toast shows how many images were found (or warns if none)
-- Click **Begin Migration** (green, proceeds forward) or **Cancel** (red, returns to dashboard)
+- The **Begin Migration** button appears after you select a folder
+- Click **Begin Migration** (green, proceeds forward) or **Cancel** (red, cancels and sends files home)
 - Watch the progress bar as files are copied locally
+- If you cancel mid-migration, PixHerder automatically returns any partially-copied files to your source folder
 - When complete, the step shows a checkmark and Step 2 opens
 
-If you close the browser and come back later, the wizard detects your existing staging session and picks up where you left off.
+If you close the app and come back later, the wizard detects your existing staging session and picks up where you left off.
 
 ### Step 2: Configure & Scan
 
@@ -527,12 +532,16 @@ Click the **Settings** tab to customize defaults:
 ### Synced Folders (OneDrive, etc.)
 PixHerder automatically detects when you are working with OneDrive folders. When OneDrive is running, PixHerder will remind you to pause syncing before importing files or sending them home. This prevents file locking and unexpected behavior.
 
+When you acknowledge the pause prompt, an amber **"OneDrive sync paused"** banner appears at the top of the app as a reminder. Click **How to Resume** on the banner when you are ready to re-enable sync. If you try to close the app while sync is still paused, you will be reminded to resume it.
+
+If you choose **Continue without pausing**, a confirmation dialog explains the risks (file locks, sync conflicts, slower processing). Your files will not be damaged, but the process may be less reliable.
+
 **How to pause OneDrive sync:**
 
 1. Look for the OneDrive cloud icon in your system tray (bottom-right, near the clock)
 2. Click the icon, then click the gear icon (Settings)
 3. Select "Pause syncing" and choose 2 hours or more
-4. Resume syncing when you are done
+4. Resume syncing when you are done with PixHerder
 
 **After sending files home:** OneDrive may show a "Keep or Delete" dialog when it notices the changes. Choose **Keep** to preserve the files you just sorted. You can disable these reminders in Settings (Show OneDrive sync reminders).
 
