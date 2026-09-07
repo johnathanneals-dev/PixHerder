@@ -314,7 +314,7 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
     # Not treating exit code as error since we track file-level results
 
     # Build and save manifest
-    manifest = _build_manifest(source_dir, staging_dir)
+    manifest = _build_manifest(source_dir, staging_dir, extensions)
 
     if progress_cb:
         progress_cb(total_files, total_files, total_bytes, total_bytes, "done")
@@ -397,7 +397,7 @@ def _stage_with_python(source_dir, staging_dir, extensions,
 
     logger.info("Staging complete: %d copied, %d skipped, %d failed", copied, skipped, failed)
 
-    manifest = _build_manifest(source_dir, staging_dir)
+    manifest = _build_manifest(source_dir, staging_dir, extensions)
 
     if progress_cb:
         progress_cb(total_files, total_files, total_bytes, total_bytes, "done")
@@ -414,7 +414,7 @@ def _stage_with_python(source_dir, staging_dir, extensions,
     }
 
 
-def _build_manifest(source_dir, staging_dir):
+def _build_manifest(source_dir, staging_dir, extensions=None):
     """Build and save a manifest mapping staged paths to originals.
 
     Returns manifest path, or None if no files were staged (prevents
@@ -444,6 +444,7 @@ def _build_manifest(source_dir, staging_dir):
         "created": datetime.now().isoformat(),
         "file_count": staged_count,
         "bytes_total": staged_bytes,
+        "extensions": sorted(extensions) if extensions else sorted(IMAGE_EXTENSIONS),
     }
 
     from engine.config import safe_json_write
@@ -477,9 +478,9 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
                         cancel_event=None):
     """Delete OneDrive originals for files that were removed from staging.
 
-    Walks the source directory and checks if each file's staged counterpart
-    still exists. If not, the original has been cleaned up and should be
-    deleted from OneDrive too.
+    Only considers files that were staging candidates — same excluded
+    folders and extension set that staging used. Reads the extension
+    set from the staging manifest; refuses to run without one.
 
     Returns dict with deleted, skipped, errors.
     """
@@ -490,11 +491,33 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
     staging_dir = os.path.normpath(staging_dir)
     source_dir = os.path.normpath(source_dir)
 
-    # Count originals first
+    manifest = load_manifest(source_dir)
+    if manifest is None:
+        return {
+            "deleted": 0, "skipped": 0, "errors": 1, "total": 0,
+            "error_details": [
+                "No staging manifest for this source; sync-back cannot run."
+            ],
+        }
+
+    manifest_exts = manifest.get("extensions", None)
+    ext_fallback = False
+    if manifest_exts is not None:
+        ext_set = set(manifest_exts)
+    else:
+        ext_set = IMAGE_EXTENSIONS
+        ext_fallback = True
+
+    if progress_cb and ext_fallback:
+        progress_cb(0, 0, "Using default extensions (pre-upgrade manifest)")
+
     originals = []
     for root, dirs, files in os.walk(source_dir):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
         for f in files:
-            originals.append(os.path.join(root, f))
+            ext = os.path.splitext(f)[1].lower()
+            if ext in ext_set:
+                originals.append(os.path.join(root, f))
     total = len(originals)
 
     for i, original_path in enumerate(originals):
@@ -520,13 +543,16 @@ def sync_back_deletions(staging_dir, source_dir, progress_cb=None,
         if progress_cb:
             progress_cb(i + 1, total, "syncback")
 
-    return {
+    result = {
         "deleted": deleted,
         "skipped": skipped,
         "errors": error_count,
         "error_details": errors,
         "total": total,
     }
+    if ext_fallback:
+        result["ext_fallback"] = True
+    return result
 
 
 def cleanup_staging(staging_dir):

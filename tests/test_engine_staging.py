@@ -203,6 +203,104 @@ class TestExcludedFoldersInStaging(unittest.TestCase):
             result = get_onedrive_sync_state(d)
             self.assertEqual(result["sampled"], 1)
 
+    @patch(_RECYCLE)
+    def test_syncback_case_a_excluded_folder_not_recycled(self, mock_recycle):
+        """Case A: files in PixHerder_Duplicates were never staged and must
+        never be recycled by sync_back_deletions."""
+        with tempfile.TemporaryDirectory() as d:
+            source = os.path.join(d, "source")
+            staging = os.path.join(d, "staging")
+            os.makedirs(source)
+            os.makedirs(staging)
+            for i in range(4):
+                with open(os.path.join(source, "img%d.jpg" % i), "w") as f:
+                    f.write("data%d" % i)
+            dupes = os.path.join(source, "PixHerder_Duplicates")
+            os.makedirs(dupes)
+            for i in range(2):
+                with open(os.path.join(dupes, "dupe%d.jpg" % i), "w") as f:
+                    f.write("dupedata%d" % i)
+            with open(os.path.join(source, "notes.txt"), "w") as f:
+                f.write("keep me")
+            for i in range(2):
+                with open(os.path.join(staging, "img%d.jpg" % i), "w") as f:
+                    f.write("data%d" % i)
+            manifest = {
+                "source_dir": os.path.normpath(source),
+                "staging_dir": os.path.normpath(staging),
+                "extensions": [".jpg"],
+                "file_count": 2,
+            }
+            mpath = os.path.join(d, "manifest.json")
+            with open(mpath, "w") as f:
+                json.dump(manifest, f)
+            with patch("engine.staging.manifest_path_for",
+                       return_value=Path(mpath)):
+                result = sync_back_deletions(staging, source)
+            self.assertEqual(result["deleted"], 2)
+            self.assertEqual(result["skipped"], 2)
+            recycled = [c[0][0] for c in mock_recycle.call_args_list]
+            for path in recycled:
+                self.assertNotIn("PixHerder_Duplicates", path)
+                self.assertNotIn("notes.txt", path)
+
+    @patch(_RECYCLE)
+    def test_syncback_case_b_wrong_extension_not_recycled(self, mock_recycle):
+        """Case B: staging used extensions=['.jpg'] only. A .png file in
+        source was never staged and must never be recycled."""
+        with tempfile.TemporaryDirectory() as d:
+            source = os.path.join(d, "source")
+            staging = os.path.join(d, "staging")
+            scans = os.path.join(d, "scans")
+            os.makedirs(source)
+            os.makedirs(staging)
+            os.makedirs(scans)
+            with open(os.path.join(source, "photo1.jpg"), "w") as f:
+                f.write("jpg1")
+            with open(os.path.join(source, "photo2.jpg"), "w") as f:
+                f.write("jpg2")
+            with open(os.path.join(source, "photo3.png"), "w") as f:
+                f.write("png3")
+            with open(os.path.join(staging, "photo1.jpg"), "w") as f:
+                f.write("jpg1")
+            manifest = {
+                "source_dir": os.path.normpath(source),
+                "staging_dir": os.path.normpath(staging),
+                "extensions": [".jpg"],
+                "file_count": 1,
+            }
+            mpath = os.path.join(scans, "staging_manifest_test.json")
+            with open(mpath, "w") as f:
+                json.dump(manifest, f)
+            with patch("engine.staging.manifest_path_for",
+                       return_value=Path(mpath)):
+                result = sync_back_deletions(staging, source)
+            self.assertEqual(result["deleted"], 1)
+            self.assertEqual(result["skipped"], 1)
+            recycled = [c[0][0] for c in mock_recycle.call_args_list]
+            self.assertEqual(len(recycled), 1)
+            self.assertIn("photo2.jpg", recycled[0])
+            self.assertTrue(os.path.exists(os.path.join(source, "photo3.png")))
+
+    @patch(_RECYCLE)
+    def test_syncback_case_c_no_manifest_refuses(self, mock_recycle):
+        """Case C: no staging manifest exists. sync_back_deletions must
+        refuse to run and recycle nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            source = os.path.join(d, "source")
+            staging = os.path.join(d, "staging")
+            os.makedirs(source)
+            os.makedirs(staging)
+            for i in range(5):
+                with open(os.path.join(source, "img%d.jpg" % i), "w") as f:
+                    f.write("data%d" % i)
+            with patch("engine.staging.load_manifest", return_value=None):
+                result = sync_back_deletions(staging, source)
+            self.assertEqual(result["deleted"], 0)
+            self.assertEqual(result["errors"], 1)
+            self.assertIn("No staging manifest", result["error_details"][0])
+            mock_recycle.assert_not_called()
+
 
 class TestStagingPathDerivation(_StagingTestCase):
     """Staging dir and manifest path are derived, not stored — so they must be stable."""
@@ -472,6 +570,15 @@ class TestSyncBackDeletions(_StagingTestCase):
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             with open(dst, "wb") as f:
                 f.write(b"img")
+        manifest = {
+            "source_dir": os.path.normpath(self.source),
+            "staging_dir": os.path.normpath(self.staging),
+            "extensions": [".jpg", ".png"],
+            "file_count": len(names),
+        }
+        mpath = manifest_path_for(self.source)
+        with open(str(mpath), "w") as f:
+            json.dump(manifest, f)
 
     def test_original_is_kept_when_its_staged_copy_still_exists(self):
         self._prepare(["a.jpg"])
