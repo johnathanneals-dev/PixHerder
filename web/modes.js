@@ -388,6 +388,22 @@ function _startAutonomous() {
   });
 }
 
+function _cancelAutonomous() {
+  var phase = _autoState.phase;
+  if (phase === "migrate") {
+    api("POST", "/api/staging/cancel").catch(function() {});
+  } else if (phase === "scan") {
+    api("POST", "/api/scan/cancel").catch(function() {});
+  } else if (phase === "move") {
+    api("POST", "/api/action/cancel").catch(function() {});
+  }
+  window._onStagingProgress = null;
+  window._onScanProgress = null;
+  window._onActionProgress = null;
+  toast("Cancelled. Returning to dashboard.", "warning");
+  navigate("dashboard");
+}
+
 function _autoUpdatePhase(phase, label) {
   _autoState.phase = phase;
   document.getElementById("autoSetup").style.display = "none";
@@ -398,6 +414,8 @@ function _autoUpdatePhase(phase, label) {
   document.getElementById("autoProgressPct").textContent = "0%";
   document.getElementById("autoProgressLeft").textContent = "";
   document.getElementById("autoStageLabel").textContent = "";
+  var cancelBtn = document.getElementById("autoCancelBtn");
+  if (cancelBtn) cancelBtn.disabled = false;
 }
 
 function _autoUpdateProgress(current, total, stageText) {
@@ -426,6 +444,9 @@ function _autoPhase1_migrate(sourceDir) {
             window._onStagingProgress = null;
             _autoState.stagingDir = p.staging_dir || _autoState.stagingDir;
             _autoPhase2_scan();
+          } else if (p.status === "cancelled") {
+            window._onStagingProgress = null;
+            navigate("dashboard");
           } else if (p.status === "error") {
             window._onStagingProgress = null;
             _autoComplete(0, "Migration failed: " + (p.message || "Unknown error"));
@@ -478,6 +499,9 @@ function _autoPhase2_scan() {
           "auto_recycling": "Auto-recycling exact duplicates..."
         };
         _autoUpdateProgress(d.current || 0, d.total || 0, stageLabels[stage] || stage);
+        var noReturn = (stage === "saving" || stage === "auto_recycling" || stage === "done");
+        var cancelBtn = document.getElementById("autoCancelBtn");
+        if (cancelBtn) cancelBtn.disabled = noReturn;
 
         if (d.status === "complete") {
           window._onScanProgress = null;
@@ -497,7 +521,7 @@ function _autoPhase2_scan() {
           _autoComplete(0, "Scan failed: " + (d.message || "Unknown error"));
         } else if (d.status === "cancelled") {
           window._onScanProgress = null;
-          _autoComplete(0, "Scan was cancelled.");
+          navigate("dashboard");
         }
       };
       window.pywebview.api.subscribe_scan_progress();
@@ -536,6 +560,9 @@ function _autoPhase3_move(reportFile) {
             var result = d.result || {};
             _autoState.totalMoved = result.moved || 0;
             _autoComplete(_autoState.totalMoved, null);
+          } else if (d.status === "cancelled") {
+            window._onActionProgress = null;
+            navigate("dashboard");
           } else if (d.status === "error") {
             window._onActionProgress = null;
             _autoComplete(0, "Move failed: " + (d.message || "Unknown error"));

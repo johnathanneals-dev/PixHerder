@@ -628,6 +628,10 @@ class Api:
         worker_manager.scan_cancel.set()
         return {"status": "cancelling"}
 
+    def action_cancel_op(self, params=None):
+        worker_manager.action_cancel.set()
+        return {"status": "cancelling"}
+
     def action_move(self, params=None):
         logger.debug("Bridge call: action_move(%d groups)", len((params or {}).get("groups", [])))
         if params is None:

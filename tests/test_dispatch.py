@@ -269,6 +269,13 @@ class TestPostDispatch(unittest.TestCase):
         mock_fn.assert_called_once()
         self.assertIs(mock_fn.call_args[0][0], handler)
 
+    @patch("web.routes_actions.handle_action_cancel")
+    def test_post_action_cancel(self, mock_fn):
+        handler = _make_handler("POST", "/api/action/cancel")
+        handler.do_POST()
+        mock_fn.assert_called_once()
+        self.assertIs(mock_fn.call_args[0][0], handler)
+
     @patch("web.routes_actions.handle_action_delete")
     def test_post_action_delete(self, mock_fn):
         handler = _make_handler("POST", "/api/action/delete")

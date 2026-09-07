@@ -801,6 +801,7 @@ var _bridgeMap = {
   "POST /api/scan/start": "scan_start",
   "POST /api/scan/cancel": "scan_cancel_op",
   "POST /api/action/move": "action_move",
+  "POST /api/action/cancel": "action_cancel_op",
   "POST /api/action/delete": "action_delete",
   "POST /api/action/rescue": "action_rescue",
   "POST /api/settings": "save_settings",

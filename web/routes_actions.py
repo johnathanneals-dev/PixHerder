@@ -92,6 +92,11 @@ def handle_action_rescue(handler, workers):
     handler.send_json(result)
 
 
+def handle_action_cancel(handler, workers):
+    workers.action_cancel.set()
+    handler.send_json({"status": "cancelling"})
+
+
 def handle_oddball_run(handler, workers):
     if workers.oddball_thread and workers.oddball_thread.is_alive():
         handler.send_error_json("Oddball check is already running", 409)

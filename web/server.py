@@ -152,6 +152,8 @@ class PixHerderHandler(http.server.BaseHTTPRequestHandler):
             routes_actions.handle_action_move(self, worker_manager)
         elif path == "/api/action/delete":
             routes_actions.handle_action_delete(self, worker_manager)
+        elif path == "/api/action/cancel":
+            routes_actions.handle_action_cancel(self, worker_manager)
         elif path == "/api/action/rescue":
             routes_actions.handle_action_rescue(self, worker_manager)
         elif path == "/api/settings":
