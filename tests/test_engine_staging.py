@@ -139,12 +139,12 @@ class TestGetOnedriveSyncState(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             result = get_onedrive_sync_state(d)
             self.assertEqual(result["sampled"], 0)
-            self.assertTrue(result["all_local"])
+            self.assertFalse(result["all_local"])
 
     def test_nonexistent_directory_returns_zero_samples(self):
         result = get_onedrive_sync_state(r"Z:\no\such\path")
         self.assertEqual(result["sampled"], 0)
-        self.assertTrue(result["all_local"])
+        self.assertFalse(result["all_local"])
 
     def test_local_image_files_counted_as_local(self):
         with tempfile.TemporaryDirectory() as d:

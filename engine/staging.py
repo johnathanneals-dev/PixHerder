@@ -67,10 +67,11 @@ def _ensure_placeholder_mode():
     try:
         import ctypes
         ntdll = ctypes.WinDLL("ntdll", use_last_error=True)
-        ntdll.RtlSetProcessPlaceholderCompatibilityMode(2)
+        prev = ntdll.RtlSetProcessPlaceholderCompatibilityMode(2)
+        if prev >= 0:
+            _phcm_set = True
     except (OSError, AttributeError):
         pass
-    _phcm_set = True
 
 
 def get_onedrive_sync_state(directory, sample_limit=50):
@@ -87,7 +88,7 @@ def get_onedrive_sync_state(directory, sample_limit=50):
         "cloud_only": 0,
         "pinned": 0,
         "local": 0,
-        "all_local": True,
+        "all_local": False,
     }
     if not os.path.isdir(directory):
         return result
@@ -115,7 +116,7 @@ def get_onedrive_sync_state(directory, sample_limit=50):
         if count >= sample_limit:
             break
     result["sampled"] = count
-    result["all_local"] = result["cloud_only"] == 0
+    result["all_local"] = count > 0 and result["cloud_only"] == 0
     return result
 
 

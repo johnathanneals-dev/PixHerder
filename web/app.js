@@ -132,7 +132,7 @@ function checkOneDriveBeforeOperation(sourceDir, operation, onContinue) {
         return;
       }
       var ss = od.sync_state;
-      if (ss && ss.all_local && operation === "migration") {
+      if (ss && ss.sampled > 0 && ss.all_local && operation === "migration") {
         onContinue();
         return;
       }
