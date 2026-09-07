@@ -158,6 +158,18 @@ function modeAwareDashboard(mode) {
   var continueBtn = document.getElementById("dashContinueBtn");
   var moreOptions = document.getElementById("dashAdvancedOptions");
 
+  // Reset defaults before applying mode-specific changes
+  if (directScanBtn) directScanBtn.style.display = "";
+  if (moreOptions) moreOptions.style.display = "";
+  if (continueBtn) {
+    continueBtn.style.fontSize = "";
+    continueBtn.style.padding = "";
+    continueBtn.textContent = "Continue Guided Cleanup";
+    continueBtn.onclick = function() { navigate("wizard"); };
+  }
+  var sendHomeWrap = document.getElementById("dashSendHomeBtn");
+  if (sendHomeWrap) sendHomeWrap.parentElement.style.display = "";
+
   if (mode === "easy") {
     // Hide Direct Scan (wizard is the path in Easy mode)
     if (directScanBtn) directScanBtn.style.display = "none";
@@ -168,10 +180,9 @@ function modeAwareDashboard(mode) {
       continueBtn.style.padding = "16px 32px";
     }
   } else if (mode === "autonomous") {
-    // Hide More Options, repurpose Continue button for autonomous
     if (directScanBtn) directScanBtn.style.display = "none";
-    if (moreOptions) moreOptions.style.display = "none";
-    // Show "Run Duplicate Cleanup" button -- replaces Continue Guided Cleanup
+    var sendHomeBtn = document.getElementById("dashSendHomeBtn");
+    if (sendHomeBtn) sendHomeBtn.parentElement.style.display = "none";
     if (continueBtn) {
       continueBtn.textContent = "Run Duplicate Cleanup";
       continueBtn.onclick = function() { navigate("autonomous"); };

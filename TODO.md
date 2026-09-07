@@ -182,7 +182,7 @@ Game plan: `.claude/plans/robust-weaving-thompson.md` for phased fix schedule.
 
 - [x] Autonomous mode: add cancel button that dumps to dashboard (no send-home) — 2a1a981
 - [x] Mode switch in Settings should take effect immediately on dashboard — applies nav visibility on save
-- [ ] Send Files Home / More Options should be accessible in all workflow modes
+- [x] Send Files Home / More Options should be accessible in all workflow modes — More Options visible in all modes; Send Files Home hidden in autonomous only
 
 ### Help System
 
