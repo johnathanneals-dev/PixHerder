@@ -33,6 +33,7 @@ from engine.staging import (
     _stage_with_python,
     cleanup_staging,
     count_files_for_staging,
+    get_onedrive_sync_state,
     get_staging_dir,
     is_onedrive_path,
     is_onedrive_running,
@@ -129,6 +130,49 @@ class TestIsOnedriveRunning(unittest.TestCase):
     def test_subprocess_failure_degrades_to_false(self):
         with patch("engine.staging.subprocess.run", side_effect=OSError("nope")):
             self.assertFalse(is_onedrive_running())
+
+
+class TestGetOnedriveSyncState(unittest.TestCase):
+    """Sync state sampling from file attributes."""
+
+    def test_empty_directory_returns_zero_samples(self):
+        with tempfile.TemporaryDirectory() as d:
+            result = get_onedrive_sync_state(d)
+            self.assertEqual(result["sampled"], 0)
+            self.assertTrue(result["all_local"])
+
+    def test_nonexistent_directory_returns_zero_samples(self):
+        result = get_onedrive_sync_state(r"Z:\no\such\path")
+        self.assertEqual(result["sampled"], 0)
+        self.assertTrue(result["all_local"])
+
+    def test_local_image_files_counted_as_local(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(5):
+                with open(os.path.join(d, "img%d.jpg" % i), "w") as f:
+                    f.write("x")
+            result = get_onedrive_sync_state(d)
+            self.assertEqual(result["sampled"], 5)
+            self.assertEqual(result["local"], 5)
+            self.assertEqual(result["cloud_only"], 0)
+            self.assertTrue(result["all_local"])
+
+    def test_non_image_files_are_skipped(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "readme.txt"), "w") as f:
+                f.write("x")
+            with open(os.path.join(d, "photo.png"), "w") as f:
+                f.write("x")
+            result = get_onedrive_sync_state(d)
+            self.assertEqual(result["sampled"], 1)
+
+    def test_sample_limit_respected(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(20):
+                with open(os.path.join(d, "img%d.jpg" % i), "w") as f:
+                    f.write("x")
+            result = get_onedrive_sync_state(d, sample_limit=5)
+            self.assertEqual(result["sampled"], 5)
 
 
 class TestStagingPathDerivation(_StagingTestCase):

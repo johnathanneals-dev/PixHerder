@@ -53,6 +53,71 @@ def is_onedrive_running():
         return False
 
 
+_FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000
+_FILE_ATTRIBUTE_PINNED = 0x00080000
+_FILE_ATTRIBUTE_UNPINNED = 0x00100000
+_phcm_set = False
+
+
+def _ensure_placeholder_mode():
+    """Enable PHCM_EXPOSE_PLACEHOLDERS so os.stat() sees real cloud attrs."""
+    global _phcm_set
+    if _phcm_set:
+        return
+    try:
+        import ctypes
+        ntdll = ctypes.WinDLL("ntdll", use_last_error=True)
+        ntdll.RtlSetProcessPlaceholderCompatibilityMode(2)
+    except (OSError, AttributeError):
+        pass
+    _phcm_set = True
+
+
+def get_onedrive_sync_state(directory, sample_limit=50):
+    """Sample image files and return OneDrive file-state summary.
+
+    Returns dict with counts of cloud-only, pinned, and local files
+    so the UI can skip the pause dialog when all files are already local.
+    Uses os.stat() which reads metadata without triggering cloud recalls.
+    Requires PHCM_EXPOSE_PLACEHOLDERS to see real attributes on Win10 1803+.
+    """
+    _ensure_placeholder_mode()
+    result = {
+        "sampled": 0,
+        "cloud_only": 0,
+        "pinned": 0,
+        "local": 0,
+        "all_local": True,
+    }
+    if not os.path.isdir(directory):
+        return result
+    count = 0
+    for root, dirs, files in os.walk(directory):
+        for fname in files:
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                attrs = os.stat(fpath).st_file_attributes
+            except (OSError, AttributeError):
+                continue
+            count += 1
+            if attrs & _FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS:
+                result["cloud_only"] += 1
+            elif attrs & _FILE_ATTRIBUTE_PINNED:
+                result["pinned"] += 1
+            else:
+                result["local"] += 1
+            if count >= sample_limit:
+                break
+        if count >= sample_limit:
+            break
+    result["sampled"] = count
+    result["all_local"] = result["cloud_only"] == 0
+    return result
+
+
 def get_staging_dir(source_dir, base_staging_dir=None):
     """Return a deterministic staging subdirectory for a source path."""
     if base_staging_dir is None:

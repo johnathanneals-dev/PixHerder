@@ -33,15 +33,18 @@ def handle_onedrive_status(handler, workers):
     try:
         body = handler.read_json_body()
         directory = body.get("directory", "") if body else ""
-        from engine.staging import is_onedrive_running
+        from engine.staging import is_onedrive_running, get_onedrive_sync_state
         running = is_onedrive_running()
         is_od = is_onedrive_path(directory) if directory else False
         settings = load_settings()
-        handler.send_json({
+        resp = {
             "running": running,
             "is_onedrive": is_od,
             "show_prompts": settings.get("show_onedrive_prompts", True),
-        })
+        }
+        if is_od and running and directory:
+            resp["sync_state"] = get_onedrive_sync_state(directory)
+        handler.send_json(resp)
     except Exception as e:
         handler.send_json({"error": str(e)}, 500)
 

@@ -32,8 +32,9 @@ from engine.checkpoint import (
     checkpoint_path, find_checkpoint, delete_checkpoint,
 )
 from engine.staging import (
-    is_onedrive_path, is_onedrive_running, get_staging_dir,
-    count_files_for_staging, cleanup_staging, recycle_staging,
+    is_onedrive_path, is_onedrive_running, get_onedrive_sync_state,
+    get_staging_dir, count_files_for_staging, cleanup_staging,
+    recycle_staging,
 )
 from engine.state_validator import validate_state
 from web.image_server import _is_recyclable_dir
@@ -783,11 +784,14 @@ class Api:
         running = is_onedrive_running()
         is_od = is_onedrive_path(directory) if directory else False
         settings = load_settings()
-        return {
+        resp = {
             "running": running,
             "is_onedrive": is_od,
             "show_prompts": settings.get("show_onedrive_prompts", True),
         }
+        if is_od and running and directory:
+            resp["sync_state"] = get_onedrive_sync_state(directory)
+        return resp
 
     def staging_check(self, params=None):
         if params is None:

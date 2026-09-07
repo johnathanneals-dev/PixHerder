@@ -131,14 +131,18 @@ function checkOneDriveBeforeOperation(sourceDir, operation, onContinue) {
         onContinue();
         return;
       }
+      var ss = od.sync_state;
+      if (ss && ss.all_local && operation === "migration") {
+        onContinue();
+        return;
+      }
       try {
-        _showOneDrivePauseDialog(operation, onContinue);
+        _showOneDrivePauseDialog(operation, onContinue, ss);
       } catch (e) {
         toast("OneDrive dialog error: " + e.message, "error");
         onContinue();
       }
     }).catch(function(err) {
-      // If check fails, don't block the user
       onContinue();
     });
   } catch (e) {
@@ -177,22 +181,35 @@ window.addEventListener("beforeunload", function(e) {
   }
 });
 
-function _showOneDrivePauseDialog(operation, onContinue) {
+function _showOneDrivePauseDialog(operation, onContinue, syncState) {
   _oneDrivePauseShownThisSession = true;
   var reminder = document.getElementById("oneDriveReminder");
   if (reminder) reminder.style.display = "";
-  // Capture original dialog-actions HTML for restoration
   if (!_dialogActionsOriginal) {
     var ad = document.querySelector("#dialogOverlay > .dialog > .dialog-actions");
     if (ad) _dialogActionsOriginal = ad.innerHTML;
   }
-  var title = "Pause OneDrive Sync";
   var opLabel = operation === "migration" ? "importing files"
     : operation === "finish" ? "finishing up"
     : "sending files home";
 
-  document.getElementById("dialogTitle").textContent = title;
+  var stateNote = "";
+  if (syncState && syncState.cloud_only > 0) {
+    stateNote =
+      '<div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:10px;margin-bottom:14px;font-size:13px;">' +
+        '<strong style="color:var(--warning);">' + syncState.cloud_only + ' of ' + syncState.sampled +
+        ' sampled files are cloud-only.</strong> These files will be downloaded from OneDrive when accessed, which may slow things down.' +
+      '</div>';
+  } else if (syncState && syncState.all_local) {
+    stateNote =
+      '<div style="background:var(--success-bg, #1a2e1a);border:1px solid var(--success, #4caf50);border-radius:var(--radius-sm);padding:10px;margin-bottom:14px;font-size:13px;">' +
+        'All sampled files are available locally. Pausing is optional but recommended for write operations.' +
+      '</div>';
+  }
+
+  document.getElementById("dialogTitle").textContent = "Pause OneDrive Sync";
   document.getElementById("dialogMessage").innerHTML =
+    stateNote +
     '<div style="margin-bottom:16px;">OneDrive is running and may interfere with ' + opLabel + '. ' +
     'For best results, pause syncing first.</div>' +
     '<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">' +
@@ -214,7 +231,6 @@ function _showOneDrivePauseDialog(operation, onContinue) {
         ' style="font-size:12px;">Continue without pausing</button>' +
     '</div>';
   document.getElementById("dialogConfirmBtn").style.display = "none";
-  // Hide the standard dialog Cancel button (replaced by inline Cancel)
   var stdCancel = document.querySelector("#dialogOverlay > .dialog > .dialog-actions > .btn-danger");
   if (stdCancel) stdCancel.style.display = "none";
   document.getElementById("dialogOverlay").classList.add("active");
