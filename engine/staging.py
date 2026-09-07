@@ -13,7 +13,7 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from engine.config import IMAGE_EXTENSIONS
+from engine.config import IMAGE_EXTENSIONS, EXCLUDED_FOLDERS
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +93,7 @@ def get_onedrive_sync_state(directory, sample_limit=50):
         return result
     count = 0
     for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
         for fname in files:
             ext = os.path.splitext(fname)[1].lower()
             if ext not in IMAGE_EXTENSIONS:
@@ -142,6 +143,7 @@ def count_files_for_staging(source_dir, extensions=None):
     file_count = 0
     total_bytes = 0
     for root, dirs, files in os.walk(source_dir):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
         for f in files:
             ext = os.path.splitext(f)[1].lower()
             if ext in extensions:
@@ -218,6 +220,10 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
     for ext in extensions:
         ext_args.append("*" + ext)
 
+    xd_args = []
+    for folder in EXCLUDED_FOLDERS:
+        xd_args += ["/XD", folder]
+
     cmd = [
         "robocopy",
         source_dir,
@@ -234,7 +240,7 @@ def _stage_with_robocopy(source_dir, staging_dir, extensions,
         "/NJS",        # no job summary
         "/TEE",        # output to console and log
         "/BYTES",      # show sizes in bytes
-    ]
+    ] + xd_args
 
     # Hide console window on Windows (prevents flash)
     si = subprocess.STARTUPINFO()
@@ -335,6 +341,7 @@ def _stage_with_python(source_dir, staging_dir, extensions,
     errors = []
 
     for root, dirs, files in os.walk(source_dir):
+        dirs[:] = [d for d in dirs if d not in EXCLUDED_FOLDERS]
         for f in files:
             if cancel_event and cancel_event.is_set():
                 return {

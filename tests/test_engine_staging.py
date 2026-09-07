@@ -175,6 +175,35 @@ class TestGetOnedriveSyncState(unittest.TestCase):
             self.assertEqual(result["sampled"], 5)
 
 
+class TestExcludedFoldersInStaging(unittest.TestCase):
+    """PixHerder_Duplicates must be excluded from staging operations."""
+
+    def test_count_excludes_duplicates_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(3):
+                with open(os.path.join(d, "img%d.jpg" % i), "w") as f:
+                    f.write("x")
+            dupes = os.path.join(d, "PixHerder_Duplicates")
+            os.makedirs(dupes)
+            for i in range(5):
+                with open(os.path.join(dupes, "dupe%d.jpg" % i), "w") as f:
+                    f.write("x")
+            count, _ = count_files_for_staging(d)
+            self.assertEqual(count, 3)
+
+    def test_sync_state_excludes_duplicates_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, "photo.png"), "w") as f:
+                f.write("x")
+            dupes = os.path.join(d, "PixHerder_Duplicates")
+            os.makedirs(dupes)
+            for i in range(10):
+                with open(os.path.join(dupes, "d%d.png" % i), "w") as f:
+                    f.write("x")
+            result = get_onedrive_sync_state(d)
+            self.assertEqual(result["sampled"], 1)
+
+
 class TestStagingPathDerivation(_StagingTestCase):
     """Staging dir and manifest path are derived, not stored — so they must be stable."""
 
