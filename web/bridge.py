@@ -822,7 +822,7 @@ class Api:
         source_count = 0
         if os.path.isdir(directory):
             extensions = settings.get("extensions", DEFAULTS["extensions"])
-            source_count = count_files_for_staging(directory, extensions)
+            source_count, _ = count_files_for_staging(directory, extensions)
 
         # Disk space check
         free_gb = 0
