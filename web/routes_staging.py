@@ -126,19 +126,7 @@ def handle_staging_start(handler, workers):
     extensions = settings.get("extensions")
 
     try:
-        source_size = 0
-        ext_set = set(extensions) if extensions else None
-        for root, dirs, fnames in os.walk(source_dir):
-            for fname in fnames:
-                if ext_set:
-                    ext = os.path.splitext(fname)[1].lower()
-                    if ext not in ext_set:
-                        continue
-                fpath = os.path.join(root, fname)
-                try:
-                    source_size += os.path.getsize(fpath)
-                except OSError:
-                    pass
+        _, source_size = count_files_for_staging(source_dir, extensions)
         target_drive = os.path.splitdrive(staging_dir)[0]
         if target_drive:
             usage = shutil.disk_usage(target_drive + os.sep)
